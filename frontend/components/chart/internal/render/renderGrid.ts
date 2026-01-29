@@ -1,0 +1,139 @@
+/**
+ * renderGrid.ts - отрисовка сетки графика
+ * 
+ * FLOW G4: Render Engine
+ */
+
+import type { Viewport } from '../viewport.types';
+
+interface RenderGridParams {
+  ctx: CanvasRenderingContext2D; // Нативный тип браузера
+  viewport: Viewport;
+  width: number;
+  height: number;
+  timeframeMs?: number; // Для привязки вертикальных линий к границам свечей
+}
+
+const GRID_COLOR = 'rgba(255, 255, 255, 0.1)';
+const GRID_LINE_WIDTH = 1;
+
+/**
+ * Вычисляет оптимальный шаг для сетки по времени
+ * Использует ту же логику что и renderAxes для синхронизации с метками времени
+ */
+function calculateTimeStep(timeRange: number, width: number, timeframeMs?: number): number {
+  const MIN_LABEL_SPACING = 60; // Минимальное расстояние между метками в пикселях (как в renderAxes)
+  const targetLabels = Math.floor(width / MIN_LABEL_SPACING);
+  
+  if (targetLabels <= 0) return timeRange;
+  
+  const timePerLabel = timeRange / targetLabels;
+  
+  // Используем ту же логику что и в renderAxes для синхронизации
+  if (timePerLabel < 1000) {
+    // Меньше секунды - округляем до секунд
+    return Math.ceil(timePerLabel / 1000) * 1000;
+  } else if (timePerLabel < 60000) {
+    // Меньше минуты - округляем до секунд (5s, 10s, 30s)
+    const seconds = Math.ceil(timePerLabel / 1000);
+    if (seconds <= 5) return 5000;
+    if (seconds <= 10) return 10000;
+    if (seconds <= 30) return 30000;
+    return 60000;
+  } else {
+    // Минуты или больше
+    const minutes = Math.ceil(timePerLabel / 60000);
+    return minutes * 60000;
+  }
+}
+
+/**
+ * Вычисляет оптимальный шаг для сетки по цене
+ */
+function calculatePriceStep(priceRange: number, height: number): number {
+  const targetSteps = 10; // Целевое количество шагов
+  const pixelsPerStep = height / targetSteps;
+  const pricePerPixel = priceRange / height;
+  const priceStep = pixelsPerStep * pricePerPixel;
+
+  // Округляем до "красивых" значений
+  const magnitude = Math.pow(10, Math.floor(Math.log10(priceStep)));
+  const normalized = priceStep / magnitude;
+
+  let step: number;
+  if (normalized <= 1) step = 1;
+  else if (normalized <= 2) step = 2;
+  else if (normalized <= 5) step = 5;
+  else step = 10;
+
+  return step * magnitude;
+}
+
+/**
+ * Конвертирует время в X координату
+ */
+function timeToX(time: number, viewport: Viewport, width: number): number {
+  const timeRange = viewport.timeEnd - viewport.timeStart;
+  if (timeRange === 0) return 0;
+  return ((time - viewport.timeStart) / timeRange) * width;
+}
+
+/**
+ * Конвертирует цену в Y координату
+ */
+function priceToY(price: number, viewport: Viewport, height: number): number {
+  const priceRange = viewport.priceMax - viewport.priceMin;
+  if (priceRange === 0) return height / 2;
+  return height - ((price - viewport.priceMin) / priceRange) * height;
+}
+
+export function renderGrid({
+  ctx,
+  viewport,
+  width,
+  height,
+  timeframeMs,
+}: RenderGridParams): void {
+  ctx.save();
+
+  ctx.strokeStyle = GRID_COLOR;
+  ctx.lineWidth = GRID_LINE_WIDTH;
+
+  const timeRange = viewport.timeEnd - viewport.timeStart;
+  const priceRange = viewport.priceMax - viewport.priceMin;
+
+  // Вертикальная сетка (по времени) - синхронизирована с метками времени из renderAxes
+  if (timeRange > 0) {
+    const timeStep = calculateTimeStep(timeRange, width, timeframeMs);
+    // Используем ту же логику выравнивания что и в renderAxes
+    const startTime = Math.ceil(viewport.timeStart / timeStep) * timeStep;
+
+    ctx.beginPath();
+    for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
+      const x = timeToX(time, viewport, width);
+      if (x >= 0 && x <= width) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+      }
+    }
+    ctx.stroke();
+  }
+
+  // Горизонтальная сетка (по цене)
+  if (priceRange > 0) {
+    const priceStep = calculatePriceStep(priceRange, height);
+    const startPrice = Math.ceil(viewport.priceMin / priceStep) * priceStep;
+
+    ctx.beginPath();
+    for (let price = startPrice; price <= viewport.priceMax; price += priceStep) {
+      const y = priceToY(price, viewport, height);
+      if (y >= 0 && y <= height) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
+    }
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}

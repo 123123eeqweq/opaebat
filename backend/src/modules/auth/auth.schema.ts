@@ -1,0 +1,44 @@
+/**
+ * Auth request/response schemas for Fastify
+ */
+
+export const registerSchema = {
+  body: {
+    type: 'object',
+    required: ['email', 'password'],
+    properties: {
+      email: {
+        type: 'string',
+        format: 'email',
+      },
+      password: {
+        type: 'string',
+        minLength: 6,
+      },
+    },
+  },
+} as const;
+
+export const loginSchema = {
+  body: {
+    type: 'object',
+    required: ['email', 'password'],
+    properties: {
+      email: {
+        type: 'string',
+        format: 'email',
+      },
+      password: {
+        type: 'string',
+      },
+    },
+  },
+} as const;
+
+export const logoutSchema = {
+  // No body required
+} as const;
+
+export const meSchema = {
+  // No body required
+} as const;

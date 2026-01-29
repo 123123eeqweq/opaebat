@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+  trades   Trade[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+enum AccountType {
+  demo
+  real
+}
+
+model Account {
+  id        String      @id @default(cuid())
+  userId    String
+  type      AccountType
+  balance   Decimal     @default(0)
+  currency  String      @default("USD")
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades Trade[]
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("accounts")
+}
+
+enum TradeDirection {
+  CALL
+  PUT
+}
+
+enum TradeStatus {
+  OPEN
+  WIN
+  LOSS
+}
+
+model Trade {
+  id         String         @id @default(uuid())
+  userId     String
+  accountId  String
+  direction  TradeDirection
+  amount     Decimal
+  entryPrice Decimal
+  exitPrice  Decimal?
+  payout     Decimal
+  status     TradeStatus
+  openedAt   DateTime       @default(now())
+  expiresAt  DateTime
+  closedAt   DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([status, expiresAt])
+  @@index([userId])
+  @@index([accountId])
+  @@map("trades")
+}
+
+// Свечи котировок — хранятся в БД постоянно (не в Redis)
+model Candle {
+  id        String   @id @default(cuid())
+  symbol    String   @default("BTC/USD")
+  timeframe String   // '5s', '15s', '30s', '1m'
+  timestamp BigInt   // начало свечи, ms
+  open      Decimal
+  high      Decimal
+  low       Decimal
+  close     Decimal
+
+  @@unique([symbol, timeframe, timestamp])
+  @@index([symbol, timeframe, timestamp(sort: Desc)])
+  @@map("candles")
+}

@@ -1,0 +1,50 @@
+/**
+ * Terminal snapshot types (aligned with backend)
+ * FLOW P4: snapshot includes instrument
+ */
+
+export interface TerminalSnapshot {
+  instrument: string; // BTCUSD, EURUSD, AUDCAD
+  user: {
+    id: string;
+    email: string;
+  };
+  accounts: {
+    id: string;
+    type: 'demo' | 'real';
+    balance: string;
+    currency: string;
+    isActive: boolean;
+  }[];
+  activeAccount: {
+    id: string;
+    type: 'demo' | 'real';
+    balance: string;
+    currency: string;
+  } | null;
+  price: {
+    asset: string;
+    value: number;
+    timestamp: number;
+  };
+  candles: {
+    timeframe: string;
+    items: {
+      open: number;
+      high: number;
+      low: number;
+      close: number;
+      startTime: number;
+      endTime: number;
+    }[];
+  };
+  openTrades: {
+    id: string;
+    direction: 'CALL' | 'PUT';
+    amount: string;
+    entryPrice: string;
+    expiresAt: number;
+    payout: string;
+  }[];
+  serverTime: number;
+}
