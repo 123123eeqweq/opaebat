@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, Lock, KeyRound, Copy, Check } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { api } from '@/lib/api/api';
 
 interface UserProfile {
@@ -158,201 +158,209 @@ export function SecuritySection({ profile, onProfileUpdate }: SecuritySectionPro
     setTwoFAError(null);
   };
 
+  const inputClass = 'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50';
+  const labelClass = 'block text-sm font-medium text-white/70 mb-2';
+
   return (
-    <>
-      {/* Смена пароля */}
-      <section className="mb-10">
-        <div className="flex items-center gap-2 mb-4">
-          <Lock className="w-5 h-5 text-white/60" strokeWidth={2} />
-          <h2 className="text-lg font-medium text-white">Смена пароля</h2>
+    <div className="w-full space-y-6">
+      {/* Смена пароля — карточка на всю ширину */}
+      <section className="rounded-xl bg-[#0a1635] border border-white/10 p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-white">Смена пароля</h2>
+          <p className="text-sm text-white/50 mt-0.5">Обновите пароль для защиты аккаунта</p>
         </div>
-        <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Текущий пароль</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
-              maxLength={128}
-              required
-            />
+        <form onSubmit={handleChangePassword} className="w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+              <label className={labelClass}>Текущий пароль</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="••••••••"
+                className={inputClass}
+                maxLength={128}
+                required
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Новый пароль</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Минимум 8 символов"
+                className={inputClass}
+                minLength={8}
+                maxLength={128}
+                required
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Подтвердите новый пароль</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className={inputClass}
+                maxLength={128}
+                required
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Новый пароль</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Минимум 8 символов"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
-              minLength={8}
-              maxLength={128}
-              required
-            />
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <button
+              type="submit"
+              disabled={passwordSaving}
+              className="px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+            >
+              {passwordSaving ? 'Сохранение...' : 'Изменить пароль'}
+            </button>
+            {passwordError && <p className="text-sm text-red-400">{passwordError}</p>}
+            {passwordSuccess && <p className="text-sm text-emerald-400">Пароль успешно изменён</p>}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Подтвердите новый пароль</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
-              maxLength={128}
-              required
-            />
-          </div>
-          {passwordError && (
-            <p className="text-sm text-red-400">{passwordError}</p>
-          )}
-          {passwordSuccess && (
-            <p className="text-sm text-emerald-400">Пароль успешно изменён</p>
-          )}
-          <button
-            type="submit"
-            disabled={passwordSaving}
-            className="px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
-          >
-            {passwordSaving ? 'Сохранение...' : 'Изменить пароль'}
-          </button>
         </form>
       </section>
 
-      {/* 2FA */}
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Shield className="w-5 h-5 text-white/60" strokeWidth={2} />
-          <h2 className="text-lg font-medium text-white">Двухфакторная аутентификация (2FA)</h2>
+      {/* 2FA — карточка на всю ширину */}
+      <section className="rounded-xl bg-[#0a1635] border border-white/10 p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-white">Двухфакторная аутентификация (2FA)</h2>
+          <p className="text-sm text-white/50 mt-0.5">Дополнительный уровень защиты при входе</p>
         </div>
 
         {twoFAError && (
-          <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
             {twoFAError}
           </div>
         )}
         {twoFASuccess && (
-          <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
             {twoFASuccess}
           </div>
         )}
 
         {profile?.twoFactorEnabled ? (
-          <>
-            <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
-              <KeyRound className="w-4 h-4 shrink-0" />
-              <span>2FA включена. Ваш аккаунт защищён дополнительным кодом при входе.</span>
+          <div className="space-y-6">
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+              2FA включена. Ваш аккаунт защищён дополнительным кодом при входе.
             </div>
-            <form onSubmit={handleDisable2FA} className="max-w-md space-y-4">
-              <p className="text-sm text-white/60">Для отключения 2FA введите пароль и текущий код из приложения.</p>
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">Пароль</label>
-                <input
-                  type="password"
-                  value={disable2FAPassword}
-                  onChange={(e) => setDisable2FAPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">Код из приложения</label>
-                <input
-                  type="text"
-                  value={disable2FACode}
-                  onChange={(e) => setDisable2FACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 font-mono text-lg tracking-widest"
-                  maxLength={6}
-                  required
-                />
+            <form onSubmit={handleDisable2FA} className="w-full">
+              <p className="text-sm text-white/60 mb-4">Для отключения 2FA введите пароль и текущий код из приложения.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+                <div>
+                  <label className={labelClass}>Пароль</label>
+                  <input
+                    type="password"
+                    value={disable2FAPassword}
+                    onChange={(e) => setDisable2FAPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className={inputClass}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Код из приложения</label>
+                  <input
+                    type="text"
+                    value={disable2FACode}
+                    onChange={(e) => setDisable2FACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    className={`${inputClass} font-mono text-lg tracking-widest`}
+                    maxLength={6}
+                    required
+                  />
+                </div>
               </div>
               <button
                 type="submit"
                 disabled={disable2FALoading}
-                className="px-6 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50 border border-red-500/30"
+                className="mt-6 px-6 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50 border border-red-500/30"
               >
                 {disable2FALoading ? 'Отключение...' : 'Отключить 2FA'}
               </button>
             </form>
-          </>
+          </div>
         ) : step2FA === 'qr' ? (
-          <div className="max-w-md space-y-6">
+          <div className="w-full space-y-6">
             <p className="text-sm text-white/70">
               Отсканируйте QR-код в приложении для аутентификации (Google Authenticator, Authy и др.):
             </p>
-            {qrCode && (
-              <div className="p-4 rounded-xl bg-white inline-block">
-                <img src={qrCode} alt="QR-код" className="w-48 h-48" />
-              </div>
-            )}
-            {backupCodes.length > 0 && (
-              <div>
-                <p className="text-sm text-white/70 mb-2">Сохраните резервные коды в надёжном месте. Каждый код можно использовать один раз.</p>
-                <div className="flex flex-wrap gap-2">
-                  {backupCodes.map((code, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => handleCopyBackupCode(code, i)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 font-mono text-xs hover:bg-white/10 transition-colors"
-                    >
-                      {code}
-                      {copiedCode === i ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-white/50" />}
-                    </button>
-                  ))}
+            <div className="flex flex-col sm:flex-row gap-8 items-start">
+              {qrCode && (
+                <div className="p-4 rounded-xl bg-white inline-block shrink-0">
+                  <img src={qrCode} alt="QR-код" className="w-48 h-48" />
                 </div>
-              </div>
-            )}
-            <form onSubmit={handleVerify2FA} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">Введите код из приложения</label>
-                <input
-                  type="text"
-                  value={verifyCode}
-                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 font-mono text-lg tracking-widest"
-                  maxLength={6}
-                  required
-                />
-              </div>
-              <div className="flex gap-3">
+              )}
+              <div className="flex-1 min-w-0 space-y-6">
+                {backupCodes.length > 0 && (
+                  <div>
+                    <p className="text-sm text-white/70 mb-2">Сохраните резервные коды в надёжном месте. Каждый код можно использовать один раз.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {backupCodes.map((code, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => handleCopyBackupCode(code, i)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 font-mono text-xs hover:bg-white/10 transition-colors"
+                        >
+                          {code}
+                          {copiedCode === i ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-white/50" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <form onSubmit={handleVerify2FA} className="space-y-4">
+                  <div>
+                    <label className={labelClass}>Введите код из приложения</label>
+                    <input
+                      type="text"
+                      value={verifyCode}
+                      onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      className={`${inputClass} font-mono text-lg tracking-widest max-w-[200px]`}
+                      maxLength={6}
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-3">
                 <button
                   type="submit"
                   disabled={verify2FALoading}
                   className="px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
                 >
-                  {verify2FALoading ? 'Проверка...' : 'Подтвердить'}
-                </button>
+                      {verify2FALoading ? 'Проверка...' : 'Подтвердить'}
+                    </button>
                 <button
                   type="button"
                   onClick={cancel2FASetup}
                   className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-medium uppercase tracking-wider transition-colors"
                 >
-                  Отмена
-                </button>
+                      Отмена
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
           </div>
         ) : (
-          <div className="max-w-md">
-            <p className="text-sm text-white/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <p className="text-sm text-white/60">
               Добавьте дополнительный уровень защиты. При входе потребуется код из приложения.
             </p>
             <button
               type="button"
               onClick={handleEnable2FA}
               disabled={enable2FALoading}
-              className="px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+              className="px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50 shrink-0"
             >
               {enable2FALoading ? 'Загрузка...' : 'Включить 2FA'}
             </button>
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

@@ -127,7 +127,7 @@ export class PrismaAccountRepository implements AccountRepository {
           userId,
           type: 'real',
           balance: new Prisma.Decimal(0),
-          currency: 'USD',
+          currency: 'UAH',
           isActive: true,
         },
       });

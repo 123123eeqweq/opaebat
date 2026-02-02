@@ -441,29 +441,7 @@ export default function TerminalPage() {
     }
   }, [snapshot, accountType]);
 
-  // Отслеживаем высоту контейнера графика для SentimentBar
-  useEffect(() => {
-    const container = chartContainerRef.current;
-    if (!container) return;
-
-    const updateHeight = () => {
-      const height = container.clientHeight;
-      if (height > 0) {
-        setSentimentBarHeight(height);
-      }
-    };
-
-    updateHeight();
-    const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(container);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
   const [resetDemoLoading, setResetDemoLoading] = useState<boolean>(false);
-  const [sentimentBarHeight, setSentimentBarHeight] = useState<number>(600);
   const [buyPercentage, setBuyPercentage] = useState<number>(50);
   const [sellPercentage, setSellPercentage] = useState<number>(50);
   const mainRef = useRef<HTMLElement | null>(null);
@@ -533,7 +511,7 @@ export default function TerminalPage() {
   };
 
   const getCurrentBalance = () => {
-    if (!snapshot) return { balance: '0.00', currency: 'USD' };
+    if (!snapshot) return { balance: '0.00', currency: 'UAH' };
     return { balance: snapshot.balance.toFixed(2), currency: snapshot.currency };
   };
 
@@ -704,17 +682,17 @@ export default function TerminalPage() {
     <AuthGuard requireAuth>
       <div ref={fullscreenContainerRef} className="min-h-screen bg-[#061230] flex flex-col">
       {/* Header */}
-      <header className="bg-[#05122a] border-b border-white/10">
-        <div className="px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-10 w-auto object-contain" />
-            <span className="text-xl font-semibold text-white uppercase">ComforTrade</span>
-            <button type="button" className="w-10 h-10 rounded-lg flex items-center justify-center text-white hover:bg-white/10 transition-colors">
-              <Bell className="w-5 h-5" />
+      <header className="bg-[#05122a] border-b border-white/10 shrink-0">
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+            <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComforTrade</span>
+            <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white hover:bg-white/10 transition-colors shrink-0">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="relative">
               <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#3347ff]/50 via-[#5b6bff]/30 to-[#3347ff]/50 blur-sm opacity-60 pointer-events-none" />
               <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#05122a] z-10 pointer-events-none ${accountType === 'demo' ? 'bg-sky-400' : 'bg-emerald-500'}`} title={accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'} />
@@ -835,18 +813,19 @@ export default function TerminalPage() {
               </div>
             </div>
 
-            <Link href="/profile?tab=wallet" className="px-5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white hover:from-[#3347ff]/90 hover:to-[#1e2fcc]/90 transition-all flex items-center gap-2 uppercase">
-              <Wallet className="w-4 h-4" />
-              <span>Пополнить счёт</span>
+            <Link href="/profile?tab=wallet" className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white hover:from-[#3347ff]/90 hover:to-[#1e2fcc]/90 transition-all flex items-center gap-1.5 sm:gap-2 uppercase">
+              <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="sm:hidden">Пополнить</span>
+              <span className="hidden sm:inline">Пополнить счёт</span>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area with Sidebar */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Left Sidebar */}
-        <aside className="w-[88px] shrink-0 bg-[#05122a] border-r border-white/10 flex flex-col items-center py-2.5 gap-2">
+      {/* Main Content Area with Sidebar — pb-20 на мобилке под нижнюю навигацию */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden pb-20 md:pb-0">
+        {/* Left Sidebar — скрыт на мобилке, на десктопе слева */}
+        <aside className="hidden md:flex w-[88px] shrink-0 bg-[#05122a] border-r border-white/10 flex-col items-center py-2.5 gap-2">
           <div className="flex-1 flex flex-col items-center gap-2 w-full min-h-0">
             {/* Кнопка истории сделок */}
             <button
@@ -973,7 +952,7 @@ export default function TerminalPage() {
         {showTradesHistory && (
           <>
             <div
-              className="fixed left-[88px] top-0 right-0 bottom-0 z-40"
+              className="fixed left-0 md:left-[88px] top-0 right-0 bottom-0 z-40"
               onClick={() => setShowTradesHistory(false)}
               aria-hidden
             />
@@ -983,10 +962,10 @@ export default function TerminalPage() {
           </>
         )}
 
-        {/* Page Content */}
-        <main ref={mainRef} className="flex-1 min-h-0 relative">
+        {/* Page Content — на мобилке первый (выше сайдбара) */}
+        <main ref={mainRef} className="flex-1 min-h-0 min-w-0 relative order-1">
           {/* Chart Controls (поверх графика) */}
-          <div className="absolute top-3 left-3 z-10 flex items-center gap-1">
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 flex flex-wrap items-center gap-1 max-w-[calc(100%-0.5rem)]">
             {/* 1. Валютная пара */}
             <div className="bg-gradient-to-b from-[#24304d] to-[#1f2a45] rounded-lg">
               <InstrumentMenu
@@ -1055,7 +1034,7 @@ export default function TerminalPage() {
           )}
 
           {/* Обёртка графика с явными размерами под ресайз — заполняет main по inset-0 */}
-          <div ref={chartContainerRef} className="absolute inset-0 min-w-0 min-h-0 overflow-hidden flex">
+          <div ref={chartContainerRef} className="absolute inset-0 min-w-0 min-h-0 overflow-hidden flex flex-col">
             {/* График */}
             <div className="flex-1 min-w-0 min-h-0 relative">
               {/* 🔥 FLOW: Hard Chart Reinitialization on Timeframe/ChartType Change
@@ -1100,40 +1079,33 @@ export default function TerminalPage() {
               />
             </div>
             
-            {/* SentimentBar - отдельный блок справа от графика */}
-            <div className="shrink-0 relative h-full flex flex-col" style={{ width: '12px' }}>
-              {/* Процент сверху */}
-              <div className="flex-shrink-0 h-[20px] flex items-center justify-center">
-                <div className="text-[6px] font-normal text-white/40 pointer-events-none whitespace-nowrap" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                  {buyPercentage}%
-                </div>
-              </div>
-              
-              {/* SentimentBar */}
-              <div className="flex-1 flex items-center justify-center">
-                <SentimentBar 
-                  height={sentimentBarHeight} 
+            {/* SentimentBar — горизонтально под графиком */}
+            <div className="shrink-0 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#05122a]/80 border-t border-white/5">
+              <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                {buyPercentage}%
+              </span>
+              <div className="flex-1 min-w-0 h-2 md:h-3">
+                <SentimentBar
+                  orientation="horizontal"
                   onPercentagesChange={(buy, sell) => {
                     setBuyPercentage(buy);
                     setSellPercentage(sell);
                   }}
                 />
               </div>
-              
-              {/* Процент снизу */}
-              <div className="flex-shrink-0 h-[20px] flex items-center justify-center">
-                <div className="text-[6px] font-normal text-white/40 pointer-events-none whitespace-nowrap" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                  {sellPercentage}%
-                </div>
-              </div>
+              <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                {sellPercentage}%
+              </span>
             </div>
           </div>
         </main>
 
-        {/* Right Sidebar */}
-        <aside className="w-48 shrink-0 bg-[#06122c] border-l border-white/10 p-3 flex flex-col gap-3">
+        {/* Right Sidebar — на мобилке внизу под графиком, на десктопе справа */}
+        <aside className="w-full md:w-48 shrink-0 bg-[#06122c] border-t md:border-t-0 md:border-l border-white/10 p-3 flex flex-col gap-3 order-2">
+          {/* Time + Amount — на мобилке в ряд */}
+          <div className="flex flex-row md:flex-col gap-3">
           {/* Time Input */}
-          <div className="flex flex-col gap-1.5 relative" ref={timeFieldRef}>
+          <div className="flex flex-col gap-1.5 relative flex-1 md:flex-none" ref={timeFieldRef}>
             <label className="text-xs text-gray-400">Время</label>
             <div className="flex items-center gap-0 bg-white/10 rounded-lg overflow-hidden px-1">
               {/* Minus Button */}
@@ -1201,7 +1173,7 @@ export default function TerminalPage() {
           </div>
 
           {/* Amount Input */}
-          <div className="flex flex-col gap-1.5 relative" ref={amountFieldRef}>
+          <div className="flex flex-col gap-1.5 relative flex-1 md:flex-none" ref={amountFieldRef}>
             <label className="text-xs text-gray-400">Сумма</label>
             <div className="flex items-center gap-0 bg-white/10 rounded-lg overflow-hidden px-1">
               {/* Minus Button */}
@@ -1259,26 +1231,27 @@ export default function TerminalPage() {
                     onClose={() => setShowAmountModal(false)}
                     payoutPercent={payoutPercent}
                   />
-                </div>
-              </>
+              </div>
+            </>
             )}
+          </div>
           </div>
 
           {/* 🔥 FLOW I-PAYOUT: Доходность и потенциальный выигрыш */}
-          <div className="flex flex-col gap-1.5 items-center justify-center py-3">
-            <div className="text-2xl font-bold text-green-400">
+          <div className="flex flex-row md:flex-col gap-2 md:gap-1.5 items-center justify-center py-2 md:py-3">
+            <div className="text-xl md:text-2xl font-bold text-green-400">
               +{payoutPercent}%
             </div>
-            <div className="text-base text-gray-400">
+            <div className="text-sm md:text-base text-gray-400">
               +{((Number.parseFloat(amount || '100') * payoutPercent) / 100).toFixed(2)} UAH
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex flex-col gap-2.5">
+          {/* Buttons — на мобилке в ряд */}
+          <div className="flex flex-row md:flex-col gap-2 md:gap-2.5">
             {/* Купить */}
             <button
-              className="w-full py-3.5 px-4 text-white font-semibold text-base rounded-lg transition-all flex items-center justify-center tracking-wide shadow-lg shadow-green-500/20"
+              className="flex-1 md:flex-none w-full py-3 md:py-3.5 px-3 md:px-4 text-white font-semibold text-sm md:text-base rounded-lg transition-all flex items-center justify-center tracking-wide shadow-lg shadow-green-500/20"
               style={{ background: 'linear-gradient(135deg, #4fc63f 0%, #45b833 50%, #3aa028 100%)' }}
               onMouseEnter={() => {
                 candleChartRef.current?.setHoverAction('CALL');
@@ -1341,7 +1314,7 @@ export default function TerminalPage() {
 
             {/* Продать */}
             <button
-              className="w-full py-3.5 px-4 text-white font-semibold text-base rounded-lg transition-all flex items-center justify-center tracking-wide shadow-lg shadow-red-500/20"
+              className="flex-1 md:flex-none w-full py-3 md:py-3.5 px-3 md:px-4 text-white font-semibold text-sm md:text-base rounded-lg transition-all flex items-center justify-center tracking-wide shadow-lg shadow-red-500/20"
               style={{ background: 'linear-gradient(135deg, #ff5d3f 0%, #ff3d1f 50%, #e63515 100%)' }}
               onMouseEnter={() => {
                 candleChartRef.current?.setHoverAction('PUT');
@@ -1402,8 +1375,8 @@ export default function TerminalPage() {
             </button>
           </div>
 
-          {/* Совет от трейдера + кнопки внизу сайдбара */}
-          <div className="mt-auto flex flex-col gap-3">
+          {/* Совет от трейдера + кнопки внизу сайдбара — скрыто на мобилке */}
+          <div className="hidden md:flex mt-auto flex-col gap-3">
           <div className="rounded-lg bg-white/10 p-3">
             <div className="flex items-center gap-2 mb-1.5">
               <Image
@@ -1459,6 +1432,53 @@ export default function TerminalPage() {
         </aside>
 
       </div>
+
+      {/* Нижняя навигация — только на мобилке (кнопки слева перенесены вниз) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-2 px-2 bg-[#05122a] border-t border-white/10">
+        <button
+          onClick={() => setShowTradesHistory((prev) => !prev)}
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] transition-colors ${
+            showTradesHistory ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+          }`}
+        >
+          <History className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">История</span>
+        </button>
+        <button
+          onClick={() => setShowNews(true)}
+          className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
+        >
+          <Newspaper className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">Новости</span>
+        </button>
+        <Link
+          href="/profile?tab=wallet"
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] transition-colors ${
+            activeMenu === 'кошелек' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+          }`}
+        >
+          <Wallet className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">Кошелёк</span>
+        </Link>
+        <Link
+          href="/profile"
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] transition-colors ${
+            activeMenu === 'личный-профиль' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+          }`}
+        >
+          <UserCircle className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">Профиль</span>
+        </Link>
+        <a
+          href="https://t.me/your_support_channel"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
+        >
+          <Image src="/images/support.png" alt="Поддержка" width={20} height={20} className="w-5 h-5 object-contain" />
+          <span className="text-[9px] font-semibold leading-tight">Поддержка</span>
+        </a>
+      </nav>
 
       {/* Chart Settings Modal */}
       {showChartSettingsModal && (
@@ -1593,7 +1613,7 @@ function TradesHistoryModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed left-[88px] top-[65px] z-50 h-[calc(100vh-65px)] w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
+      className="fixed left-0 md:left-[88px] top-[65px] z-50 h-[calc(100vh-65px)] w-full md:w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
     >
         {/* Filter Tabs */}
         <div className="px-5 pt-3 shrink-0 border-b border-white/10">
@@ -1775,7 +1795,7 @@ function NewsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed left-[88px] top-[65px] z-50 h-[calc(100vh-65px)] w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
+      className="fixed left-0 md:left-[88px] top-[65px] z-50 h-[calc(100vh-65px)] w-full md:w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
     >
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between shrink-0">

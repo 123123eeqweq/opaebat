@@ -225,7 +225,7 @@ export function WalletTab() {
   return (
     <div className="flex flex-col w-full min-h-full">
       {/* Табы */}
-      <div className="shrink-0 flex border-b border-white/[0.08] px-8 pt-6">
+      <div className="shrink-0 flex border-b border-white/[0.08] px-4 sm:px-6 md:px-8 pt-4 md:pt-6 overflow-x-auto">
         {WALLET_TABS.map(({ id, label }) => (
           <button
             key={id}
@@ -247,7 +247,7 @@ export function WalletTab() {
         {walletTab === 'deposit' && (
           <>
             {/* Левая колонка — форма */}
-            <div className="flex-1 min-w-0 p-8 overflow-auto">
+            <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto">
               <div className="w-full">
                 <h1 className="text-2xl font-bold text-white mb-1">Пополнение счёта</h1>
           <p className="text-sm text-white/50 mb-8">
@@ -428,6 +428,34 @@ export function WalletTab() {
             </div>
           </div>
 
+          {/* Кнопка оплаты — на мобилке (на десктопе в сайдбаре) */}
+          <div className="lg:hidden mb-8">
+            <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-4 mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-white/60 text-sm">К оплате</span>
+                <span className="text-lg font-bold text-[#3347ff] tabular-nums">{totalPay.toFixed(0)} UAH</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleDeposit}
+                disabled={submitting || !isValidAmount}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Обработка...
+                  </>
+                ) : (
+                  <>
+                    Перейти к оплате
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Список последних депозитов */}
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -448,7 +476,8 @@ export function WalletTab() {
               ) : transactions.filter((t) => t.type === 'DEPOSIT').length === 0 ? (
                 <div className="p-8 text-center text-white/40 text-sm">Нет пополнений</div>
               ) : (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[400px]">
                   <thead>
                     <tr className="border-b border-white/[0.06]">
                       <th className="text-left py-3 px-4 text-white/50 font-medium">Дата</th>
@@ -496,14 +525,15 @@ export function WalletTab() {
                       ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Правая часть — Summary (sticky при скролле) */}
-      <div className="w-[360px] shrink-0 p-6 flex flex-col gap-6 self-stretch sticky top-0 min-h-[calc(100vh-3.5rem)] bg-[#051228]">
+      {/* Правая часть — Summary (скрыта на мобилке) */}
+      <div className="hidden lg:flex w-[360px] shrink-0 p-6 flex-col gap-6 self-stretch sticky top-0 min-h-[calc(100vh-3.5rem)] bg-[#051228]">
         <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Итого</h3>
@@ -590,7 +620,7 @@ export function WalletTab() {
 
         {walletTab === 'withdraw' && (
           <>
-            <div className="flex-1 min-w-0 p-8 overflow-auto">
+            <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto">
               <div className="w-full">
                 <h1 className="text-2xl font-bold text-white mb-1">Вывод средств</h1>
                 <p className="text-sm text-white/50 mb-8">
@@ -712,10 +742,37 @@ export function WalletTab() {
                   </div>
                 </div>
               </div>
+
+              {/* Кнопка вывода — на мобилке */}
+              <div className="lg:hidden mt-8">
+                <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-white/60 text-sm">К получению</span>
+                    <span className="text-lg font-bold text-[#3347ff] tabular-nums">
+                      {(withdrawNumAmount >= MIN_AMOUNT_UAH && withdrawNumAmount <= MAX_AMOUNT_UAH ? withdrawNumAmount : 0).toFixed(0)} UAH
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleWithdraw}
+                    disabled={submitting || !isValidWithdraw}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Обработка...
+                      </>
+                    ) : (
+                      'Подтвердить вывод'
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* Правая часть — Summary для вывода */}
-            <div className="w-[360px] shrink-0 p-6 flex flex-col gap-6 self-stretch sticky top-0 min-h-[calc(100vh-3.5rem)] bg-[#051228]">
+            {/* Правая часть — Summary для вывода (скрыта на мобилке) */}
+            <div className="hidden lg:flex w-[360px] shrink-0 p-6 flex-col gap-6 self-stretch sticky top-0 min-h-[calc(100vh-3.5rem)] bg-[#051228]">
               <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-6">
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-white">Итого</h3>
@@ -787,7 +844,7 @@ export function WalletTab() {
         )}
 
         {walletTab === 'history' && (
-          <div className="flex-1 min-w-0 p-8 overflow-auto w-full">
+          <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto w-full">
             <div className="w-full">
               <h1 className="text-2xl font-bold text-white mb-1">История транзакций</h1>
               <p className="text-sm text-white/50 mb-8">
@@ -808,8 +865,8 @@ export function WalletTab() {
                     <p className="text-sm text-white/40 mt-1">Пополнения и выводы появятся здесь</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    <table className="w-full min-w-[500px]">
                       <thead>
                         <tr className="border-b border-white/[0.08] bg-white/[0.02]">
                           <th className="text-left py-4 px-5 text-[11px] font-semibold text-white/50 uppercase tracking-wider">Дата</th>

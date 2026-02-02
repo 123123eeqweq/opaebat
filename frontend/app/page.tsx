@@ -34,6 +34,7 @@ export default function Home() {
   const [panelMode, setPanelMode] = useState<'login' | 'register'>('register')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [currentLanguage, setCurrentLanguage] = useState('RU')
   
   // Form state
@@ -131,7 +132,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header and Hero Section with shared background */}
-      <div className="bg-[#061230] relative overflow-hidden pt-24">
+      <div className="bg-[#061230] relative overflow-hidden pt-20 sm:pt-24">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/back1.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}></div>
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/back2.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}></div>
         
@@ -141,10 +142,10 @@ export default function Home() {
             isHeaderScrolled ? 'bg-[#061230]/95 backdrop-blur-sm' : 'bg-transparent'
           }`}
         >
-          <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-10 w-auto object-contain" />
-            <span className="text-xl font-semibold text-white uppercase">ComforTrade</span>
+          <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+            <span className="text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[120px] sm:max-w-none">ComforTrade</span>
           </div>
           
           <nav className="hidden md:flex items-center gap-8">
@@ -155,8 +156,8 @@ export default function Home() {
             <Link href="/education" className="text-gray-300 hover:text-white">Обучение</Link>
           </nav>
           
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative hidden sm:block">
               <button
                 onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                 className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 px-2 py-1"
@@ -214,16 +215,16 @@ export default function Home() {
               <>
                 {isAuthenticated && user ? (
                   <>
-                    <span className="text-white text-sm">{user.email}</span>
+                    <span className="hidden sm:inline text-white text-sm truncate max-w-[100px] md:max-w-[140px]">{user.email}</span>
                     <button
                       onClick={handleLogout}
-                      className="bg-transparent text-white px-6 py-2 rounded-lg font-medium border border-white/50 hover:bg-white/10 transition-colors"
+                      className="bg-transparent text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base border border-white/50 hover:bg-white/10 transition-colors"
                     >
                       Выйти
                     </button>
                     <Link
                       href="/terminal"
-                      className="bg-[#3347ff] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors"
+                      className="bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors"
                     >
                       Терминал
                     </Link>
@@ -232,13 +233,13 @@ export default function Home() {
                   <>
                     <button
                       onClick={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
-                      className="bg-transparent text-white px-6 py-2 rounded-lg font-semibold border border-white/50 hover:bg-white/10 transition-colors"
+                      className="bg-transparent text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base border border-white/50 hover:bg-white/10 transition-colors"
                     >
                       Войти
                     </button>
                     <button
                       onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
-                      className="bg-[#3347ff] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#2a3ae6] transition-colors"
+                      className="bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors"
                     >
                       Регистрация
                     </button>
@@ -246,8 +247,76 @@ export default function Home() {
                 )}
               </>
             )}
+
+            {/* Кнопка мобильного меню */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Меню"
+            >
+              {showMobileMenu ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
           </div>
           </div>
+
+          {/* Мобильное меню */}
+          {showMobileMenu && (
+            <>
+              <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} aria-hidden />
+              <div className="absolute top-full left-0 right-0 z-50 md:hidden bg-[#061230]/98 backdrop-blur-sm border-t border-white/10 shadow-xl">
+                <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
+                  <Link href="/start" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Как начать?</Link>
+                  <Link href="/assets" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Активы</Link>
+                  <Link href="/about" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">О компании</Link>
+                  <Link href="/reviews" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Отзывы</Link>
+                  <Link href="/education" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Обучение</Link>
+                  <div className="pt-3 mt-2 border-t border-white/10">
+                    <button
+                      onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                      className="flex items-center gap-2 py-2 text-gray-300 hover:text-white w-full"
+                    >
+                      <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
+                        <Image src={languages.find(l => l.code === currentLanguage)?.flag || '/images/flags/ru.svg'} alt="" fill className="object-cover" />
+                      </div>
+                      <span>Язык: {languages.find(l => l.code === currentLanguage)?.label || currentLanguage}</span>
+                      <svg className={`w-4 h-4 ml-auto transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showLanguageMenu && (
+                      <div className="flex flex-col py-2 pl-7">
+                        {languages.map((lang) => (
+                          <button
+                            key={lang.code}
+                            onClick={() => {
+                              setCurrentLanguage(lang.code);
+                              setShowLanguageMenu(false);
+                            }}
+                            className={`text-left py-2 rounded-lg text-sm flex items-center gap-3 ${
+                              currentLanguage === lang.code ? 'text-[#7b8fff]' : 'text-gray-400 hover:text-white'
+                            }`}
+                          >
+                            <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
+                              <Image src={lang.flag} alt="" fill className="object-cover" />
+                            </div>
+                            {lang.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </nav>
+              </div>
+            </>
+          )}
         </header>
 
         {/* Hero Section */}

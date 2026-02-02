@@ -163,18 +163,18 @@ export function TradeProfileTab() {
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_120%_80%_at_20%_0%,rgba(51,71,255,0.06),transparent_50%)]" />
 
       {/* Основная часть */}
-      <div className="flex-1 min-w-0 p-8 overflow-auto relative">
+      <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto relative">
         <div className="w-full">
-          <div className="mb-10">
-            <h1 className="text-3xl font-bold text-white tracking-tight">Торговый профиль</h1>
+          <div className="mb-6 sm:mb-10">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Торговый профиль</h1>
             <p className="text-sm text-white/50 mt-1">
               Статистика и динамика баланса
             </p>
           </div>
 
           {/* Статистика */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-10">
+            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
               <StatLabel label="Макс. прибыль" hint="Максимальная прибыль от одной сделки за выбранный период" />
               {loading ? (
                 <div className="h-8 w-20 bg-white/10 rounded animate-pulse" />
@@ -185,7 +185,7 @@ export function TradeProfileTab() {
               )}
             </div>
 
-            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
+            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
               <StatLabel label="Объём торгов" hint="Суммарный объём всех сделок за период" />
               {loading ? (
                 <div className="h-8 w-20 bg-white/10 rounded animate-pulse" />
@@ -196,7 +196,7 @@ export function TradeProfileTab() {
               )}
             </div>
 
-            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
+            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
               <StatLabel label="Сделок" hint="Количество закрытых сделок за период" />
               {loading ? (
                 <div className="h-8 w-20 bg-white/10 rounded animate-pulse" />
@@ -207,7 +207,7 @@ export function TradeProfileTab() {
               )}
             </div>
 
-            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
+            <div className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(51,71,255,0.15)]">
               <StatLabel label="% успешных" hint="Win rate — процент прибыльных сделок от общего числа" />
               {loading ? (
                 <div className="h-8 w-20 bg-white/10 rounded animate-pulse" />
@@ -220,11 +220,11 @@ export function TradeProfileTab() {
           </div>
 
           {/* График баланса */}
-          <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]">
+          <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-4 sm:p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]">
             <div className="flex flex-col gap-4 mb-6">
               <h2 className="text-base font-semibold text-white">Динамика баланса</h2>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+                <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06] overflow-x-auto">
                   {PRESET_INTERVALS.map((i) => (
                     <button
                       key={i.id}
@@ -329,9 +329,9 @@ export function TradeProfileTab() {
           </div>
 
           {/* Аналитика: распределение по активам и направлению */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
             {/* Распределение по активам */}
-            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-6">
+            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-4 sm:p-6">
               <h3 className="text-base font-semibold text-white mb-4">Распределение по активам</h3>
               {analyticsLoading ? (
                 <div className="h-[220px] flex items-center justify-center">
@@ -378,7 +378,7 @@ export function TradeProfileTab() {
             </div>
 
             {/* Направление сделок: вверх / вниз */}
-            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-6">
+            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-4 sm:p-6">
               <h3 className="text-base font-semibold text-white mb-4">Направление сделок</h3>
               {analyticsLoading ? (
                 <div className="h-[220px] flex items-center justify-center">
@@ -393,9 +393,10 @@ export function TradeProfileTab() {
                   Нет сделок за период
                 </div>
               ) : (
-                <div className="h-[220px] flex flex-col gap-4">
-                  <div className="flex-1 flex items-center gap-4">
-                    <ResponsiveContainer width="50%" height="100%">
+                <div className="h-[220px] min-h-[280px] sm:min-h-[220px] flex flex-col gap-4">
+                  <div className="flex-1 flex flex-col sm:flex-row items-center gap-4">
+                    <div className="w-full sm:w-1/2 h-[140px] sm:h-full flex-shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={[
@@ -430,7 +431,8 @@ export function TradeProfileTab() {
                         />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="flex-1 space-y-3">
+                    </div>
+                    <div className="flex-1 space-y-3 w-full sm:w-auto">
                       <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                         <span className="text-sm text-white/80">Вверх (CALL)</span>
                         <span className="text-sm font-semibold text-emerald-400 tabular-nums">

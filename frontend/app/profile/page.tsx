@@ -71,10 +71,10 @@ interface UserProfile {
 }
 
 const SIDEBAR_ITEMS = [
-  { id: 'profile', label: 'Личный профиль', href: '/profile?tab=profile', icon: User },
-  { id: 'wallet', label: 'Кошелек', href: '/profile?tab=wallet', icon: Wallet },
-  { id: 'trade', label: 'Торговый профиль', href: '/profile?tab=trade', icon: TrendingUp },
-  { id: 'support', label: 'Поддержка', href: '/profile?tab=support', icon: MessageCircle },
+  { id: 'profile', label: 'Личный профиль', shortLabel: 'Профиль', href: '/profile?tab=profile', icon: User },
+  { id: 'wallet', label: 'Кошелек', shortLabel: 'Кошелёк', href: '/profile?tab=wallet', icon: Wallet },
+  { id: 'trade', label: 'Торговый профиль', shortLabel: 'Торги', href: '/profile?tab=trade', icon: TrendingUp },
+  { id: 'support', label: 'Поддержка', shortLabel: 'Поддержка', href: '/profile?tab=support', icon: MessageCircle },
 ] as const;
 
 const TAB_LABELS: Record<string, string> = {
@@ -369,7 +369,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
     <div className="w-full min-h-full flex flex-col">
       <div className="flex flex-1 min-h-[calc(100vh-3.5rem)]">
         {/* Левая колонка — форма */}
-        <div className="flex-1 min-w-0 p-8 overflow-auto">
+        <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto">
         <h1 className="text-2xl font-semibold text-white mb-6">Личные данные</h1>
 
         {error && (
@@ -641,8 +641,8 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
         </div>
         </div>
 
-        {/* Правая колонка — виджеты */}
-        <div className="w-72 shrink-0 p-6 border-l border-white/10 flex flex-col gap-6">
+        {/* Правая колонка — виджеты (скрыта на мобилке) */}
+        <div className="hidden md:flex w-72 shrink-0 p-6 border-l border-white/10 flex-col gap-6">
           <div className="rounded-xl bg-[#0a1635] border border-white/10 p-6">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Заполненность профиля</h3>
             <div className="mb-2">
@@ -745,23 +745,24 @@ function ProfileHeader() {
   const pageTitle = TAB_LABELS[activeTab] || 'Профиль';
 
   return (
-    <header className="shrink-0 h-14 bg-[#05122a] border-b border-white/10 flex items-center px-6">
-      <div className="flex items-center gap-4 w-full">
-        <Link href="/terminal" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+    <header className="shrink-0 h-14 bg-[#05122a] border-b border-white/10 flex items-center px-4 md:px-6">
+      <div className="flex items-center gap-2 md:gap-4 w-full min-w-0">
+        <Link href="/terminal" className="hidden sm:flex items-center gap-2 text-white/70 hover:text-white transition-colors shrink-0">
           <span className="text-sm font-medium">Терминал</span>
         </Link>
-        <div className="h-4 w-px bg-white/20" />
-        <div className="flex items-center gap-3 flex-1">
-          <Image src="/images/logo.png" alt="" width={28} height={28} className="object-contain" />
-          <span className="text-lg font-semibold text-white">ComforTrade</span>
-          <span className="text-white/40">/</span>
-          <span className="text-white/90 font-medium">{pageTitle}</span>
+        <div className="hidden sm:block h-4 w-px bg-white/20 shrink-0" />
+        <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+          <Image src="/images/logo.png" alt="" width={28} height={28} className="object-contain shrink-0" />
+          <span className="text-base md:text-lg font-semibold text-white truncate">ComforTrade</span>
+          <span className="text-white/40 shrink-0">/</span>
+          <span className="text-white/90 font-medium truncate">{pageTitle}</span>
         </div>
         <Link
           href="/terminal"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors text-sm"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors text-sm shrink-0"
         >
-          <span>К торговле</span>
+          <span className="hidden sm:inline">К торговле</span>
+          <span className="sm:hidden">Терминал</span>
         </Link>
       </div>
     </header>
@@ -817,7 +818,7 @@ function ProfileSidebar() {
   const countryName = COUNTRIES.find((c) => c.code === countryCode)?.name ?? profile?.country ?? '—';
 
   return (
-    <aside className="w-[300px] shrink-0 flex flex-col h-full overflow-y-auto relative bg-[#051228] border-r border-white/[0.08]">
+    <aside className="hidden md:flex w-[300px] shrink-0 flex-col h-full overflow-y-auto relative bg-[#051228] border-r border-white/[0.08]">
 
       {/* Верхний блок — аватар и данные */}
       <div className="px-4 pt-6 pb-3 font-sans antialiased">
@@ -954,6 +955,31 @@ function ProfileSidebar() {
   );
 }
 
+function ProfileBottomNav() {
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'profile';
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-2 px-2 bg-[#051228] border-t border-white/[0.08]">
+      {SIDEBAR_ITEMS.map(({ id, shortLabel, href, icon: Icon }) => {
+        const isActive = activeTab === id;
+        return (
+          <Link
+            key={id}
+            href={href}
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg min-w-[64px] transition-colors ${
+              isActive ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
+            }`}
+          >
+            <Icon className="w-5 h-5" strokeWidth={2.5} />
+            <span className="text-[10px] font-medium uppercase tracking-wider">{shortLabel}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function ProfilePage() {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'profile';
@@ -964,13 +990,14 @@ export default function ProfilePage() {
         <ProfileHeader />
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <ProfileSidebar />
-          <main className="flex-1 min-w-0 overflow-auto">
+          <main className="flex-1 min-w-0 overflow-auto pb-20 md:pb-0">
             {activeTab === 'profile' && <PersonalProfileTab />}
             {activeTab === 'wallet' && <WalletTab />}
             {activeTab === 'trade' && <TradeProfileTab />}
             {activeTab === 'support' && <SupportTab />}
           </main>
         </div>
+        <ProfileBottomNav />
       </div>
     </AuthGuard>
   );

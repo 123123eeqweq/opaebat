@@ -1,5 +1,5 @@
 /**
- * SentimentBar - вертикальная полоса распределения CALL/PUT
+ * SentimentBar - полоса распределения CALL/PUT (вертикальная или горизонтальная)
  * 🔥 FLOW S1: Market Sentiment / Traders Distribution Bar
  * 
  * Отдельный canvas, не связанный с основным графиком
@@ -10,12 +10,13 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface SentimentBarProps {
-  height: number;
+  height?: number;
   width?: number;
+  orientation?: 'vertical' | 'horizontal';
   onPercentagesChange?: (buy: number, sell: number) => void;
 }
 
-export function SentimentBar({ height, width = 12, onPercentagesChange }: SentimentBarProps) {
+export function SentimentBar({ height = 600, width = 12, orientation = 'vertical', onPercentagesChange }: SentimentBarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const targetBuyRef = useRef(0.5);
@@ -25,7 +26,8 @@ export function SentimentBar({ height, width = 12, onPercentagesChange }: Sentim
   const [buyPercentage, setBuyPercentage] = useState(50);
   const [sellPercentage, setSellPercentage] = useState(50);
   const lastBuyPctRef = useRef<number>(50);
-  const [actualHeight, setActualHeight] = useState(height);
+  const [actualWidth, setActualWidth] = useState(orientation === 'horizontal' ? 400 : width);
+  const [actualHeight, setActualHeight] = useState(orientation === 'horizontal' ? 12 : height);
 
   // Функция для ограничения значения
   const clamp = (value: number, min: number, max: number) => {
@@ -45,11 +47,10 @@ export function SentimentBar({ height, width = 12, onPercentagesChange }: Sentim
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.save(); // Сохраняем состояние для clip
+    ctx.save();
 
     const now = Date.now();
 
-    // 🔥 FLOW S1.2: Обновляем target каждые 1-2 секунды
     if (now - lastUpdateRef.current > 1500) {
       targetBuyRef.current = clamp(
         targetBuyRef.current + random(-0.08, 0.08),
@@ -59,110 +60,139 @@ export function SentimentBar({ height, width = 12, onPercentagesChange }: Sentim
       lastUpdateRef.current = now;
     }
 
-    // 🔥 FLOW S1.3: Плавная анимация к target
     currentBuyRef.current += (targetBuyRef.current - currentBuyRef.current) * 0.05;
 
     const buyRatio = currentBuyRef.current;
     const sellRatio = 1 - buyRatio;
 
-    // Обновляем проценты для отображения (только при значительном изменении, чтобы не перегружать React)
     const newBuyPct = Math.round(buyRatio * 100);
     const newSellPct = Math.round(sellRatio * 100);
     if (Math.abs(newBuyPct - lastBuyPctRef.current) >= 1) {
       setBuyPercentage(newBuyPct);
       setSellPercentage(newSellPct);
       lastBuyPctRef.current = newBuyPct;
-      // Передаем проценты наружу
       if (onPercentagesChange) {
         onPercentagesChange(newBuyPct, newSellPct);
       }
     }
 
-    const buyHeight = actualHeight * buyRatio;
-    const sellHeight = actualHeight - buyHeight;
-    const borderRadius = 4; // Скругление углов
-    const padding = 1; // Минимальный паддинг внутри блока
+    const borderRadius = 4;
+    const padding = 1;
 
-    // Очищаем canvas
-    ctx.clearRect(0, 0, width, actualHeight);
+    if (orientation === 'horizontal') {
+      const w = actualWidth;
+      const h = actualHeight;
+      const buyWidth = w * buyRatio;
+      const sellWidth = w - buyWidth;
+      const innerHeight = h - padding * 2;
+      const innerY = padding;
 
-    // Рисуем общий контейнер со скруглениями сверху и снизу
-    ctx.beginPath();
-    ctx.roundRect(0, 0, width, actualHeight, borderRadius);
-    ctx.clip(); // Обрезаем все что выходит за скругленные границы
+      ctx.clearRect(0, 0, w, h);
 
-    // Вычисляем размеры с учетом паддинга
-    const innerWidth = width - padding * 2;
-    const innerX = padding;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, w, h, borderRadius);
+      ctx.clip();
 
-    // 🔥 FLOW S1.4: Рисуем SELL (красный, снизу) - цвет как у красных свечей
-    ctx.fillStyle = '#ff3d1f';
-    ctx.fillRect(innerX, actualHeight - sellHeight, innerWidth, sellHeight);
+      // BUY (зелёный) — слева
+      ctx.fillStyle = '#45b833';
+      ctx.fillRect(0, innerY, buyWidth, innerHeight);
 
-    // Рисуем BUY (зелёный, сверху) - цвет как у зеленых свечей
-    ctx.fillStyle = '#45b833';
-    ctx.fillRect(innerX, 0, innerWidth, buyHeight);
+      // SELL (красный) — справа
+      ctx.fillStyle = '#ff3d1f';
+      ctx.fillRect(buyWidth, innerY, sellWidth, innerHeight);
 
-    // Сбрасываем clip
+      ctx.restore();
+      ctx.save();
+
+      // Разделитель — вертикальный ромб (только если есть оба сегмента)
+      const diamondWidth = 4;
+      const dividerX = Math.max(diamondWidth, Math.min(w - diamondWidth, buyWidth));
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      ctx.moveTo(dividerX, 0);
+      ctx.lineTo(dividerX + diamondWidth, h / 2);
+      ctx.lineTo(dividerX, h);
+      ctx.lineTo(dividerX - diamondWidth, h / 2);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      const buyHeight = actualHeight * buyRatio;
+      const sellHeight = actualHeight - buyHeight;
+      const innerWidth = width - padding * 2;
+      const innerX = padding;
+
+      ctx.clearRect(0, 0, width, actualHeight);
+
+      ctx.beginPath();
+      ctx.roundRect(0, 0, width, actualHeight, borderRadius);
+      ctx.clip();
+
+      ctx.fillStyle = '#ff3d1f';
+      ctx.fillRect(innerX, actualHeight - sellHeight, innerWidth, sellHeight);
+
+      ctx.fillStyle = '#45b833';
+      ctx.fillRect(innerX, 0, innerWidth, buyHeight);
+
+      ctx.restore();
+      ctx.save();
+
+      const dividerY = buyHeight;
+      const diamondHeight = 4;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      ctx.moveTo(innerX, dividerY);
+      ctx.lineTo(width / 2, dividerY - diamondHeight);
+      ctx.lineTo(innerX + innerWidth, dividerY);
+      ctx.lineTo(width / 2, dividerY + diamondHeight);
+      ctx.closePath();
+      ctx.fill();
+    }
+
     ctx.restore();
-    ctx.save(); // Сохраняем состояние для разделителя
-
-    // Красивый разделитель на стыке двух цветов - ромб с заостренными краями
-    const dividerY = buyHeight;
-    const diamondHeight = 4; // Высота ромба (вертикальный размер)
-    
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Белый цвет с небольшой прозрачностью
-    ctx.beginPath();
-    // Рисуем ромб, который полностью закрывает стык по ширине (с учетом паддинга)
-    // Левая заостренная точка, центр вверху, правая заостренная точка, центр внизу
-    ctx.moveTo(innerX, dividerY); // Левая точка на стыке
-    ctx.lineTo(width / 2, dividerY - diamondHeight); // Верхняя центральная точка
-    ctx.lineTo(innerX + innerWidth, dividerY); // Правая точка на стыке
-    ctx.lineTo(width / 2, dividerY + diamondHeight); // Нижняя центральная точка
-    ctx.closePath();
-    ctx.fill();
-    
-    ctx.restore(); // Восстанавливаем состояние
   };
 
-  // Отслеживаем высоту контейнера
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const updateHeight = () => {
-      const containerHeight = container.clientHeight;
-      if (containerHeight > 0) {
-        setActualHeight(containerHeight);
+    const updateSize = () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      if (orientation === 'horizontal') {
+        if (w > 0) setActualWidth(w);
+        if (h > 0) setActualHeight(h);
+      } else {
+        if (h > 0) setActualHeight(h);
       }
     };
 
-    updateHeight();
-    const resizeObserver = new ResizeObserver(updateHeight);
+    updateSize();
+    const resizeObserver = new ResizeObserver(updateSize);
     resizeObserver.observe(container);
 
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
+    return () => resizeObserver.disconnect();
+  }, [orientation]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || actualHeight === 0) return;
+    if (!canvas) return;
+    if (orientation === 'vertical' && actualHeight === 0) return;
+    if (orientation === 'horizontal' && (actualWidth === 0 || actualHeight === 0)) return;
 
-    // Устанавливаем размеры canvas
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = actualHeight * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${actualHeight}px`;
+    const w = orientation === 'horizontal' ? actualWidth : width;
+    const h = orientation === 'horizontal' ? actualHeight : actualHeight;
+
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     ctx.scale(dpr, dpr);
 
-    // 🔥 FLOW S1.6: Свой render loop
     const animate = () => {
       render();
       rafIdRef.current = requestAnimationFrame(animate);
@@ -176,14 +206,17 @@ export function SentimentBar({ height, width = 12, onPercentagesChange }: Sentim
         rafIdRef.current = null;
       }
     };
-  }, [actualHeight, width, buyPercentage, sellPercentage]);
+  }, [actualHeight, actualWidth, width, orientation]);
+
+  const isHorizontal = orientation === 'horizontal';
 
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full"
+      className="relative w-full"
       style={{
-        width: `${width}px`,
+        width: isHorizontal ? '100%' : `${width}px`,
+        height: isHorizontal ? '12px' : '100%',
         pointerEvents: 'none',
       }}
     >

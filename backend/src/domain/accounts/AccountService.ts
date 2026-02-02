@@ -69,7 +69,7 @@ export class AccountService {
       userId: input.userId,
       type: input.type,
       balance: initialBalance,
-      currency: 'USD',
+      currency: 'UAH',
       isActive: isFirstAccount,
     });
 
