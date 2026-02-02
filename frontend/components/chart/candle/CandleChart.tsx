@@ -22,12 +22,17 @@ interface CandleChartProps {
   timeframe?: string;
   snapshot?: TerminalSnapshot | null;
   instrument?: string;
+  payoutPercent?: number;
   digits?: number;
   activeInstrumentRef?: React.MutableRefObject<string>;
   indicatorConfigs?: IndicatorConfig[];
   drawingMode?: 'horizontal' | 'vertical' | 'trend' | 'rectangle' | 'fibonacci' | 'parallel-channel' | 'ray' | 'arrow' | null;
   /** FLOW O: Overlay Registry — visibility и onDrawingAdded */
   overlayRegistry?: OverlayRegistryParams;
+  /** FLOW C-MARKET-ALTERNATIVES: Callback для переключения инструмента */
+  onInstrumentChange?: (instrumentId: string) => void;
+  /** Режим свечей (classic/heikin_ashi/bars) — восстанавливается из localStorage */
+  candleMode?: CandleMode;
 }
 
 export interface CandleChartRef {
@@ -61,12 +66,14 @@ export interface CandleChartRef {
   }) => void;
   /** FLOW T-OVERLAY: удалить trade по id */
   removeTrade: (id: string) => void;
+  /** FLOW BO-HOVER: установить hover action (CALL/PUT/null) */
+  setHoverAction: (action: 'CALL' | 'PUT' | null) => void;
 }
 
 export const CandleChart = forwardRef<CandleChartRef, CandleChartProps>(
-  ({ className, style, timeframe = '5s', snapshot, instrument, digits, activeInstrumentRef, indicatorConfigs = [], drawingMode = null, overlayRegistry }, ref) => {
+  ({ className, style, timeframe = '5s', snapshot, instrument, payoutPercent = 75, digits, activeInstrumentRef, indicatorConfigs = [], drawingMode = null, overlayRegistry, onInstrumentChange, candleMode = 'classic' }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const chartApi = useChart({ canvasRef, timeframe, snapshot, instrument, digits, activeInstrumentRef, indicatorConfigs, drawingMode, overlayRegistry });
+    const chartApi = useChart({ canvasRef, timeframe, snapshot, instrument, payoutPercent, digits, activeInstrumentRef, indicatorConfigs, drawingMode, overlayRegistry, onInstrumentChange, candleMode });
 
     // Canvas infrastructure
     useCanvasInfrastructure({ canvasRef });
@@ -88,6 +95,7 @@ export const CandleChart = forwardRef<CandleChartRef, CandleChartProps>(
       setExpirationSeconds: chartApi.setExpirationSeconds,
       addTradeOverlayFromDTO: chartApi.addTradeOverlayFromDTO,
       removeTrade: chartApi.removeTrade,
+      setHoverAction: chartApi.setHoverAction,
     }));
 
     return (

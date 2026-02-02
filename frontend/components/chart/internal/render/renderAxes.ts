@@ -5,6 +5,7 @@
  */
 
 import type { Viewport } from '../viewport.types';
+import { getChartSettings } from '@/lib/chartSettings';
 
 interface RenderAxesParams {
   ctx: CanvasRenderingContext2D; // Нативный тип браузера
@@ -16,10 +17,15 @@ interface RenderAxesParams {
 }
 
 const AXIS_COLOR = 'rgba(255, 255, 255, 0.3)';
-const LABEL_COLOR = 'rgba(255, 255, 255, 0.7)';
+const LABEL_COLOR = 'rgba(255, 255, 255, 0.45)';
 const LABEL_FONT = '12px sans-serif';
 const LABEL_PADDING = 8;
 const MIN_LABEL_SPACING = 60; // Минимальное расстояние между подписями в пикселях
+const TIME_LABEL_BG_HEIGHT = 25; // Высота фона для меток времени
+const PRICE_LABEL_BG_WIDTH = 60; // Ширина фона для меток цены справа (уменьшено)
+// Чуть темнее фона графика (#061230) для меток времени
+const TIME_LABEL_BG_COLOR = '#05122a';
+const PRICE_LABEL_PADDING = 4; // Паддинг для меток цены справа (меньше чем общий LABEL_PADDING)
 
 /**
  * Конвертирует время в X координату
@@ -40,13 +46,16 @@ function priceToY(price: number, viewport: Viewport, height: number): number {
 }
 
 /**
- * Форматирует время в HH:mm:ss
+ * Форматирует время в HH:mm:ss с учетом часового пояса из настроек
  */
 function formatTime(timestamp: number): string {
-  const date = new Date(timestamp);
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
+  const settings = getChartSettings();
+  // Применяем смещение часового пояса
+  const adjustedTs = timestamp + settings.timezoneOffset * 60 * 60 * 1000;
+  const date = new Date(adjustedTs);
+  const hours = date.getUTCHours().toString().padStart(2, '0');
+  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+  const seconds = date.getUTCSeconds().toString().padStart(2, '0');
   return `${hours}:${minutes}:${seconds}`;
 }
 
@@ -128,9 +137,14 @@ export function renderAxes({
 
   // X-ось (внизу) - время: рисуем от нижней границы вверх, чтобы ничего не выходило за экран
   if (timeRange > 0) {
+    // Рисуем фон для секции меток времени
+    ctx.fillStyle = TIME_LABEL_BG_COLOR;
+    ctx.fillRect(0, height - TIME_LABEL_BG_HEIGHT, width, TIME_LABEL_BG_HEIGHT);
+
     const timeStep = calculateTimeLabelStep(timeRange, width);
     const startTime = Math.ceil(viewport.timeStart / timeStep) * timeStep;
 
+    ctx.fillStyle = LABEL_COLOR; // Восстанавливаем цвет для текста
     ctx.textBaseline = 'alphabetic'; // нижняя граница символов на y
     for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
       const x = timeToX(time, viewport, width);
@@ -147,13 +161,17 @@ export function renderAxes({
     const priceStep = calculatePriceLabelStep(priceRange, height);
     const startPrice = Math.ceil(viewport.priceMin / priceStep) * priceStep;
 
-    ctx.textAlign = 'right';
+    ctx.fillStyle = LABEL_COLOR; // Восстанавливаем цвет для текста
+    ctx.textAlign = 'center'; // Выравнивание по центру
     ctx.textBaseline = 'middle';
+    // Центр области меток цены: правая граница минус половина ширины области
+    const priceLabelCenterX = width - PRICE_LABEL_BG_WIDTH / 2;
     for (let price = startPrice; price <= viewport.priceMax; price += priceStep) {
       const y = priceToY(price, viewport, height);
       if (y >= 0 && y <= height) {
         const label = formatPrice(price, digits);
-        ctx.fillText(label, width - LABEL_PADDING, y);
+        // Позиционируем по центру области меток цены
+        ctx.fillText(label, priceLabelCenterX, y);
       }
     }
   }

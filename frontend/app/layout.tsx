@@ -5,11 +5,18 @@ import './globals.css'
 const montserrat = Montserrat({
   subsets: ['latin', 'cyrillic'],
   variable: '--font-montserrat',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+  fallback: ['system-ui', 'arial'], // Fallback на случай проблем с загрузкой
 })
 
 export const metadata: Metadata = {
-  title: 'COMFORTRADE',
-  description: 'COMFORTRADE - торговля на финансовых рынках',
+  title: {
+    default: 'COMFORTRADE - Торговля на финансовых рынках',
+    template: '%s | COMFORTRADE',
+  },
+  description: 'Торгуйте бинарными опционами на валютных парах, криптовалютах и других активах. Современная платформа с интуитивным интерфейсом, техническими индикаторами и инструментами анализа.',
+  keywords: ['бинарные опционы', 'торговля', 'форекс', 'криптовалюта', 'финансовые рынки', 'трейдинг'],
   icons: {
     icon: [
       { url: '/images/logo.png', sizes: '32x32', type: 'image/png' },
@@ -20,6 +27,13 @@ export const metadata: Metadata = {
     ],
     shortcut: '/images/logo.png',
   },
+  openGraph: {
+    type: 'website',
+    locale: 'ru_RU',
+    siteName: 'COMFORTRADE',
+    title: 'COMFORTRADE - Торговля на финансовых рынках',
+    description: 'Торгуйте бинарными опционами на валютных парах, криптовалютах и других активах.',
+  },
 }
 
 export default function RootLayout({
@@ -28,8 +42,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={montserrat.variable}>{children}</body>
+    <html lang="en" className={montserrat.variable}>
+      <body className={montserrat.className}>{children}</body>
     </html>
   )
 }

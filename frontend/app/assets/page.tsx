@@ -3,7 +3,20 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import ReactCountryFlag from 'react-country-flag'
 import Footer from '@/components/Footer'
+
+function getCurrencyCountryCodes(pair: string): [string | null, string | null] {
+  const parts = pair.split('/')
+  if (parts.length !== 2) return [null, null]
+  const [base, quote] = parts
+  const currencyToCountry: Record<string, string> = {
+    EUR: 'EU', USD: 'US', GBP: 'GB', JPY: 'JP', AUD: 'AU', CAD: 'CA', CHF: 'CH', NZD: 'NZ', NOK: 'NO', UAH: 'UA',
+    SGD: 'SG', HKD: 'HK', CNH: 'CN', ZAR: 'ZA', MXN: 'MX', TRY: 'TR', RUB: 'RU', INR: 'IN', KRW: 'KR', BRL: 'BR',
+    PLN: 'PL', SEK: 'SE', DKK: 'DK', BTC: 'US', ETH: 'US', SOL: 'US', ADA: 'US',
+  }
+  return [currencyToCountry[base] || null, currencyToCountry[quote] || null]
+}
 
 export default function AssetsPage() {
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false)
@@ -209,7 +222,39 @@ export default function AssetsPage() {
                     <tr key={t.ticker} className="border-b border-gray-200 last:border-b-0">
                       <td className="py-4 px-4 md:px-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: t.color }}>{t.letter}</div>
+                          {t.ticker.includes('/') ? (
+                            <div className="flex items-center">
+                              {(() => {
+                                const [country1, country2] = getCurrencyCountryCodes(t.ticker)
+                                return (
+                                  <>
+                                    {country1 && (
+                                      <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0 flex items-center justify-center">
+                                        <ReactCountryFlag
+                                          countryCode={country1}
+                                          svg
+                                          style={{ width: '20px', height: '20px', objectFit: 'cover', display: 'block' }}
+                                          title={country1}
+                                        />
+                                      </div>
+                                    )}
+                                    {country2 && (
+                                      <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0 flex items-center justify-center -ml-2.5 relative z-10">
+                                        <ReactCountryFlag
+                                          countryCode={country2}
+                                          svg
+                                          style={{ width: '20px', height: '20px', objectFit: 'cover', display: 'block' }}
+                                          title={country2}
+                                        />
+                                      </div>
+                                    )}
+                                  </>
+                                )
+                              })()}
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: t.color }}>{t.letter}</div>
+                          )}
                           <span className="font-medium text-gray-900">{t.name}</span>
                           <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-sm">{t.ticker}</span>
                         </div>

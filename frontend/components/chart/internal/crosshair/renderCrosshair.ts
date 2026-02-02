@@ -24,13 +24,13 @@ const LINE_COLOR = 'rgba(64, 100, 143, 0.5)'; // Полупрозрачная с
 const LINE_WIDTH = 1;
 const LABEL_BG_COLOR = '#40648f'; // Синий фон для меток цены (справа)
 const LABEL_PADDING = 6;
-const LABEL_FONT = '12px monospace';
+const LABEL_FONT = '12px sans-serif';
 const LABEL_BORDER_RADIUS = 6; // Скругление углов
 
 // Метка времени внизу — время под курсором (как у метки цены: читаемо и заметно)
-const TIME_FONT = LABEL_FONT; // 12px monospace — тот же шрифт, что у цены
+const TIME_FONT = LABEL_FONT;
 const TIME_PADDING_H = 8;
-const TIME_OFFSET_FROM_BOTTOM = 8;
+const TIME_OFFSET_FROM_BOTTOM = 0; // Без отступа снизу
 const TIME_BG = LABEL_BG_COLOR; // тот же синий, что у метки цены
 const TIME_BORDER = 'rgba(255,255,255,0.25)';
 const TIME_TEXT = '#ffffff'; // белый текст, как у цены — хорошо виден на синем
@@ -79,29 +79,27 @@ export function renderCrosshairTimeLabel(
   const boxH = 20;
   let x = crosshair.x - boxW / 2;
   x = Math.max(2, Math.min(x, width - boxW - 2));
-  const y = height - TIME_OFFSET_FROM_BOTTOM - boxH / 2;
+  // Метка закрывает всю область меток времени (высота 25px) и доходит до самого низа
+  const TIME_LABEL_AREA_HEIGHT = 25; // Высота области меток времени
+  const y = height - boxH / 2;
 
-  // Фон метки
+  // Фон метки - позиционируем так, чтобы закрывать область меток времени и доходить до низа
   ctx.fillStyle = TIME_BG;
   ctx.strokeStyle = TIME_BORDER;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(x, y - boxH / 2, boxW, boxH, 4);
+  ctx.roundRect(x, height - TIME_LABEL_AREA_HEIGHT, boxW, TIME_LABEL_AREA_HEIGHT, 4);
   ctx.fill();
   ctx.stroke();
 
-  // Текст поверх фона: сначала обводка, потом заливка — чтобы был виден на любом фоне
+  // Текст без обводки - по центру области меток времени
   const textX = x + boxW / 2;
+  const textY = height - TIME_LABEL_AREA_HEIGHT / 2;
   ctx.font = TIME_FONT;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
-  ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  ctx.miterLimit = 2;
-  ctx.strokeText(text, textX, y);
   ctx.fillStyle = TIME_TEXT;
-  ctx.fillText(text, textX, y);
+  ctx.fillText(text, textX, textY);
 
   ctx.restore();
 }
@@ -137,69 +135,73 @@ export function renderCrosshair({
   // Метка времени внизу рисуется отдельно в конце кадра (renderCrosshairTimeLabel),
   // чтобы её не перекрывали drawings / OHLC
 
-  // Метка цены (справа)
+  // Метка цены (справа) - закрывает область меток цены
   const priceLabel = formatPrice(crosshair.price, digits);
   ctx.font = LABEL_FONT;
   ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left'; // Выравнивание влево для метки цены
+  ctx.textAlign = 'left';
   const priceMetrics = ctx.measureText(priceLabel);
   const priceLabelWidth = priceMetrics.width;
-  const priceLabelHeight = 20;
-  const priceLabelX = width - priceLabelWidth - LABEL_PADDING * 2;
-  const priceLabelY = Math.max(priceLabelHeight / 2 + LABEL_PADDING, Math.min(crosshair.y, height - priceLabelHeight / 2 - LABEL_PADDING));
+  const PRICE_LABEL_AREA_WIDTH = 60; // Ширина области меток цены (как PRICE_LABEL_BG_WIDTH)
+  const priceLabelHeight = 26; // Увеличена высота метки цены
+  
+  // Позиционируем метку так, чтобы она закрывала область меток цены справа
+  const priceLabelX = width - PRICE_LABEL_AREA_WIDTH + LABEL_PADDING;
+  const priceLabelY = crosshair.y;
+  
+  // Ограничиваем позицию по вертикали, чтобы метка не выходила за границы
+  const clampedY = Math.max(priceLabelHeight / 2, Math.min(priceLabelY, height - priceLabelHeight / 2));
 
-  // Фон для метки цены
+  // Вычисляем точную позицию фона метки
+  const backgroundTop = clampedY - priceLabelHeight / 2;
+  const backgroundCenter = backgroundTop + priceLabelHeight / 2;
+
+  // Фон для метки цены - закрывает всю область меток цены
   ctx.fillStyle = LABEL_BG_COLOR;
   ctx.roundRect(
-    priceLabelX - LABEL_PADDING,
-    priceLabelY - priceLabelHeight / 2 - LABEL_PADDING,
-    priceLabelWidth + LABEL_PADDING * 2,
-    priceLabelHeight + LABEL_PADDING * 2,
+    width - PRICE_LABEL_AREA_WIDTH,
+    backgroundTop,
+    PRICE_LABEL_AREA_WIDTH,
+    priceLabelHeight,
     LABEL_BORDER_RADIUS
   );
   ctx.fill();
 
-  // Текст метки цены (яркий белый для максимальной видимости)
-  // Явно устанавливаем все свойства текста
+  // Текст метки цены без обводки - центрируем по вертикали точно по центру фона
   ctx.font = LABEL_FONT;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
-  // Используем обводку для лучшей видимости на синем фоне
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Темная обводка для контраста
-  ctx.lineWidth = 3;
-  ctx.lineJoin = 'round';
-  ctx.miterLimit = 2;
-  ctx.strokeText(priceLabel, priceLabelX, priceLabelY);
-  // Яркий белый текст поверх обводки
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(priceLabel, priceLabelX, priceLabelY);
+  // Используем явно вычисленный центр фона для точного центрирования
+  ctx.fillText(priceLabel, priceLabelX, backgroundCenter);
 
   // FLOW A2: Price Alert "+" слева от метки цены (справа от метки она уходит за край)
   if (registerInteractionZone) {
-    const plusSize = 16;
+    const plusSize = priceLabelHeight - 4; // Чуть меньше чем метка цены
     const plusPadding = 6;
 
     // Кнопка слева от блока с ценой: [➕] [ 49934.09 ]
     const plusX = priceLabelX - LABEL_PADDING - plusSize - plusPadding;
-    const plusY = priceLabelY - plusSize / 2;
+    const plusY = clampedY - plusSize / 2; // Выравниваем по центру метки цены
 
-    // Рисуем фон для кнопки "+"
-    ctx.fillStyle = 'rgba(255, 212, 0, 0.25)';
+    // Рисуем фон для кнопки "+" - используем тот же цвет что и у метки цены
+    ctx.fillStyle = LABEL_BG_COLOR;
     ctx.beginPath();
-    ctx.roundRect(plusX, plusY, plusSize, plusSize, 4);
+    ctx.roundRect(plusX, plusY, plusSize, plusSize, LABEL_BORDER_RADIUS); // Такие же скругления как у метки
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 212, 0, 0.8)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; // Светлая обводка как у метки
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Рисуем плюс
-    ctx.strokeStyle = '#FFD400';
+    // Рисуем плюс - белый цвет как у текста метки
+    const plusIconPadding = 8; // Отступ для иконки
+    ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(plusX + plusSize / 2, plusY + 4);
-    ctx.lineTo(plusX + plusSize / 2, plusY + plusSize - 4);
-    ctx.moveTo(plusX + 4, plusY + plusSize / 2);
-    ctx.lineTo(plusX + plusSize - 4, plusY + plusSize / 2);
+    ctx.moveTo(plusX + plusSize / 2, plusY + plusIconPadding);
+    ctx.lineTo(plusX + plusSize / 2, plusY + plusSize - plusIconPadding);
+    ctx.moveTo(plusX + plusIconPadding, plusY + plusSize / 2);
+    ctx.lineTo(plusX + plusSize - plusIconPadding, plusY + plusSize / 2);
     ctx.stroke();
 
     // Регистрируем hit‑зону для клика

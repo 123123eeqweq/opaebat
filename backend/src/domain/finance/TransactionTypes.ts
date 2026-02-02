@@ -1,0 +1,48 @@
+/**
+ * Domain types for Transactions
+ * 🔥 FLOW W1: Deposit/Withdrawal transactions
+ */
+
+export enum TransactionType {
+  DEPOSIT = 'DEPOSIT',
+  WITHDRAW = 'WITHDRAW',
+  TRADE_RESULT = 'TRADE_RESULT',
+  BONUS = 'BONUS',
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  FAILED = 'FAILED',
+}
+
+export enum PaymentMethod {
+  CARD = 'CARD',
+  CRYPTO = 'CRYPTO',
+  BANK = 'BANK',
+}
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  accountId: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  amount: number; // Decimal as number for domain
+  currency: string;
+  paymentMethod: PaymentMethod;
+  provider: string | null;
+  createdAt: Date;
+  confirmedAt: Date | null;
+}
+
+export interface CreateTransactionDto {
+  userId: string;
+  accountId: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  amount: number;
+  currency: string;
+  paymentMethod: PaymentMethod;
+  provider?: string | null;
+}

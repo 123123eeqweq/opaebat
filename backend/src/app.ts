@@ -11,6 +11,10 @@ import { registerAuthRoutes } from './modules/auth/auth.routes.js';
 import { registerAccountsRoutes } from './modules/accounts/accounts.routes.js';
 import { registerTradesRoutes } from './modules/trades/trades.routes.js';
 import { registerTerminalRoutes } from './modules/terminal/terminal.routes.js';
+import { registerLineChartRoutes } from './modules/linechart/linechart.routes.js';
+import { registerUserRoutes } from './modules/user/user.routes.js';
+import { registerWalletRoutes } from './modules/wallet/wallet.routes.js';
+import { registerInstrumentsRoutes } from './modules/instruments/instruments.routes.js';
 
 export async function createApp() {
   const app = Fastify({
@@ -24,8 +28,9 @@ export async function createApp() {
       ? process.env.FRONTEND_URL || 'http://localhost:3000'
       : true, // Allow all origins in development
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Type'],
   });
 
   // Register cookie plugin
@@ -49,6 +54,18 @@ export async function createApp() {
 
   // Register terminal routes
   await registerTerminalRoutes(app);
+
+  // Register line chart routes
+  await registerLineChartRoutes(app);
+
+  // Register user routes (FLOW U1: Base Profile)
+  await registerUserRoutes(app);
+
+  // Register wallet routes (FLOW W1: Deposit)
+  await registerWalletRoutes(app);
+
+  // Register instruments routes (FLOW I-PAYOUT: Instrument payout)
+  await registerInstrumentsRoutes(app);
 
   logger.info('Fastify application instance created');
 

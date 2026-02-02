@@ -5,9 +5,11 @@
 import { TradeClosingService } from '../domain/trades/TradeClosingService.js';
 import { PrismaTradeRepository } from '../infrastructure/prisma/PrismaTradeRepository.js';
 import { PrismaAccountRepository } from '../infrastructure/prisma/PrismaAccountRepository.js';
+import { PrismaTransactionRepository } from '../infrastructure/prisma/PrismaTransactionRepository.js';
 import { PriceServiceAdapter } from '../infrastructure/pricing/PriceServiceAdapter.js';
 import { getPriceEngineManager } from './prices.bootstrap.js';
 import { logger } from '../shared/logger.js';
+import { AccountService } from '../domain/accounts/AccountService.js';
 
 let closingService: TradeClosingService | null = null;
 let closingInterval: NodeJS.Timeout | null = null;
@@ -26,11 +28,13 @@ export async function bootstrapTrades(): Promise<void> {
   // Price service should be initialized by now (bootstrapPrices is called before)
   const tradeRepository = new PrismaTradeRepository();
   const accountRepository = new PrismaAccountRepository();
+  const transactionRepository = new PrismaTransactionRepository();
+  const accountService = new AccountService(accountRepository, transactionRepository);
   
   try {
     const manager = getPriceEngineManager();
     const priceProvider = new PriceServiceAdapter(manager);
-    closingService = new TradeClosingService(tradeRepository, accountRepository, priceProvider);
+    closingService = new TradeClosingService(tradeRepository, accountRepository, priceProvider, accountService);
   } catch (error) {
     logger.error('Failed to initialize trade closing service - price service not available:', error);
     throw error;

@@ -26,9 +26,9 @@ export function AuthGuard({ children, requireAuth, requireGuest }: AuthGuardProp
     const publicRoutes = ['/login', '/register'];
     const isPublicRoute = publicRoutes.includes(pathname);
 
-    // If requires auth and not authenticated -> redirect to login
+    // If requires auth and not authenticated -> redirect to main (login modal)
     if (requireAuth && !isAuthenticated) {
-      router.push('/login');
+      router.push('/?auth=login');
       return;
     }
 

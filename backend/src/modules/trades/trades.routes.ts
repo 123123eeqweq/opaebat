@@ -6,16 +6,19 @@ import type { FastifyInstance } from 'fastify';
 import { TradeService } from '../../domain/trades/TradeService.js';
 import { PrismaTradeRepository } from '../../infrastructure/prisma/PrismaTradeRepository.js';
 import { PrismaAccountRepository } from '../../infrastructure/prisma/PrismaAccountRepository.js';
+import { PrismaTransactionRepository } from '../../infrastructure/prisma/PrismaTransactionRepository.js';
 import { PriceServiceAdapter } from '../../infrastructure/pricing/PriceServiceAdapter.js';
 import { getPriceEngineManager } from '../../bootstrap/prices.bootstrap.js';
 import { TradesController } from './trades.controller.js';
 import { openTradeSchema, getTradesSchema } from './trades.schema.js';
 import { requireAuth } from '../auth/auth.middleware.js';
+import { AccountService } from '../../domain/accounts/AccountService.js';
 
 export async function registerTradesRoutes(app: FastifyInstance) {
   // Initialize dependencies
   const tradeRepository = new PrismaTradeRepository();
   const accountRepository = new PrismaAccountRepository();
+  const transactionRepository = new PrismaTransactionRepository();
   
   // Create lazy price provider wrapper
   // This will be initialized when first used (after bootstrap)
@@ -35,8 +38,9 @@ export async function registerTradesRoutes(app: FastifyInstance) {
     },
   };
 
-  const tradeService = new TradeService(tradeRepository, accountRepository, lazyPriceProvider);
-  const tradesController = new TradesController(tradeService);
+  const tradeService = new TradeService(tradeRepository, accountRepository, lazyPriceProvider, transactionRepository);
+  const accountService = new AccountService(accountRepository, transactionRepository);
+  const tradesController = new TradesController(tradeService, accountService);
 
   // Register routes with auth middleware
   app.post(
@@ -55,5 +59,23 @@ export async function registerTradesRoutes(app: FastifyInstance) {
       preHandler: requireAuth,
     },
     (request, reply) => tradesController.getTrades(request, reply),
+  );
+
+  // 🔥 FLOW TRADE-STATS: GET /api/trades/statistics
+  app.get(
+    '/api/trades/statistics',
+    {
+      preHandler: requireAuth,
+    },
+    (request, reply) => tradesController.getStatistics(request, reply),
+  );
+
+  // 🔥 FLOW TRADE-STATS: GET /api/trades/balance-history?days=30
+  app.get(
+    '/api/trades/balance-history',
+    {
+      preHandler: requireAuth,
+    },
+    (request, reply) => tradesController.getBalanceHistory(request, reply),
   );
 }

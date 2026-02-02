@@ -1,0 +1,28 @@
+/**
+ * Instruments routes — маршруты для работы с инструментами
+ * 🔥 FLOW I-PAYOUT: Endpoint для получения инструментов с payoutPercent
+ */
+
+import type { FastifyInstance } from 'fastify';
+import { InstrumentsController } from './instruments.controller.js';
+import { getInstrumentsSchema, updatePayoutSchema } from './instruments.schema.js';
+// TODO: Добавить requireAuth для updatePayout когда будет админка
+
+export async function registerInstrumentsRoutes(app: FastifyInstance) {
+  const instrumentsController = new InstrumentsController();
+
+  // GET /api/instruments — получить все инструменты с payoutPercent
+  app.get(
+    '/api/instruments',
+    { schema: getInstrumentsSchema },
+    (request, reply) => instrumentsController.getInstruments(request, reply)
+  );
+
+  // PATCH /api/instruments/:id/payout — обновить доходность (для админки)
+  app.patch(
+    '/api/instruments/:id/payout',
+    { schema: updatePayoutSchema },
+    // TODO: Добавить requireAuth когда будет админка
+    (request, reply) => instrumentsController.updatePayout(request as any, reply)
+  );
+}

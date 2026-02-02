@@ -3,6 +3,7 @@
  */
 
 import type { Timeframe } from '../../prices/PriceTypes.js';
+import type { MarketStatus, MarketAlternative } from './MarketStatus.js';
 
 export interface SnapshotCandle {
   open: number;
@@ -36,7 +37,7 @@ export interface TerminalSnapshot {
     asset: string;
     value: number;
     timestamp: number;
-  };
+  } | null; // FLOW C-MARKET-CLOSED: может быть null когда рынок закрыт
   candles: {
     timeframe: Timeframe;
     items: SnapshotCandle[];
@@ -51,4 +52,11 @@ export interface TerminalSnapshot {
     secondsLeft: number; // UX data - calculated on server
   }[];
   serverTime: number; // timestamp
+  // FLOW C-MARKET-CLOSED: статус рынка
+  marketOpen: boolean;
+  marketStatus: MarketStatus;
+  // FLOW C-MARKET-COUNTDOWN: время следующего открытия рынка (ISO string UTC)
+  nextMarketOpenAt: string | null;
+  // FLOW C-MARKET-ALTERNATIVES: топ-5 альтернативных пар с наибольшей доходностью
+  topAlternatives: MarketAlternative[];
 }

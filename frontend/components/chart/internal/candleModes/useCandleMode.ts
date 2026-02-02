@@ -25,11 +25,15 @@ import { transformToBars } from './barTransform';
 interface UseCandleModeParams {
   getCandles: () => Candle[];
   getLiveCandle: () => Candle | null;
+  /** Начальный режим при монтировании (восстанавливается из localStorage) */
+  initialMode?: CandleMode;
 }
 
 interface UseCandleModeReturn {
   getRenderCandles: () => Candle[];
   getRenderLiveCandle: () => Candle | null;
+  /** Live свеча для рендера с учётом аниматора: если передан animatedCandle, применяем transform к нему */
+  getLiveCandleForRender: (animatedCandle: Candle | null) => Candle | null;
   setMode: (mode: CandleMode) => void;
   getMode: () => CandleMode;
 }
@@ -37,9 +41,10 @@ interface UseCandleModeReturn {
 export function useCandleMode({
   getCandles,
   getLiveCandle,
+  initialMode = 'classic',
 }: UseCandleModeParams): UseCandleModeReturn {
   // Хранение режима через useRef (не useState!)
-  const modeRef = useRef<CandleMode>('classic');
+  const modeRef = useRef<CandleMode>(initialMode);
 
   /**
    * Получить текущий режим
@@ -123,9 +128,38 @@ export function useCandleMode({
     }
   };
 
+  /**
+   * Live свеча для рендера с учётом аниматора.
+   * Если передан animatedCandle — применяем transform к нему (иначе анимированная live рисуется как classic).
+   */
+  const getLiveCandleForRender = (animatedCandle: Candle | null): Candle | null => {
+    const mode = modeRef.current;
+    const source = animatedCandle ?? getRenderLiveCandle();
+    if (!source) return null;
+
+    // animatedCandle уже прошёл через getRenderLiveCandle при null — но когда animatedCandle есть,
+    // getRenderLiveCandle не вызывался. Значит source = raw animated. Нужно применить transform.
+    if (!animatedCandle) return source; // getRenderLiveCandle уже применил transform
+
+    switch (mode) {
+      case 'classic':
+      case 'bars':
+        return animatedCandle;
+      case 'heikin_ashi': {
+        const candles = getCandles();
+        const haCandles = transformToHeikinAshi(candles);
+        const prevHaCandle = haCandles.length > 0 ? haCandles[haCandles.length - 1] : null;
+        return transformLiveCandleToHeikinAshi(animatedCandle, prevHaCandle);
+      }
+      default:
+        return animatedCandle;
+    }
+  };
+
   return {
     getRenderCandles,
     getRenderLiveCandle,
+    getLiveCandleForRender,
     setMode,
     getMode,
   };

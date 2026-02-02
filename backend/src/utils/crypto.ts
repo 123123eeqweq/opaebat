@@ -36,3 +36,4 @@ export function generateSessionToken(): string {
     .update(Math.random().toString() + Date.now().toString())
     .digest('hex');
 }
+

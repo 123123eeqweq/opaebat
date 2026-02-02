@@ -26,7 +26,7 @@ export interface TerminalSnapshot {
     asset: string;
     value: number;
     timestamp: number;
-  };
+  } | null; // FLOW C-MARKET-CLOSED: может быть null когда рынок закрыт
   candles: {
     timeframe: string;
     items: {
@@ -47,4 +47,15 @@ export interface TerminalSnapshot {
     payout: string;
   }[];
   serverTime: number;
+  // FLOW C-MARKET-CLOSED: статус рынка
+  marketOpen: boolean;
+  marketStatus: 'OPEN' | 'WEEKEND' | 'MAINTENANCE' | 'HOLIDAY';
+  // FLOW C-MARKET-COUNTDOWN: время следующего открытия рынка (ISO string UTC)
+  nextMarketOpenAt: string | null;
+  // FLOW C-MARKET-ALTERNATIVES: топ-5 альтернативных пар с наибольшей доходностью
+  topAlternatives: Array<{
+    instrumentId: string;
+    label: string;
+    payout: number;
+  }>;
 }

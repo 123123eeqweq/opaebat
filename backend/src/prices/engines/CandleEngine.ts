@@ -11,12 +11,11 @@ const BASE_TIMEFRAME_SECONDS = 5; // 5 seconds
 
 export class CandleEngine {
   private activeCandle: Candle | null = null;
-  private candleInterval: NodeJS.Timeout | null = null;
   private unsubscribePriceTick: (() => void) | null = null;
   private isRunning = false;
 
   constructor(
-    private symbol: string, // FLOW P3: e.g. "BTC/USD" for store keys
+    private instrumentId: string, // instrumentId для агрегации (EURUSD, EURUSD_REAL)
     private candleStore: CandleStore,
     private eventBus: PriceEventBus,
   ) {}
@@ -34,14 +33,10 @@ export class CandleEngine {
     this.isRunning = true;
 
     // Subscribe to price ticks
+    // FLOW FIX-CANDLE-TIMING: Закрытие свечей происходит по времени в handlePriceTick, не через setInterval
     this.unsubscribePriceTick = this.eventBus.on('price_tick', (event) => {
       this.handlePriceTick(event.data as PriceTick);
     });
-
-    // Start candle interval (5 seconds)
-    this.candleInterval = setInterval(() => {
-      this.closeCandle();
-    }, BASE_TIMEFRAME_SECONDS * 1000);
   }
 
   /**
@@ -60,11 +55,6 @@ export class CandleEngine {
       this.unsubscribePriceTick = null;
     }
 
-    if (this.candleInterval) {
-      clearInterval(this.candleInterval);
-      this.candleInterval = null;
-    }
-
     // Close current candle if exists
     if (this.activeCandle) {
       this.closeCandle();
@@ -73,36 +63,62 @@ export class CandleEngine {
 
   /**
    * Handle price tick
+   * 
+   * FLOW FIX-CANDLE-TIMING: Закрытие свечей по абсолютным границам времени
+   * 
+   * Алгоритм:
+   * 1. Вычисляем текущий слот времени
+   * 2. Если свечи нет → открыть
+   * 3. Если тик в текущем слоте → обновить
+   * 4. Если время вышло за слот → закрыть и открыть новую
    */
   private handlePriceTick(tick: PriceTick): void {
+    const now = tick.timestamp;
+    const timeframeMs = BASE_TIMEFRAME_SECONDS * 1000;
+    
+    // Вычисляем текущий слот времени
+    const slotStart = Math.floor(now / timeframeMs) * timeframeMs;
+    const slotEnd = slotStart + timeframeMs;
+    
+    // 1️⃣ Если свечи нет — открыть
     if (!this.activeCandle) {
-      // First tick - open new candle
-      this.openCandle(tick);
-    } else {
-      // Update existing candle
-      this.updateCandle(tick);
+      this.openCandle(slotStart, slotEnd, tick);
+      return;
     }
+    
+    // 2️⃣ Проверяем, в каком слоте находится тик
+    const currentSlotStart = this.activeCandle.timestamp;
+    
+    // Если тик находится в том же слоте, что и активная свеча — обновляем
+    if (slotStart === currentSlotStart) {
+      this.updateCandle(tick);
+      return;
+    }
+    
+    // 3️⃣ Если тик в новом слоте — ЗАКРЫТЬ предыдущую свечу
+    this.closeCandle();
+    
+    // 4️⃣ Открыть новую свечу в новом слоте
+    this.openCandle(slotStart, slotEnd, tick);
   }
 
   /**
    * Open new candle
+   * 
+   * FLOW FIX-CANDLE-TIMING: Используем переданные slotStart и slotEnd для точного времени
    */
-  private openCandle(tick: PriceTick): void {
-    const now = Date.now();
-    // Round down to 5s boundary
-    const candleStart = Math.floor(now / (BASE_TIMEFRAME_SECONDS * 1000)) * (BASE_TIMEFRAME_SECONDS * 1000);
-
+  private openCandle(slotStart: number, slotEnd: number, tick: PriceTick): void {
     this.activeCandle = {
       open: tick.price,
       high: tick.price,
       low: tick.price,
       close: tick.price,
-      timestamp: candleStart,
+      timestamp: slotStart, // Нормализованное время начала слота
       timeframe: '5s',
     };
 
-    // Store active candle (per symbol)
-    this.candleStore.setActiveCandle(this.symbol, this.activeCandle).catch((error) => {
+    // Store active candle (per instrumentId)
+    this.candleStore.setActiveCandle(this.instrumentId, this.activeCandle).catch((error) => {
       logger.error('Failed to store active candle:', error);
     });
 
@@ -128,8 +144,8 @@ export class CandleEngine {
     this.activeCandle.low = Math.min(this.activeCandle.low, tick.price);
     this.activeCandle.close = tick.price;
 
-    // Store updated candle (per symbol)
-    this.candleStore.setActiveCandle(this.symbol, this.activeCandle).catch((error) => {
+    // Store updated candle (per instrumentId)
+    this.candleStore.setActiveCandle(this.instrumentId, this.activeCandle).catch((error) => {
       logger.error('Failed to store active candle:', error);
     });
 
@@ -143,27 +159,34 @@ export class CandleEngine {
   }
 
   /**
-   * Close current candle and start new one
+   * Close current candle
+   * 
+   * FLOW FIX-CANDLE-TIMING: Закрытие происходит по времени, не по интервалу
+   * timestamp свечи уже нормализован, поэтому закрытие происходит ровно в границу слота
    */
   private closeCandle(): void {
     if (!this.activeCandle) {
       return;
     }
 
-    // Store closed candle (per symbol)
-    this.candleStore.addClosedCandle(this.symbol, this.activeCandle).catch((error) => {
+    // Store closed candle (per instrumentId)
+    this.candleStore.addClosedCandle(this.instrumentId, this.activeCandle).catch((error) => {
       logger.error('Failed to store closed candle:', error);
     });
 
     // Emit event
+    // FLOW FIX-CANDLE-TIMING: timestamp события = время закрытия (slotEnd), а не текущее время
+    const slotEnd = this.activeCandle.timestamp + (BASE_TIMEFRAME_SECONDS * 1000);
     const event: PriceEvent = {
       type: 'candle_closed',
       data: this.activeCandle,
-      timestamp: Date.now(),
+      timestamp: slotEnd, // Используем точное время закрытия слота
     };
+    
+    // Логирование для диагностики
     this.eventBus.emit(event);
 
-    // Clear active candle (new one will be opened on next tick)
+    // Clear active candle (новая свеча будет открыта в handlePriceTick)
     this.activeCandle = null;
   }
 }

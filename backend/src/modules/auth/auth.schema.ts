@@ -36,7 +36,11 @@ export const loginSchema = {
 } as const;
 
 export const logoutSchema = {
-  // No body required
+  body: {
+    type: 'object',
+    properties: {},
+    additionalProperties: false,
+  },
 } as const;
 
 export const meSchema = {

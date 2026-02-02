@@ -123,12 +123,26 @@ export function emitTradeOpen(trade: TradeDTO, userId: string): void {
 export function emitTradeClose(
   trade: TradeDTO,
   userId: string,
-  result: 'WIN' | 'LOSS',
+  result: 'WIN' | 'LOSS' | 'TIE',
 ): void {
   const wsManager = getWebSocketManager();
   wsManager.sendToUser(userId, {
     type: 'trade:close',
     data: { ...trade, result },
+  });
+}
+
+/**
+ * 🔥 FLOW A-ACCOUNT: Emit account snapshot to user
+ */
+export function emitAccountSnapshot(
+  userId: string,
+  snapshot: { accountId: string; type: 'REAL' | 'DEMO'; balance: number; currency: 'USD' | 'RUB' | 'UAH'; updatedAt: number },
+): void {
+  const wsManager = getWebSocketManager();
+  wsManager.sendToUser(userId, {
+    type: 'account.snapshot',
+    payload: snapshot,
   });
 }
 

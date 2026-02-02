@@ -19,7 +19,7 @@ interface RenderPriceAlertsParams {
   alerts: PriceAlert[];
 }
 
-const ALERT_COLOR_ACTIVE = '#FFD400'; // Ярко-жёлтый
+const ALERT_COLOR_ACTIVE = '#40648f'; // Цвет как у фона плюсика (LABEL_BG_COLOR)
 const ALERT_LINE_WIDTH = 1;
 const ALERT_DASH: number[] = [4, 4]; // Пунктир
 

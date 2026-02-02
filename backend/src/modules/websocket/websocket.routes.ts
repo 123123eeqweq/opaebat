@@ -38,12 +38,25 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
     // Register client
     manager.register(client);
 
-    logger.info(`WebSocket client connected: ${userId}`);
+    logger.info(`WebSocket client connected: ${userId}, sessionId: ${client.sessionId}`);
+
+    // FLOW WS-1.0: Отправляем ws:ready сразу после регистрации
+    try {
+      client.send({
+        type: 'ws:ready',
+        sessionId: client.sessionId,
+        serverTime: Date.now(),
+      });
+    } catch (error) {
+      logger.error('Failed to send ws:ready:', error);
+    }
 
     // Handle messages
     socket.on('message', (message: Buffer) => {
       try {
-        const data = JSON.parse(message.toString());
+        const rawMessage = message.toString();
+        const data = JSON.parse(rawMessage) as import('./WsEvents.js').WsClientMessage;
+        
 
         // Handle ping
         if (data.type === 'ping') {
@@ -51,12 +64,47 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
           return;
         }
 
-        // FLOW WS-SUBSCRIBE: клиент подписывается на конкретный инструмент
+        // FLOW WS-1.1: subscribe - добавляем в Set подписок
         if (data.type === 'subscribe' && typeof data.instrument === 'string') {
-          client.instrument = data.instrument;
-          logger.debug(
-            `WebSocket client ${userId} subscribed to instrument ${data.instrument}`,
-          );
+          client.subscriptions.add(data.instrument);
+          
+          logger.debug(`🔔 Client ${userId} subscribed to ${data.instrument}`);
+          
+          // Отправляем подтверждение подписки
+          client.send({ 
+            type: 'subscribed', 
+            instrument: data.instrument,
+          });
+          return;
+        }
+        
+        // FLOW WS-1.1: unsubscribe - удаляем из Set
+        if (data.type === 'unsubscribe' && typeof data.instrument === 'string') {
+          client.subscriptions.delete(data.instrument);
+          
+          logger.debug(`🔕 Client ${userId} unsubscribed from ${data.instrument}`);
+          
+          client.send({
+            type: 'unsubscribed',
+            instrument: data.instrument,
+          });
+          return;
+        }
+        
+        // FLOW WS-1.1: unsubscribe_all - очищаем все подписки
+        if (data.type === 'unsubscribe_all') {
+          const instruments = Array.from(client.subscriptions);
+          client.subscriptions.clear();
+          
+          logger.debug(`🔕 Client ${userId} unsubscribed from all instruments`);
+          
+          // Отправляем подтверждения для каждого инструмента
+          instruments.forEach(instrument => {
+            client.send({
+              type: 'unsubscribed',
+              instrument,
+            });
+          });
           return;
         }
       } catch (error) {
@@ -66,7 +114,7 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
 
     // Handle close
     socket.on('close', () => {
-      logger.info(`WebSocket client disconnected: ${userId}`);
+      logger.info(`WebSocket client disconnected: ${userId}, sessionId: ${client.sessionId}`);
       manager.unregister(client);
     });
 
@@ -75,13 +123,6 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
       logger.error(`WebSocket error for user ${userId}:`, error);
       manager.unregister(client);
     });
-
-    // Send initial server time
-    try {
-      client.send({ type: 'server:time', data: { timestamp: Date.now() } });
-    } catch (error) {
-      logger.error('Failed to send initial server time:', error);
-    }
   });
 
   logger.info('WebSocket routes registered');

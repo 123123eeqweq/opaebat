@@ -13,6 +13,15 @@ const TIMEFRAME_SECONDS: Record<Timeframe, number> = {
   '15s': 15,
   '30s': 30,
   '1m': 60,
+  '2m': 120,
+  '3m': 180,
+  '5m': 300,
+  '10m': 600,
+  '15m': 900,
+  '30m': 1800,
+  '1h': 3600,
+  '4h': 14400,
+  '1d': 86400,
 };
 
 export class TimeframeAggregator {
@@ -21,7 +30,7 @@ export class TimeframeAggregator {
   private isRunning = false;
 
   constructor(
-    private symbol: string, // FLOW P3: e.g. "BTC/USD" for store
+    private instrumentId: string, // instrumentId для агрегации (EURUSD, EURUSD_REAL)
     private timeframes: Timeframe[],
     private candleStore: CandleStore,
     private eventBus: PriceEventBus,
@@ -86,14 +95,23 @@ export class TimeframeAggregator {
 
   /**
    * Aggregate candle into timeframe
+   * 
+   * FLOW TIMEFRAME-CLOSE: Закрытие агрегированной свечи происходит когда
+   * последняя 5s свеча периода закрывается (её endTime достигает границы)
    */
   private aggregateCandle(baseCandle: Candle, timeframe: Timeframe): void {
     const timeframeSeconds = TIMEFRAME_SECONDS[timeframe];
+    const timeframeMs = timeframeSeconds * 1000;
+    const baseTimeframeMs = 5000; // 5s base
 
     // Calculate candle start timestamp for this timeframe
-    const candleStart = Math.floor(
-      baseCandle.timestamp / (timeframeSeconds * 1000),
-    ) * (timeframeSeconds * 1000);
+    const candleStart = Math.floor(baseCandle.timestamp / timeframeMs) * timeframeMs;
+    
+    // 🔥 FIX: Вычисляем END TIME базовой свечи (timestamp + duration)
+    const baseCandleEndTime = baseCandle.timestamp + baseTimeframeMs;
+    
+    // Вычисляем конец текущего агрегированного периода
+    const aggregatedCandleEndTime = candleStart + timeframeMs;
 
     let aggregator = this.aggregators.get(timeframe);
 
@@ -127,10 +145,10 @@ export class TimeframeAggregator {
       this.aggregators.set(timeframe, aggregator);
     }
 
-    // Check if this candle should be closed (when we move to next timeframe period)
-    const nextCandleStart = candleStart + timeframeSeconds * 1000;
-    if (baseCandle.timestamp >= nextCandleStart - 100) { // Small buffer for timing
-      // Close current candle
+    // 🔥 FIX: Проверяем, достигла ли базовая свеча конца агрегированного периода
+    // Например: 5s свеча :05 имеет endTime = :10, что равно концу 10s свечи :00
+    if (baseCandleEndTime >= aggregatedCandleEndTime) {
+      // Базовая свеча завершает агрегированный период — закрываем!
       if (aggregator) {
         this.closeAggregatedCandle(aggregator);
         this.aggregators.set(timeframe, null);
@@ -142,8 +160,24 @@ export class TimeframeAggregator {
    * Close aggregated candle (per symbol)
    */
   private closeAggregatedCandle(candle: Candle): void {
-    this.candleStore.addClosedCandle(this.symbol, candle).catch((error) => {
+    // Сохраняем в БД
+    this.candleStore.addClosedCandle(this.instrumentId, candle).catch((error) => {
       logger.error(`Failed to store closed ${candle.timeframe} candle:`, error);
     });
+
+    // 🔥 EMIT candle_closed EVENT для WebSocket
+    // Без этого фронтенд не получает candle:close для таймфреймов кроме 5s
+    const timeframeSeconds = TIMEFRAME_SECONDS[candle.timeframe as Timeframe];
+    const slotEnd = candle.timestamp + (timeframeSeconds * 1000);
+    
+    const event: PriceEvent = {
+      type: 'candle_closed',
+      data: candle,
+      timestamp: slotEnd,
+    };
+    
+    this.eventBus.emit(event);
+    
+    logger.debug(`Emitted candle_closed for ${candle.timeframe} at ${new Date(candle.timestamp).toISOString()}`);
   }
 }

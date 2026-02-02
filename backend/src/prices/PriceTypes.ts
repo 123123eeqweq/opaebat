@@ -13,10 +13,10 @@ export interface Candle {
   low: number;
   close: number;
   timestamp: number; // Start timestamp of the candle
-  timeframe: string; // '5s', '10s', '15s', '30s', '1m'
+  timeframe: string; // '5s'
 }
 
-export type Timeframe = '5s' | '10s' | '15s' | '30s' | '1m';
+export type Timeframe = '5s' | '10s' | '15s' | '30s' | '1m' | '2m' | '3m' | '5m' | '10m' | '15m' | '30m' | '1h' | '4h' | '1d';
 
 export interface PriceConfig {
   asset: string;
@@ -29,7 +29,7 @@ export interface PriceConfig {
 
 export interface CandleConfig {
   baseTimeframe: Timeframe; // '5s'
-  aggregationTimeframes: Timeframe[]; // ['10s', '15s', '30s', '1m']
+  aggregationTimeframes: Timeframe[]; // [] - только базовый таймфрейм 5s
 }
 
 export type PriceEventType = 'price_tick' | 'candle_opened' | 'candle_updated' | 'candle_closed';

@@ -15,12 +15,12 @@ interface RenderOhlcPanelParams {
   digits?: number;
 }
 
-const PANEL_BG_COLOR = 'rgba(0, 0, 0, 0.8)'; // Тёмный фон
-const PANEL_TEXT_COLOR = '#ffffff';
-const PANEL_PADDING = 10;
-const PANEL_MARGIN = 10;
-const PANEL_FONT = '12px monospace';
-const PANEL_LINE_HEIGHT = 18;
+const PANEL_TEXT_COLOR = 'rgba(255, 255, 255, 0.45)'; // Как у меток осей
+const PANEL_PADDING = 14; // Увеличен отступ для большего воздуха
+const PANEL_MARGIN = 8; // Отступ слева
+const PANEL_MARGIN_BOTTOM = 35; // Отступ снизу
+const PANEL_FONT = '12px sans-serif'; // Как у меток осей и времени
+const PANEL_LINE_HEIGHT = 22; // Увеличено расстояние между строками
 const LIVE_LABEL_COLOR = '#10b981'; // Зелёный для LIVE
 
 /**
@@ -50,10 +50,10 @@ export function renderOhlcPanel({
   ctx.textAlign = 'left';
 
   // Форматируем значения по digits инструмента
-  const openLabel = `O: ${formatPrice(ohlc.open, digits)}`;
-  const highLabel = `H: ${formatPrice(ohlc.high, digits)}`;
-  const lowLabel = `L: ${formatPrice(ohlc.low, digits)}`;
-  const closeLabel = `C: ${formatPrice(ohlc.close, digits)}`;
+  const openLabel = `Открытие: ${formatPrice(ohlc.open, digits)}`;
+  const highLabel = `Максимум: ${formatPrice(ohlc.high, digits)}`;
+  const lowLabel = `Минимум: ${formatPrice(ohlc.low, digits)}`;
+  const closeLabel = `Закрытие: ${formatPrice(ohlc.close, digits)}`;
 
   // Измеряем размеры текста
   const openMetrics = ctx.measureText(openLabel);
@@ -76,13 +76,9 @@ export function renderOhlcPanel({
 
   // Позиция панели (левый нижний угол)
   const panelX = PANEL_MARGIN;
-  const panelY = height - panelHeight - PANEL_MARGIN;
+  const panelY = height - panelHeight - PANEL_MARGIN_BOTTOM;
 
-  // Рисуем фон панели
-  ctx.fillStyle = PANEL_BG_COLOR;
-  ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
-
-  // Рисуем текст
+  // Рисуем текст (без фона)
   let currentY = panelY + PANEL_PADDING;
 
   // LIVE метка (если isLive)

@@ -17,6 +17,7 @@
 
 import { useEffect, useRef, RefObject } from 'react';
 import type React from 'react';
+import type { Viewport } from '../viewport.types';
 import { InteractionState, type InteractionZone } from './interaction.types';
 import { panViewportTime, zoomViewportTime } from './math';
 import type { Viewport } from '../viewport.types';
@@ -39,10 +40,33 @@ interface UseChartInteractionsParams {
   // FLOW A: Price Alerts
   getInteractionZones?: () => InteractionZone[];
   addPriceAlert?: (price: number) => void;
+  // 🔥 FLOW C-INERTIA: Pan inertia refs (опционально, если не переданы - создаются внутри)
+  panInertiaRefs?: {
+    velocityRef: React.MutableRefObject<number>;
+    activeRef: React.MutableRefObject<boolean>;
+  };
+  // FLOW C-MARKET-ALTERNATIVES: Hitboxes для альтернативных пар
+  marketAlternativesHitboxesRef?: React.MutableRefObject<Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    instrumentId: string;
+  }>>;
+  // FLOW C-MARKET-ALTERNATIVES: Callback для переключения инструмента
+  onAlternativeClick?: (instrumentId: string) => void;
+  // FLOW C-MARKET-ALTERNATIVES: Callback для hover по альтернативной паре
+  onAlternativeHover?: (mouseX: number, mouseY: number) => number | null;
+  // 🔥 FLOW Y1: Callback для авто-фита Y-шкалы при двойном клике на метки цены
+  resetYScale?: () => void;
+  // FLOW C-MARKET-CLOSED: блокировка pan/zoom когда рынок закрыт
+  getMarketStatus?: () => 'OPEN' | 'WEEKEND' | 'MAINTENANCE' | 'HOLIDAY';
+  // 🔥 FLOW RETURN-TO-FOLLOW: Callback для планирования возврата в follow mode
+  scheduleReturnToFollow?: () => void;
 }
 
 const MIN_VISIBLE_CANDLES = 20;
-const MAX_VISIBLE_CANDLES = 300;
+const MAX_VISIBLE_CANDLES = 300; // Увеличено для возможности большего zoom out
 const ZOOM_SENSITIVITY = 0.1; // 10% за шаг колесика
 const PRICE_AXIS_WIDTH = 80; // 🔥 FLOW Y1: Ширина правой оси цены
 
@@ -73,6 +97,19 @@ function isMouseOnPriceAxis(
   return relativeX > canvas.clientWidth - PRICE_AXIS_WIDTH;
 }
 
+interface UseChartInteractionsReturn {
+  reset: () => void; // 🔥 FLOW: Timeframe Switch Reset - сброс состояния pan/zoom
+  // 🔥 FLOW C-INERTIA: Pan inertia API
+  getPanVelocity: () => number;
+  getInertiaActive: () => boolean;
+  stopInertia: () => void;
+  // 🔥 FLOW C-INERTIA: Refs для передачи в useViewport
+  panInertiaRefs: {
+    velocityRef: React.MutableRefObject<number>;
+    activeRef: React.MutableRefObject<boolean>;
+  };
+}
+
 export function useChartInteractions({
   canvasRef,
   viewportRef,
@@ -89,13 +126,26 @@ export function useChartInteractions({
   endYScaleDrag,
   getInteractionZones,
   addPriceAlert,
-}: UseChartInteractionsParams): void {
+  panInertiaRefs: externalPanInertiaRefs,
+  marketAlternativesHitboxesRef,
+  onAlternativeClick,
+  onAlternativeHover,
+  resetYScale,
+  getMarketStatus,
+  scheduleReturnToFollow,
+}: UseChartInteractionsParams): UseChartInteractionsReturn {
   const interactionStateRef = useRef<InteractionState>({
     isDragging: false,
     lastX: null,
   });
   // 🔥 FLOW Y1: Y-scale drag state
   const yDragStateRef = useRef<boolean>(false);
+  // 🔥 FLOW C-INERTIA: Pan inertia state (используем переданные refs или создаем свои)
+  const internalPanVelocityRef = useRef<number>(0);
+  const internalInertiaActiveRef = useRef<boolean>(false);
+  const panVelocityPxPerMsRef = externalPanInertiaRefs?.velocityRef || internalPanVelocityRef;
+  const inertiaActiveRef = externalPanInertiaRefs?.activeRef || internalInertiaActiveRef;
+  const lastMoveTimeRef = useRef<number | null>(null);
 
   /**
    * Обработчик mouseDown - начало pan или Y-scale drag
@@ -103,18 +153,44 @@ export function useChartInteractions({
   const handleMouseDown = (e: MouseEvent) => {
     if (e.button !== 0) return; // Только левая кнопка
 
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // FLOW C-MARKET-ALTERNATIVES: Проверяем клик по альтернативным парам (до проверки market closed — клики по списку должны работать)
+    if (marketAlternativesHitboxesRef && onAlternativeClick) {
+      const hitboxes = marketAlternativesHitboxesRef.current;
+      for (const box of hitboxes) {
+        if (
+          x >= box.x &&
+          x <= box.x + box.width &&
+          y >= box.y &&
+          y <= box.y + box.height
+        ) {
+          onAlternativeClick(box.instrumentId);
+          return;
+        }
+      }
+    }
+
+    // FLOW C-MARKET-CLOSED: когда рынок закрыт, не начинаем pan (но клики по альтернативным парам уже обработаны выше)
+    if (getMarketStatus && getMarketStatus() !== 'OPEN') return;
+
+    // 🔥 FLOW C-INERTIA: Сбрасываем инерцию при новом взаимодействии
+    inertiaActiveRef.current = false;
+    panVelocityPxPerMsRef.current = 0;
+    lastMoveTimeRef.current = null;
+
     // FLOW G16: Если идет редактирование drawing, не начинаем pan
     if (getIsEditingDrawing && getIsEditingDrawing()) {
       return;
     }
 
-    const canvas = canvasRef.current;
     const viewport = viewportRef.current;
-    if (!canvas || !viewport) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    if (!viewport) return;
 
     // FLOW A3: Проверяем hit‑зоны (например, "+" для price alert)
     const zones = getInteractionZones ? getInteractionZones() : [];
@@ -137,6 +213,9 @@ export function useChartInteractions({
 
     // 🔥 FLOW Y1: Проверяем, находится ли мышь над правой осью цены
     if (isMouseOnPriceAxis(e.clientX, canvas)) {
+      // 🔥 FLOW C-INERTIA: Прерываем инерцию при начале Y-scale drag
+      inertiaActiveRef.current = false;
+      panVelocityPxPerMsRef.current = 0;
       // Начинаем Y-scale drag
       yDragStateRef.current = true;
       beginYScaleDrag?.(y);
@@ -158,14 +237,24 @@ export function useChartInteractions({
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
     const isOverCanvas =
       e.clientX >= rect.left &&
       e.clientX <= rect.right &&
       e.clientY >= rect.top &&
       e.clientY <= rect.bottom;
 
+    // FLOW C-MARKET-ALTERNATIVES: Обрабатываем hover по альтернативным парам
+    let isHoveringAlternatives = false;
+    if (onAlternativeHover && !interactionStateRef.current.isDragging && !yDragStateRef.current && isOverCanvas) {
+      const hoveredIndex = onAlternativeHover(x, y);
+      isHoveringAlternatives = hoveredIndex !== null;
+    }
+
     // FLOW G16: Курсор при редактировании/наведении на drawings; иначе ось Y
+    // FLOW C-MARKET-ALTERNATIVES: Проверяем hover по альтернативным парам только если не наведено на drawings
     if (isOverCanvas) {
       const drawingMode =
         (getIsEditingDrawing?.() && getDrawingEditState?.()?.mode) ?? getHoveredDrawingMode?.() ?? null;
@@ -179,6 +268,8 @@ export function useChartInteractions({
         canvas.style.cursor = 'nesw-resize';
       } else if (yDragStateRef.current || isMouseOnPriceAxis(e.clientX, canvas)) {
         canvas.style.cursor = 'ns-resize';
+      } else if (isHoveringAlternatives) {
+        canvas.style.cursor = 'pointer';
       } else {
         canvas.style.cursor = 'default';
       }
@@ -205,6 +296,20 @@ export function useChartInteractions({
 
     const currentX = e.clientX - rect.left;
     const deltaX = currentX - state.lastX;
+
+    // 🔥 FLOW C-INERTIA: Собираем скорость движения мыши
+    const now = performance.now();
+    const lastTime = lastMoveTimeRef.current;
+
+    if (lastTime !== null) {
+      const dt = now - lastTime;
+      if (dt > 0) {
+        // Скорость в пикселях на миллисекунду (не сглаживаем, берем последнюю реальную скорость)
+        panVelocityPxPerMsRef.current = deltaX / dt;
+      }
+    }
+
+    lastMoveTimeRef.current = now;
 
     // Вычисляем pixelsPerMs
     const timeRange = viewport.timeEnd - viewport.timeStart;
@@ -242,6 +347,22 @@ export function useChartInteractions({
       return;
     }
 
+    // 🔥 FLOW C-INERTIA: Запускаем инерцию, если скорость выше порога
+    const velocity = panVelocityPxPerMsRef.current;
+    if (Math.abs(velocity) > 0.05) {
+      // Порог 0.05 px/ms ≈ правильный UX-порог (ниже — незаметно)
+      inertiaActiveRef.current = true;
+      setFollowMode?.(false);
+    } else {
+      // Если скорость слишком мала, останавливаем инерцию
+      inertiaActiveRef.current = false;
+      panVelocityPxPerMsRef.current = 0;
+    }
+    
+    // 🔥 FLOW RETURN-TO-FOLLOW: ВСЕГДА планируем возврат после pan
+    // Если инерция активна — таймер подождёт, потом включит follow mode и остановит инерцию
+    scheduleReturnToFollow?.();
+
     interactionStateRef.current = {
       ...interactionStateRef.current,
       isDragging: false,
@@ -254,6 +375,13 @@ export function useChartInteractions({
    */
   const handleWheel = (e: WheelEvent) => {
     e.preventDefault();
+
+    // FLOW C-MARKET-CLOSED: когда рынок закрыт, не делаем zoom
+    if (getMarketStatus && getMarketStatus() !== 'OPEN') return;
+
+    // 🔥 FLOW C-INERTIA: Прерываем инерцию при zoom
+    inertiaActiveRef.current = false;
+    panVelocityPxPerMsRef.current = 0;
 
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
@@ -290,11 +418,33 @@ export function useChartInteractions({
 
     // Вызываем callback для загрузки истории (FLOW G6)
     onViewportChange?.(newViewport);
+
+    // 🔥 Zoom НЕ триггерит автовозврат — пользователь сам выбирает масштаб
   };
 
   const handleMouseLeave = () => {
     const canvas = canvasRef.current;
     if (canvas) canvas.style.cursor = 'default';
+  };
+
+  /**
+   * Обработчик двойного клика - авто-фит Y-шкалы при клике на метки цены
+   */
+  const handleDoubleClick = (e: MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !resetYScale) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = canvas.clientWidth || rect.width;
+
+    // Константа для области меток цены (как в renderAxes.ts)
+    const PRICE_LABEL_BG_WIDTH = 60;
+
+    // Проверяем, что клик был в области меток цены (справа)
+    if (x >= width - PRICE_LABEL_BG_WIDTH) {
+      resetYScale();
+    }
   };
 
   // Подписка на события
@@ -304,6 +454,7 @@ export function useChartInteractions({
 
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mouseleave', handleMouseLeave);
+    canvas.addEventListener('dblclick', handleDoubleClick);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('wheel', handleWheel, { passive: false });
@@ -311,10 +462,60 @@ export function useChartInteractions({
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
+      canvas.removeEventListener('dblclick', handleDoubleClick);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('wheel', handleWheel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [resetYScale]);
+
+  /**
+   * 🔥 FLOW: Timeframe Switch Reset - сброс состояния pan/zoom
+   * Сбрасывает состояние взаимодействий при смене timeframe
+   */
+  const reset = (): void => {
+    // Сбрасываем состояние pan (прерываем активный drag если есть)
+    interactionStateRef.current = {
+      isDragging: false,
+      lastX: null,
+    };
+    
+    // Сбрасываем состояние Y-scale drag (прерываем активный drag если есть)
+    yDragStateRef.current = false;
+    // Завершаем Y-scale drag если он был активен
+    if (endYScaleDrag) {
+      endYScaleDrag();
+    }
+
+    // 🔥 FLOW C-INERTIA: Сбрасываем инерцию
+    inertiaActiveRef.current = false;
+    panVelocityPxPerMsRef.current = 0;
+    lastMoveTimeRef.current = null;
+  };
+
+  // 🔥 FLOW C-INERTIA: Методы для доступа к состоянию инерции
+  const getPanVelocity = (): number => {
+    return panVelocityPxPerMsRef.current;
+  };
+
+  const getInertiaActive = (): boolean => {
+    return inertiaActiveRef.current;
+  };
+
+  const stopInertia = (): void => {
+    inertiaActiveRef.current = false;
+    panVelocityPxPerMsRef.current = 0;
+  };
+
+  return {
+    reset,
+    getPanVelocity,
+    getInertiaActive,
+    stopInertia,
+    panInertiaRefs: {
+      velocityRef: panVelocityPxPerMsRef,
+      activeRef: inertiaActiveRef,
+    },
+  };
 }

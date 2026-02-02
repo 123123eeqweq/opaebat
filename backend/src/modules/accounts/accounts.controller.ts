@@ -9,9 +9,12 @@ import {
   AccountAlreadyExistsError,
   InvalidAccountTypeError,
   UnauthorizedAccountAccessError,
+  DemoResetNotAllowedError,
+  DemoAccountNotFoundError,
 } from '../../domain/accounts/AccountErrors.js';
 import { AccountType } from '../../domain/accounts/AccountTypes.js';
 import { logger } from '../../shared/logger.js';
+import { emitAccountSnapshot } from '../../bootstrap/websocket.bootstrap.js';
 
 export class AccountsController {
   constructor(private accountService: AccountService) {}
@@ -81,6 +84,17 @@ export class AccountsController {
 
       const account = await this.accountService.setActiveAccount(userId, accountId);
 
+      // 🔥 FLOW A-ACCOUNT: Emit account snapshot via WebSocket
+      try {
+        const snapshot = await this.accountService.getAccountSnapshot(userId);
+        if (snapshot) {
+          emitAccountSnapshot(userId, snapshot);
+        }
+      } catch (error) {
+        logger.error('Failed to emit account snapshot after switch:', error);
+        // Don't fail the request if WS fails
+      }
+
       return reply.send({
         account,
       });
@@ -100,6 +114,83 @@ export class AccountsController {
       }
 
       logger.error('Switch account error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * 🔥 FLOW A-ACCOUNT: Get account snapshot
+   */
+  async getAccountSnapshot(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = request.userId!; // Set by requireAuth middleware
+
+      const snapshot = await this.accountService.getAccountSnapshot(userId);
+
+      if (!snapshot) {
+        return reply.status(404).send({
+          error: 'No active account found',
+        });
+      }
+
+      return reply.send(snapshot);
+    } catch (error) {
+      logger.error('Get account snapshot error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * 🔥 FLOW D-RESET-DEMO: Reset demo account balance
+   */
+  async resetDemoAccount(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = request.userId!; // Set by requireAuth middleware
+
+      logger.info(`Reset demo account requested for user: ${userId}`);
+      const account = await this.accountService.resetDemoAccount(userId);
+
+      // 🔥 FLOW A-ACCOUNT: Emit account snapshot via WebSocket
+      try {
+        const snapshot = await this.accountService.getAccountSnapshot(userId);
+        if (snapshot) {
+          emitAccountSnapshot(userId, snapshot);
+        }
+      } catch (error) {
+        logger.error('Failed to emit account snapshot after reset:', error);
+        // Don't fail the request if WS fails
+      }
+
+      return reply.send({
+        account: {
+          id: account.id,
+          balance: account.balance,
+          currency: account.currency,
+          type: account.type,
+        },
+      });
+    } catch (error) {
+      if (error instanceof DemoAccountNotFoundError) {
+        logger.warn(`Demo account not found for user: ${request.userId}`);
+        return reply.status(404).send({
+          error: 'Demo account not found',
+          message: error.message,
+        });
+      }
+
+      if (error instanceof DemoResetNotAllowedError) {
+        logger.warn(`Demo reset not allowed for user: ${request.userId} - balance too high`);
+        return reply.status(400).send({
+          error: 'Demo reset not allowed',
+          message: error.message,
+        });
+      }
+
+      logger.error('Reset demo account error:', error);
       return reply.status(500).send({
         error: 'Internal server error',
       });

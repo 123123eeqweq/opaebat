@@ -12,12 +12,18 @@ export type WsEvent =
   | { instrument: string; type: 'candle:update'; data: { timeframe: string; candle: Candle } }
   | { instrument: string; type: 'candle:close'; data: { timeframe: string; candle: Candle } }
   | { type: 'trade:open'; data: TradeDTO }
-  | { type: 'trade:close'; data: TradeDTO & { result: 'WIN' | 'LOSS' } }
+  | { type: 'trade:close'; data: TradeDTO & { result: 'WIN' | 'LOSS' | 'TIE' } }
   | { type: 'trade:countdown'; data: { tradeId: string; secondsLeft: number } }
-  | { type: 'server:time'; data: { timestamp: number } };
+  | { type: 'server:time'; data: { timestamp: number } }
+  // FLOW A-ACCOUNT: Account snapshot event
+  | { type: 'account.snapshot'; payload: { accountId: string; type: 'REAL' | 'DEMO'; balance: number; currency: 'USD' | 'RUB' | 'UAH'; updatedAt: number } }
+  // FLOW WS-1: Handshake events
+  | { type: 'ws:ready'; sessionId: string; serverTime: number }
+  | { type: 'subscribed'; instrument: string }
+  | { type: 'unsubscribed'; instrument: string };
 
 export interface WsClientMessage {
-  type: 'ping' | 'subscribe' | 'unsubscribe';
+  type: 'ping' | 'subscribe' | 'unsubscribe' | 'unsubscribe_all';
   /**
    * Для subscribe: идентификатор инструмента (EURUSD, BTCUSD, …)
    */

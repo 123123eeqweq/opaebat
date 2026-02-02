@@ -32,4 +32,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   app.get('/api/auth/me', {
     schema: meSchema,
   }, (request, reply) => authController.me(request, reply));
+
+  // 🔥 FLOW S3: POST /api/auth/2fa
+  app.post('/api/auth/2fa', (request, reply) => authController.verifyLogin2FA(request, reply));
 }

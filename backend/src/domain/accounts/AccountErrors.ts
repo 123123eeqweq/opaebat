@@ -43,3 +43,17 @@ export class UnauthorizedAccountAccessError extends AccountError {
     this.name = 'UnauthorizedAccountAccessError';
   }
 }
+
+export class DemoResetNotAllowedError extends AccountError {
+  constructor() {
+    super('Demo balance is high enough');
+    this.name = 'DemoResetNotAllowedError';
+  }
+}
+
+export class DemoAccountNotFoundError extends AccountError {
+  constructor() {
+    super('Demo account not found');
+    this.name = 'DemoAccountNotFoundError';
+  }
+}

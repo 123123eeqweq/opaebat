@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Как начать | ComforTrade',
-  description: 'Начните торговать с COMFORTRADE: регистрация, верификация, первый депозит и первые сделки.',
+  title: 'Как начать торговлю',
+  description: 'Пошаговое руководство по началу торговли бинарными опционами на COMFORTRADE. Регистрация аккаунта, верификация, пополнение счета, открытие первых сделок.',
+  keywords: ['как начать', 'руководство', 'первые шаги', 'регистрация', 'верификация', 'демо счет'],
 }
 
 export default function StartLayout({ children }: { children: React.ReactNode }) {

@@ -48,9 +48,9 @@ export class PriceService {
       priceStore,
       this.eventBus,
     );
-    this.candleEngine = new CandleEngine(this.symbol, candleStore, this.eventBus);
+    this.candleEngine = new CandleEngine(this.instrumentId, candleStore, this.eventBus);
     this.aggregator = new TimeframeAggregator(
-      this.symbol,
+      this.instrumentId,
       this.candleConfig.aggregationTimeframes,
       candleStore,
       this.eventBus,
@@ -90,6 +90,6 @@ export class PriceService {
   async getCandles(timeframe: Timeframe, limit: number = 100): Promise<Candle[]> {
     if (!this.isRunning) return [];
     const candleStore = new CandleStore();
-    return candleStore.getClosedCandles(this.symbol, timeframe, limit);
+    return candleStore.getClosedCandles(this.instrumentId, timeframe, limit);
   }
 }

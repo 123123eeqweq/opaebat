@@ -10,5 +10,12 @@ export interface TradeRepository {
   findOpenExpired(now: Date): Promise<Trade[]>;
   findById(id: string): Promise<Trade | null>;
   findByUserId(userId: string): Promise<Trade[]>;
+  findByUserIdPaginated(
+    userId: string,
+    status: 'open' | 'closed',
+    limit: number,
+    offset: number
+  ): Promise<{ trades: Trade[]; hasMore: boolean }>;
+  findByAccountId(accountId: string): Promise<Trade[]>; // 🔥 FLOW TRADE-STATS: Filter by account
   updateResult(id: string, exitPrice: number, status: TradeStatus, closedAt: Date): Promise<Trade>;
 }

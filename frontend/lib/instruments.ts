@@ -12,6 +12,27 @@ export interface InstrumentInfo {
 }
 
 export const INSTRUMENTS: InstrumentInfo[] = [
+  // FLOW R-MULTI: Real market pairs (18 пар)
+  { id: 'AUDCHF_REAL', label: 'AUD/CHF Real', digits: 5 },
+  { id: 'AUDJPY_REAL', label: 'AUD/JPY Real', digits: 3 },
+  { id: 'EURGBP_REAL', label: 'EUR/GBP Real', digits: 5 },
+  { id: 'EURUSD_REAL', label: 'EUR/USD Real', digits: 5 },
+  { id: 'AUDCAD_REAL', label: 'AUD/CAD Real', digits: 5 },
+  { id: 'EURJPY_REAL', label: 'EUR/JPY Real', digits: 3 },
+  { id: 'EURAUD_REAL', label: 'EUR/AUD Real', digits: 5 },
+  { id: 'GBPCAD_REAL', label: 'GBP/CAD Real', digits: 5 },
+  { id: 'GBPUSD_REAL', label: 'GBP/USD Real', digits: 5 },
+  { id: 'USDCHF_REAL', label: 'USD/CHF Real', digits: 5 },
+  { id: 'GBPJPY_REAL', label: 'GBP/JPY Real', digits: 3 },
+  { id: 'CHFJPY_REAL', label: 'CHF/JPY Real', digits: 3 },
+  { id: 'USDCAD_REAL', label: 'USD/CAD Real', digits: 5 },
+  { id: 'USDJPY_REAL', label: 'USD/JPY Real', digits: 3 },
+  { id: 'GBPCHF_REAL', label: 'GBP/CHF Real', digits: 5 },
+  { id: 'EURCAD_REAL', label: 'EUR/CAD Real', digits: 5 },
+  { id: 'CADJPY_REAL', label: 'CAD/JPY Real', digits: 3 },
+  { id: 'CADCHF_REAL', label: 'CAD/CHF Real', digits: 5 },
+  
+  // OTC pairs (существующие)
   { id: 'EURUSD', label: 'EUR/USD OTC', digits: 5 },
   { id: 'GBPUSD', label: 'GBP/USD OTC', digits: 5 },
   { id: 'USDCAD', label: 'USD/CAD OTC', digits: 5 },

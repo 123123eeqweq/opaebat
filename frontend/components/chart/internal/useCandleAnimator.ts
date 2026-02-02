@@ -1,11 +1,15 @@
 /**
  * useCandleAnimator - анимация live-свечи
- * 
+ *
  * Ответственность:
  * - Плавная анимация live-свечи при обновлении цены
  * - Анимация close, high, low
  * - Только presentation layer (не мутирует data)
- * 
+ *
+ * Правило (как в нормальных терминалах):
+ * Первый тик после закрытия свечи всегда анимируется от close предыдущей свечи
+ * (live.open новой свечи), а не от live.close — иначе визуальный рывок.
+ *
  * ❌ ЗАПРЕЩЕНО:
  * - useState
  * - мутация data layer
@@ -76,6 +80,9 @@ export function useCandleAnimator({
     startVisualLow: 0,
   });
 
+  /** Первый тик после candle:close — анимируем от предыдущего close (live.open), не от live.close */
+  const hasJustClosedRef = useRef<boolean>(false);
+
   /**
    * Инициализация при первом появлении live-свечи
    */
@@ -97,6 +104,7 @@ export function useCandleAnimator({
 
   /**
    * Вызывается при price:update
+   * Правило: первый тик после закрытия свечи анимируется от close предыдущей свечи (live.open).
    */
   const onPriceUpdate = (price: number): void => {
     ensureInitialized();
@@ -108,8 +116,27 @@ export function useCandleAnimator({
     animated.truthHigh = live.high;
     animated.truthLow = live.low;
 
-    // 2. Запускаем анимацию: тело (close) и фитиль (visualHigh/Low) с одним прогрессом
-    // Запоминаем текущие visual — фитиль будет плавно догонять truth с тем же eased, что и close
+    const prevClose = live.open; // close предыдущей свечи = open новой
+
+    if (hasJustClosedRef.current) {
+      // Первый тик после candle:close — якорь на предыдущем close, без рывка
+      hasJustClosedRef.current = false;
+      animated.close = prevClose;
+      animated.visualHigh = live.high;
+      animated.visualLow = live.low;
+      animationRef.current = {
+        from: prevClose,
+        to: price,
+        startTime: performance.now(),
+        duration: animationRef.current.duration,
+        active: true,
+        startVisualHigh: live.high,
+        startVisualLow: live.low,
+      };
+      return;
+    }
+
+    // 2. Обычный тик: анимация от текущего отображаемого close к новой цене
     animationRef.current = {
       from: animated.close,
       to: price,
@@ -123,11 +150,12 @@ export function useCandleAnimator({
 
   /**
    * Вызывается при candle:close
+   * Следующий onPriceUpdate будет первым тиком — анимация от предыдущего close (hasJustClosedRef).
    */
   const onCandleClose = (): void => {
-    // Сбрасываем animator — новая свеча начнётся с чистого состояния
     animatedRef.current = null;
     animationRef.current.active = false;
+    hasJustClosedRef.current = true;
   };
 
   /**
@@ -213,6 +241,7 @@ export function useCandleAnimator({
    */
   const reset = (): void => {
     animatedRef.current = null;
+    hasJustClosedRef.current = false;
     animationRef.current = {
       from: 0,
       to: 0,

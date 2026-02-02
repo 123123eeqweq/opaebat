@@ -30,3 +30,11 @@ export const switchAccountSchema = {
     },
   },
 } as const;
+
+export const resetDemoAccountSchema = {
+  // No body required - 🔥 FLOW D-RESET-DEMO: no parameters needed
+} as const;
+
+export const getAccountSnapshotSchema = {
+  // No body required - 🔥 FLOW A-ACCOUNT: returns current active account snapshot
+} as const;

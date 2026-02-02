@@ -15,9 +15,7 @@ export async function connectDatabase(): Promise<PrismaClient> {
   logger.info('Connecting to PostgreSQL database...');
 
   prismaClient = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' 
-      ? ['query', 'info', 'warn', 'error'] 
-      : ['error'],
+    log: ['error'], // Отключаем query логи - только ошибки
   });
 
   try {

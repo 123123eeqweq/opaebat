@@ -5,17 +5,24 @@
 import type { WebSocket } from 'ws';
 import type { WsEvent } from './WsEvents.js';
 import { logger } from '../logger.js';
+import { randomUUID } from 'crypto';
 
 export class WsClient {
   public userId: string | null = null;
   public isAuthenticated = false;
   /**
-   * FLOW WS-SUBSCRIBE: текущий инструмент, на который подписан клиент.
-   * null = нет активной подписки, клиент не получает ценовые события.
+   * FLOW WS-1: Set подписок на инструменты (может быть несколько)
    */
-  public instrument: string | null = null;
+  public subscriptions = new Set<string>();
+  /**
+   * FLOW WS-1: Session ID для отслеживания соединения
+   */
+  public sessionId: string;
 
-  constructor(private socket: WebSocket) {}
+  constructor(private socket: WebSocket) {
+    // Генерируем sessionId при создании клиента
+    this.sessionId = randomUUID();
+  }
 
   /**
    * Send event to client

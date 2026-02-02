@@ -107,6 +107,16 @@ export function useCrosshair({
       return;
     }
 
+    // Константы для областей меток (как в renderAxes.ts)
+    const PRICE_LABEL_BG_WIDTH = 60; // Ширина области меток цены справа
+    const TIME_LABEL_BG_HEIGHT = 25; // Высота области меток времени внизу
+
+    // Скрываем кроссхейр если курсор находится в области меток цены (справа) или меток времени (внизу)
+    if (x >= width - PRICE_LABEL_BG_WIDTH || y >= height - TIME_LABEL_BG_HEIGHT) {
+      crosshairRef.current = null;
+      return;
+    }
+
     // Время под курсором; при включённом снэпе — к центру ближайшей свечи
     let time = mapXToTime(x, viewport, width);
     const timeframeMs = getTimeframeMs?.();

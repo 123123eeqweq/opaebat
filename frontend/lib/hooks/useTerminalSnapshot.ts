@@ -13,6 +13,7 @@ import { DEFAULT_INSTRUMENT_ID } from '@/lib/instruments';
 export function useTerminalSnapshot(
   instrument: string = DEFAULT_INSTRUMENT_ID,
   timeframe: string = '5s',
+  chartType?: 'candles' | 'line', // 🔥 FLOW C-CHART-TYPE-RESET: Добавляем chartType для принудительной перезагрузки
 ) {
   const [data, setData] = useState<TerminalSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +44,7 @@ export function useTerminalSnapshot(
     return () => {
       cancelled = true;
     };
-  }, [instrument, timeframe]);
+  }, [instrument, timeframe, chartType]); // 🔥 FLOW C-CHART-TYPE-RESET: Добавляем chartType в зависимости
 
   return { data, loading, error };
 }

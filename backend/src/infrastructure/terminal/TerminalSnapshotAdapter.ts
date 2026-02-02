@@ -14,6 +14,7 @@ import type { Clock } from '../../domain/time/TimeTypes.js';
 import { TradeStatus } from '../../domain/trades/TradeTypes.js';
 import { TimeService } from '../../domain/time/TimeService.js';
 import { getInstrumentOrDefault } from '../../config/instruments.js';
+import { getMarketStatus } from '../../domain/terminal/MarketStatus.js';
 
 export class TerminalSnapshotAdapter implements TerminalSnapshotPort {
   private timeService: TimeService;
@@ -32,7 +33,14 @@ export class TerminalSnapshotAdapter implements TerminalSnapshotPort {
     const serverTime = this.timeService.now();
     const manager = this.getManager();
     const config = getInstrumentOrDefault(instrument);
-    const symbol = config.engine.asset; // "BTC/USD", "EUR/USD"
+    // Унифицированный symbol для отображения (EUR/USD формат) для всех инструментов
+    const symbol = config.source === 'otc' 
+      ? config.engine?.asset ?? `${config.base}/${config.quote}` // "EUR/USD"
+      : config.real?.symbol ?? `${config.base}/${config.quote}`; // "EUR/USD" - унифицированный формат
+
+    // FLOW C-MARKET-CLOSED: Определяем статус рынка
+    // FLOW C-MARKET-ALTERNATIVES: Передаем текущий инструмент для исключения из альтернатив
+    const marketStatus = getMarketStatus(config.source, instrument, serverTime);
 
     const user = await this.userRepository.findById(userId);
     if (!user) {
@@ -58,18 +66,17 @@ export class TerminalSnapshotAdapter implements TerminalSnapshotPort {
         }
       : null;
 
-    const priceData = await manager.getCurrentPrice(instrument);
+    // FLOW C-MARKET-CLOSED: Если рынок закрыт, price может быть null
+    const priceData = marketStatus.marketOpen 
+      ? await manager.getCurrentPrice(instrument)
+      : null;
     const priceDTO = priceData
       ? {
           asset: symbol,
           value: priceData.price,
           timestamp: priceData.timestamp,
         }
-      : {
-          asset: symbol,
-          value: 0,
-          timestamp: serverTime,
-        };
+      : null;
 
     const candles = await manager.getCandles(instrument, timeframe, 100);
     const candlesDTO: SnapshotCandle[] = candles.map((candle) => {
@@ -115,6 +122,10 @@ export class TerminalSnapshotAdapter implements TerminalSnapshotPort {
       },
       openTrades: openTradesDTO,
       serverTime,
+      marketOpen: marketStatus.marketOpen,
+      marketStatus: marketStatus.marketStatus,
+      nextMarketOpenAt: marketStatus.nextMarketOpenAt, // FLOW C-MARKET-COUNTDOWN
+      topAlternatives: marketStatus.topAlternatives, // FLOW C-MARKET-ALTERNATIVES
     };
   }
 
@@ -125,6 +136,15 @@ export class TerminalSnapshotAdapter implements TerminalSnapshotPort {
       '15s': 15,
       '30s': 30,
       '1m': 60,
+      '2m': 120,
+      '3m': 180,
+      '5m': 300,
+      '10m': 600,
+      '15m': 900,
+      '30m': 1800,
+      '1h': 3600,
+      '4h': 14400,
+      '1d': 86400,
     };
     return timeframeSeconds[timeframe] * 1000;
   }

@@ -137,7 +137,7 @@ export default function AboutPage() {
           </nav>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">О компании</h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            COMFORTRADE — надёжный брокер для торговли на валютном рынке. Высокая доходность, широкий выбор инструментов и прозрачные условия.
+            COMFORTRADE — надёжный брокер для торговли на Forex и криптовалютах. Высокая доходность до 89%, 40+ инструментов, демо и реальный счёт.
           </p>
         </div>
       </section>
@@ -195,29 +195,29 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <div className="bg-white rounded-2xl testimonial-card-shadow p-8 flex flex-col items-center text-center">
               <p className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-                100M<span className="text-[#3347ff]">+</span>
+                100K<span className="text-[#3347ff]">+</span>
               </p>
-              <p className="text-[#3347ff] font-semibold mb-3">Активных пользователей</p>
+              <p className="text-[#3347ff] font-semibold mb-3">Активных трейдеров</p>
               <p className="text-sm text-gray-600">
                 Торгуют на нашей платформе по всему миру.
               </p>
             </div>
             <div className="bg-white rounded-2xl testimonial-card-shadow p-8 flex flex-col items-center text-center">
               <p className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-                85B<span className="text-[#3347ff]">+</span>
+                40<span className="text-[#3347ff]">+</span>
               </p>
-              <p className="text-[#3347ff] font-semibold mb-3">Активов под управлением</p>
+              <p className="text-[#3347ff] font-semibold mb-3">Торговых инструментов</p>
               <p className="text-sm text-gray-600">
-                Обороты клиентов в торговле и инвестициях.
+                Forex пары и криптовалюты для Call/Put сделок.
               </p>
             </div>
             <div className="bg-white rounded-2xl testimonial-card-shadow p-8 flex flex-col items-center text-center">
               <p className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-                500K<span className="text-[#3347ff]">+</span>
+                89<span className="text-[#3347ff]">%</span>
               </p>
-              <p className="text-[#3347ff] font-semibold mb-3">Платежей в день</p>
+              <p className="text-[#3347ff] font-semibold mb-3">Доходность до</p>
               <p className="text-sm text-gray-600">
-                Быстрые пополнения и выводы без задержек.
+                Честная фиксированная выплата по успешным сделкам.
               </p>
             </div>
           </div>
@@ -245,14 +245,14 @@ export default function AboutPage() {
             {/* Right Column - Text Content */}
             <div className="space-y-6">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                The story and mission behind our company
+                История и миссия нашей компании
               </h2>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Lorem ipsum dolor sit amet consectetur adipiscing elit ut tortor mauris eu eros massa suspendisse hac pellentesque aliquam vel duis pellentesque nunc lacus cras pharetra vulputate nisi eget ipsum sagittis faucibus a pharetra ac massa at malesuada maecenas venenatis mattis ipsum pretium convallis malesuada molestie.
+                ComforTrade создан для того, чтобы торговля на Forex и криптовалютах была доступной, прозрачной и удобной. Мы развиваем современный терминал с Call/Put сделками, демо и реальным счётом, профессиональными графиками и поддержкой 24/7. Наша цель — дать каждому трейдеру надёжный инструмент для приумножения капитала.
               </p>
-              <button className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors shadow-lg">
-                Browse careers
-              </button>
+              <Link href="/start" className="inline-block bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors shadow-lg">
+                Как начать
+              </Link>
             </div>
           </div>
         </div>
@@ -265,83 +265,83 @@ export default function AboutPage() {
             {/* Left Column - Text Content */}
             <div className="space-y-6">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                The values & mantra that drive everything we do
+                Ценности, которыми мы руководствуемся
               </h2>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Lorem ipsum dolor sit amet consectetur adipiscing elit smet nibh habitant consectur.
+                Честность, прозрачность и забота о клиентах — основа нашей работы. Мы строим долгосрочные отношения с трейдерами.
               </p>
-              <button className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors shadow-lg">
-                Join our team
-              </button>
+              <Link href="/reviews" className="inline-block bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors shadow-lg">
+                Читать отзывы
+              </Link>
             </div>
 
             {/* Right Column - Cards Grid */}
             <div className="grid grid-cols-2 gap-6">
-              {/* Card 1 - Open source */}
+              {/* Card 1 - Прозрачность */}
               <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
                 <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
                   <Image
                     src="/images/1.svg"
-                    alt="Open source"
+                    alt="Прозрачность"
                     width={32}
                     height={32}
                     className="w-8 h-8"
                   />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Open source</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Прозрачность</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet dolor sitol consectetur adipiscing.
+                  Честные условия Call/Put, фиксированная доходность до 89%. Без скрытых комиссий.
                 </p>
               </div>
 
-              {/* Card 2 - Decentralized */}
+              {/* Card 2 - Надёжность */}
               <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
                 <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
                   <Image
                     src="/images/2.svg"
-                    alt="Decentralized"
+                    alt="Надёжность"
                     width={32}
                     height={32}
                     className="w-8 h-8"
                   />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Decentralized</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Надёжность</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet dolor sitol consectetur adipiscing.
+                  Защита данных, AML/KYC, быстрый вывод средств. Ваши средства под контролем.
                 </p>
               </div>
 
-              {/* Card 3 - Transparent */}
+              {/* Card 3 - Удобство */}
               <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
                 <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
                   <Image
                     src="/images/3.svg"
-                    alt="Transparent"
+                    alt="Удобство"
                     width={32}
                     height={32}
                     className="w-8 h-8"
                   />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Transparent</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Удобство</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet dolor sitol consectetur adipiscing.
+                  Интуитивный терминал, графики, индикаторы. Торгуйте с комфортом в любой момент.
                 </p>
               </div>
 
-              {/* Card 4 - Community driven */}
+              {/* Card 4 - Поддержка */}
               <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
                 <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
                   <Image
                     src="/images/4.svg"
-                    alt="Community driven"
+                    alt="Поддержка"
                     width={32}
                     height={32}
                     className="w-8 h-8"
                   />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Community driven</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Поддержка</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet dolor sitol consectetur adipiscing.
+                  Отзывчивая команда, обучающие материалы. Помогаем на всех этапах торговли.
                 </p>
               </div>
             </div>

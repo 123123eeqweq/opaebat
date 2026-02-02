@@ -24,7 +24,7 @@ export class WebSocketManager {
       this.userClients.get(client.userId)!.add(client);
     }
 
-    logger.debug(`WebSocket client registered. Total: ${this.clients.size}`);
+    logger.debug(`WebSocket client registered. Total: ${this.clients.size}, userId: ${client.userId}, authenticated: ${client.isAuthenticated}`);
   }
 
   /**
@@ -117,14 +117,20 @@ export class WebSocketManager {
   broadcastToInstrument(instrument: string, event: WsEvent): void {
     let sent = 0;
     const deadClients: WsClient[] = [];
+    let subscribedClients = 0;
 
     for (const client of this.clients) {
       if (!client.isAuthenticated) {
         continue;
       }
 
+      // Подсчитываем подписанных клиентов
+      if (client.subscriptions.has(instrument)) {
+        subscribedClients++;
+      }
+
       // клиент не подписан на этот инструмент — пропускаем
-      if (client.instrument !== instrument) {
+      if (!client.subscriptions.has(instrument)) {
         continue;
       }
 
@@ -143,10 +149,6 @@ export class WebSocketManager {
     }
 
     deadClients.forEach((client) => this.unregister(client));
-
-    if (sent > 0) {
-      logger.debug(`Broadcasted ${event.type} for ${instrument} to ${sent} clients`);
-    }
   }
 
   /**

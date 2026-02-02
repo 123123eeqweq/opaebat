@@ -104,6 +104,69 @@ export class PrismaAccountRepository implements AccountRepository {
     return this.toDomain(account);
   }
 
+  /**
+   * 🔥 FLOW W1: Get or create REAL account for user
+   */
+  async getRealAccount(userId: string): Promise<Account> {
+    const prisma = getPrismaClient();
+
+    // Try to find existing REAL account
+    let account = await prisma.account.findUnique({
+      where: {
+        userId_type: {
+          userId,
+          type: 'real',
+        },
+      },
+    });
+
+    // Create if doesn't exist
+    if (!account) {
+      account = await prisma.account.create({
+        data: {
+          userId,
+          type: 'real',
+          balance: new Prisma.Decimal(0),
+          currency: 'USD',
+          isActive: true,
+        },
+      });
+    }
+
+    return this.toDomain(account);
+  }
+
+  /**
+   * 🔥 FLOW D-RESET-DEMO: Find demo account by user ID
+   */
+  async findDemoByUserId(userId: string): Promise<Account | null> {
+    const prisma = getPrismaClient();
+    const account = await prisma.account.findFirst({
+      where: {
+        userId,
+        type: 'demo',
+      },
+    });
+
+    return account ? this.toDomain(account) : null;
+  }
+
+  /**
+   * 🔥 FLOW D-RESET-DEMO: Set absolute balance (not delta)
+   */
+  async setBalance(accountId: string, balance: number): Promise<Account> {
+    const prisma = getPrismaClient();
+
+    const account = await prisma.account.update({
+      where: { id: accountId },
+      data: {
+        balance: new Prisma.Decimal(balance),
+      },
+    });
+
+    return this.toDomain(account);
+  }
+
   private toDomain(account: {
     id: string;
     userId: string;

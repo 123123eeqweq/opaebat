@@ -22,6 +22,8 @@
 import { useRef } from 'react';
 import type { Candle, SnapshotCandle } from './chart.types';
 
+export type MarketStatus = 'OPEN' | 'WEEKEND' | 'MAINTENANCE' | 'HOLIDAY';
+
 interface UseChartDataParams {
   onDataChange?: () => void;
   timeframeMs?: number; // Для нормализации времени исторических свечей
@@ -30,9 +32,10 @@ interface UseChartDataParams {
 interface UseChartDataReturn {
   initializeFromSnapshot: (
     candles: SnapshotCandle[],
-    currentPrice: number,
+    currentPrice: number | null, // FLOW C-MARKET-CLOSED: может быть null
     currentTime: number,
-    timeframeMs: number
+    timeframeMs: number,
+    marketStatus: MarketStatus // FLOW C-MARKET-CLOSED: статус рынка
   ) => void;
   handlePriceUpdate: (price: number, timestamp: number) => void;
   handleCandleClose: (
@@ -45,6 +48,8 @@ interface UseChartDataReturn {
   getLiveCandle: () => Candle | null;
   /** FLOW G6: реальный timestamp самой ранней свечи (для /api/quotes/candles ?to=) */
   getEarliestRealTime: () => number | null;
+  /** FLOW C-MARKET-CLOSED: получить текущий статус рынка */
+  getMarketStatus: () => MarketStatus;
 }
 
 /**
@@ -59,21 +64,57 @@ function normalizeCandle(candle: Candle): Candle {
   const minOpenClose = Math.min(candle.open, candle.close);
   const low = Math.min(candle.low, minOpenClose);
 
-  // Проверка на NaN / Infinity
-  const safeValue = (value: number): number => {
-    if (!Number.isFinite(value)) {
-      return 0;
+  // FLOW R-FIX: Для цен используем fallback на соседние значения
+  // НЕ возвращаем 0 для цен - это ломает график (вертикальная палка в 0)
+  const safePrice = (value: number, fallback?: number): number => {
+    if (!Number.isFinite(value) || value <= 0) {
+      if (fallback !== undefined && Number.isFinite(fallback) && fallback > 0) {
+        console.warn('[normalizeCandle] Using fallback for invalid price:', value, '→', fallback);
+        return fallback;
+      }
+      // FLOW R-FIX: Если нет fallback, используем разумное значение по умолчанию
+      // Это лучше, чем выбрасывать ошибку и ломать весь график
+      console.error('[normalizeCandle] Invalid price value with no fallback, using 1.0:', value);
+      return 1.0; // Минимальная разумная цена (для валютных пар)
     }
     return value;
   };
 
+  // Для времени используем текущее время как fallback
+  const safeTime = (value: number): number => {
+    if (!Number.isFinite(value)) {
+      console.warn('[normalizeCandle] Invalid time value, using current time:', value);
+      return Date.now();
+    }
+    return value;
+  };
+
+  // FLOW R-FIX: Используем close как fallback для open, high, low
+  // Если close тоже некорректен, используем разумное значение по умолчанию
+  // Это гарантирует, что даже при некорректных данных свеча будет валидной
+  let safeClose = safePrice(candle.close);
+  
+  // Если close тоже некорректен (вернулся fallback 1.0), проверяем другие значения
+  if (safeClose === 1.0 && (!Number.isFinite(candle.close) || candle.close <= 0)) {
+    // Пробуем использовать open, high, low как источник истины
+    const candidates = [candle.open, candle.high, candle.low].filter(v => Number.isFinite(v) && v > 0);
+    if (candidates.length > 0) {
+      safeClose = Math.max(...candidates);
+      console.warn('[normalizeCandle] Using max(open,high,low) as close fallback:', safeClose);
+    }
+  }
+  
+  const safeOpen = safePrice(candle.open, safeClose);
+  const safeHigh = safePrice(high, Math.max(safeOpen, safeClose));
+  const safeLow = safePrice(low, Math.min(safeOpen, safeClose));
+
   return {
-    open: safeValue(candle.open),
-    high: safeValue(high),
-    low: safeValue(low),
-    close: safeValue(candle.close),
-    startTime: safeValue(candle.startTime),
-    endTime: safeValue(candle.endTime),
+    open: safeOpen,
+    high: safeHigh,
+    low: safeLow,
+    close: safeClose,
+    startTime: safeTime(candle.startTime),
+    endTime: safeTime(candle.endTime),
     isClosed: candle.isClosed,
   };
 }
@@ -106,18 +147,49 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
   const earliestRealTimeRef = useRef<number | null>(null);
   /** FLOW G6: реальные startTime уже загруженных свечей (дедуп при prepend) */
   const realStartTimesRef = useRef<Set<number>>(new Set());
+  /** FLOW C-MARKET-CLOSED: статус рынка */
+  const marketStatusRef = useRef<MarketStatus>('OPEN');
+  /** FLOW C-MARKET-COUNTDOWN: время следующего открытия рынка (timestamp в мс) */
+  const nextMarketOpenAtRef = useRef<number | null>(null);
+  /** FLOW C-MARKET-ALTERNATIVES: топ-5 альтернативных пар */
+  const topAlternativesRef = useRef<Array<{
+    instrumentId: string;
+    label: string;
+    payout: number;
+  }>>([]);
 
   /**
    * Инициализация из snapshot
    */
   const initializeFromSnapshot = (
     snapshotCandles: SnapshotCandle[],
-    currentPrice: number,
+    currentPrice: number | null, // FLOW C-MARKET-CLOSED: может быть null
     currentTime: number,
-    timeframeMs: number
+    timeframeMs: number,
+    marketStatus: MarketStatus, // FLOW C-MARKET-CLOSED: статус рынка
+    nextMarketOpenAt: string | null, // FLOW C-MARKET-COUNTDOWN: ISO string или null
+    topAlternatives: Array<{ instrumentId: string; label: string; payout: number }> // FLOW C-MARKET-ALTERNATIVES
   ): void => {
+    // FLOW C-MARKET-CLOSED: Сохраняем статус рынка
+    marketStatusRef.current = marketStatus;
+    // FLOW C-MARKET-COUNTDOWN: Сохраняем время следующего открытия
+    nextMarketOpenAtRef.current = nextMarketOpenAt 
+      ? Date.parse(nextMarketOpenAt) 
+      : null;
+    // FLOW C-MARKET-ALTERNATIVES: Сохраняем альтернативные пары
+    topAlternativesRef.current = topAlternatives ?? [];
+
     if (snapshotCandles.length === 0) {
-      // Если snapshot пустой → создать live-свечу из price/time
+      // FLOW R-FIX: Если snapshot пустой → создать live-свечу из price/time
+      // Но только если currentPrice валиден
+      if (!currentPrice || !Number.isFinite(currentPrice) || currentPrice <= 0) {
+        console.warn('[initializeFromSnapshot] Invalid currentPrice, skipping live candle creation:', currentPrice);
+        candlesRef.current = [];
+        earliestRealTimeRef.current = null;
+        realStartTimesRef.current = new Set();
+        liveCandleRef.current = null;
+        return;
+      }
       liveCandleRef.current = createLiveCandle(
         currentPrice,
         currentTime,
@@ -145,17 +217,29 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     
     for (let i = 0; i < snapshotCandles.length; i++) {
       const snapshotCandle = snapshotCandles[i];
+      
+      // FLOW R-FIX: Пропускаем свечи с некорректными данными
+      if (!Number.isFinite(snapshotCandle.close) || snapshotCandle.close <= 0) {
+        console.warn('[initializeFromSnapshot] Skipping invalid candle:', snapshotCandle);
+        continue;
+      }
+      
       const normalizedStartTime = firstNormalizedTime + i * timeframeMs;
       const normalizedEndTime = normalizedStartTime + timeframeMs;
       
-      const normalizedCandle = normalizeCandle({
-        ...snapshotCandle,
-        startTime: normalizedStartTime,
-        endTime: normalizedEndTime,
-        isClosed: true,
-      });
-      
-      closedCandles.push(normalizedCandle);
+      try {
+        const normalizedCandle = normalizeCandle({
+          ...snapshotCandle,
+          startTime: normalizedStartTime,
+          endTime: normalizedEndTime,
+          isClosed: true,
+        });
+        
+        closedCandles.push(normalizedCandle);
+      } catch (error) {
+        console.error('[initializeFromSnapshot] Failed to normalize candle:', error, snapshotCandle);
+        // Пропускаем некорректную свечу
+      }
     }
 
     // Проверяем инвариант: open[n] === close[n-1]
@@ -177,23 +261,53 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     earliestRealTimeRef.current = snapshotCandles[0].startTime;
     realStartTimesRef.current = new Set(snapshotCandles.map((c) => c.startTime));
 
-    // Создаем live-свечу на основе последней закрытой свечи
+    // FLOW R-FIX: Создаем live-свечу на основе последней закрытой свечи
+    // Live-свеча ВСЕГДА наследуется от истории
+    // FLOW C-MARKET-CLOSED: Если currentPrice null (рынок закрыт), не создаем live-свечу
     if (closedCandles.length > 0) {
       const lastCandle = closedCandles[closedCandles.length - 1];
-      liveCandleRef.current = createLiveCandle(
-        lastCandle.close,
-        lastCandle.endTime,
-        currentPrice,
-        currentTime
-      );
+      // FLOW R-FIX: Используем close последней свечи как open для live-свечи
+      const lastClose = lastCandle.close;
+      if (!Number.isFinite(lastClose) || lastClose <= 0) {
+        console.warn('[useChartData] Invalid lastCandle.close, using currentPrice:', lastClose);
+        if (currentPrice && Number.isFinite(currentPrice) && currentPrice > 0) {
+          liveCandleRef.current = createLiveCandle(
+            currentPrice,
+            lastCandle.endTime,
+            currentPrice,
+            currentTime
+          );
+        } else {
+          liveCandleRef.current = null;
+        }
+      } else {
+        // FLOW C-MARKET-CLOSED: Если currentPrice null, используем lastClose для обеих цен
+        const priceToUse = currentPrice && Number.isFinite(currentPrice) && currentPrice > 0 
+          ? currentPrice 
+          : lastClose;
+        liveCandleRef.current = createLiveCandle(
+          lastClose,
+          lastCandle.endTime,
+          priceToUse,
+          currentTime
+        );
+      }
     } else {
-      // Если snapshot пустой → создать live-свечу из price/time
-      liveCandleRef.current = createLiveCandle(
-        currentPrice,
-        currentTime,
-        currentPrice,
-        currentTime
-      );
+      // FLOW R-FIX: Если snapshot пустой (нет истории), создаем live-свечу с текущей ценой
+      // Это может произойти для REAL инструментов без истории в БД
+      // В этом случае open = close = currentPrice (нет разрыва)
+      // FLOW C-MARKET-CLOSED: Если currentPrice null, не создаем live-свечу
+      if (!currentPrice || !Number.isFinite(currentPrice) || currentPrice <= 0) {
+        console.warn('[useChartData] Cannot create live candle: invalid currentPrice', currentPrice);
+        liveCandleRef.current = null;
+      } else {
+        liveCandleRef.current = createLiveCandle(
+          currentPrice,
+          currentTime,
+          currentPrice,
+          currentTime
+        );
+      }
     }
 
     // НЕ вызываем onDataChange здесь - это только для обновлений, не для инициализации
@@ -204,10 +318,26 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
    * Обработка обновления цены
    */
   const handlePriceUpdate = (price: number, timestamp: number): void => {
+    // FLOW R-FIX: Защита от некорректных цен
+    if (!Number.isFinite(price) || price <= 0) {
+      console.warn('[useChartData] Invalid price received:', price);
+      return;
+    }
+
     // Если live-свечи нет → создать
     if (!liveCandleRef.current) {
       const lastCandle = candlesRef.current[candlesRef.current.length - 1];
+      
+      // FLOW R-FIX: Live-свеча ВСЕГДА наследуется от последней исторической свечи
+      // Если истории нет, используем текущую цену как open (но это не должно происходить)
       const previousClose = lastCandle?.close ?? price;
+      
+      // FLOW R-FIX: Защита от нулевых значений
+      if (!Number.isFinite(previousClose) || previousClose <= 0) {
+        console.warn('[useChartData] Cannot create live candle: invalid previousClose', previousClose);
+        return;
+      }
+      
       const previousEndTime = lastCandle?.endTime ?? timestamp;
 
       liveCandleRef.current = createLiveCandle(
@@ -227,6 +357,23 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     if (liveCandle.isClosed) {
       console.warn('Attempted to update closed live candle');
       return;
+    }
+
+    // FLOW R-FIX: Защита от некорректных значений в live-свече
+    // Если open = 0, исправляем его из последней исторической свечи
+    if (liveCandle.open <= 0 || !Number.isFinite(liveCandle.open)) {
+      const lastCandle = candlesRef.current[candlesRef.current.length - 1];
+      if (lastCandle && Number.isFinite(lastCandle.close) && lastCandle.close > 0) {
+        liveCandle.open = lastCandle.close;
+        // Пересчитываем high/low с правильным open
+        liveCandle.high = Math.max(lastCandle.close, liveCandle.close);
+        liveCandle.low = Math.min(lastCandle.close, liveCandle.close);
+      } else {
+        // Если истории нет, используем текущую цену
+        liveCandle.open = price;
+        liveCandle.high = price;
+        liveCandle.low = price;
+      }
     }
 
     // Обновляем: close, high, low, endTime
@@ -475,9 +622,25 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     liveCandleRef.current = null;
     earliestRealTimeRef.current = null;
     realStartTimesRef.current = new Set();
+    // FLOW C-MARKET-COUNTDOWN: сбрасываем статус рынка при reset
+    marketStatusRef.current = 'OPEN';
+    nextMarketOpenAtRef.current = null;
+    // FLOW C-MARKET-ALTERNATIVES: сбрасываем альтернативные пары
+    topAlternativesRef.current = [];
   };
 
   const getEarliestRealTime = (): number | null => earliestRealTimeRef.current;
+
+  /** FLOW C-MARKET-CLOSED: получить текущий статус рынка */
+  const getMarketStatus = (): MarketStatus => marketStatusRef.current;
+
+  /** FLOW C-MARKET-COUNTDOWN: получить время следующего открытия рынка */
+  const getNextMarketOpenAt = (): number | null => nextMarketOpenAtRef.current;
+
+  /** FLOW C-MARKET-ALTERNATIVES: получить топ-5 альтернативных пар */
+  const getTopAlternatives = (): Array<{ instrumentId: string; label: string; payout: number }> => {
+    return [...topAlternativesRef.current];
+  };
 
   return {
     initializeFromSnapshot,
@@ -488,5 +651,8 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     getCandles,
     getLiveCandle,
     getEarliestRealTime,
+    getMarketStatus,
+    getNextMarketOpenAt,
+    getTopAlternatives,
   };
 }

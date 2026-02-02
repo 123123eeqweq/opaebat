@@ -5,6 +5,7 @@
  */
 
 import type { Viewport } from '../viewport.types';
+import { getChartSettings } from '@/lib/chartSettings';
 
 interface RenderGridParams {
   ctx: CanvasRenderingContext2D; // Нативный тип браузера
@@ -14,8 +15,10 @@ interface RenderGridParams {
   timeframeMs?: number; // Для привязки вертикальных линий к границам свечей
 }
 
-const GRID_COLOR = 'rgba(255, 255, 255, 0.1)';
+const GRID_COLOR = 'rgba(255, 255, 255, 0.07)';
 const GRID_LINE_WIDTH = 1;
+const TIME_LABEL_HEIGHT = 25; // Высота области для меток времени (чтобы сетка не налазила)
+const PRICE_LABEL_WIDTH = 60; // Ширина области для меток цены справа (чтобы сетка не налазила)
 
 /**
  * Вычисляет оптимальный шаг для сетки по времени
@@ -94,6 +97,13 @@ export function renderGrid({
   height,
   timeframeMs,
 }: RenderGridParams): void {
+  const settings = getChartSettings();
+  
+  // Если сетка отключена, не рисуем ничего
+  if (!settings.showGrid) {
+    return;
+  }
+  
   ctx.save();
 
   ctx.strokeStyle = GRID_COLOR;
@@ -109,11 +119,12 @@ export function renderGrid({
     const startTime = Math.ceil(viewport.timeStart / timeStep) * timeStep;
 
     ctx.beginPath();
+    const gridHeight = height - TIME_LABEL_HEIGHT; // Оставляем место для меток времени
     for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
       const x = timeToX(time, viewport, width);
       if (x >= 0 && x <= width) {
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
+        ctx.lineTo(x, gridHeight);
       }
     }
     ctx.stroke();
@@ -125,11 +136,13 @@ export function renderGrid({
     const startPrice = Math.ceil(viewport.priceMin / priceStep) * priceStep;
 
     ctx.beginPath();
+    const gridWidth = width - PRICE_LABEL_WIDTH; // Оставляем место для меток цены справа
+    const gridHeight = height - TIME_LABEL_HEIGHT; // Оставляем место для меток времени внизу
     for (let price = startPrice; price <= viewport.priceMax; price += priceStep) {
       const y = priceToY(price, viewport, height);
-      if (y >= 0 && y <= height) {
+      if (y >= 0 && y <= gridHeight) {
         ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
+        ctx.lineTo(gridWidth, y);
       }
     }
     ctx.stroke();

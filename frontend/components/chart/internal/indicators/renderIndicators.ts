@@ -170,6 +170,7 @@ function renderRSIZone(
     timeEnd: viewport.timeEnd,
     priceMin: 0,
     priceMax: 100,
+    yMode: 'manual',
   };
 
   ctx.translate(0, yOffset);
@@ -220,6 +221,7 @@ function renderStochasticZone(
     timeEnd: viewport.timeEnd,
     priceMin: 0,
     priceMax: 100,
+    yMode: 'manual',
   };
 
   ctx.translate(0, yOffset);

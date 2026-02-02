@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'О компании | ComforTrade',
-  description: 'COMFORTRADE — надёжный брокер для торговли на валютном рынке. Высокая доходность, широкий выбор инструментов.',
+  title: 'О компании',
+  description: 'COMFORTRADE — надёжный брокер для торговли бинарными опционами на валютном и криптовалютном рынках. Высокая доходность, широкий выбор инструментов, профессиональная платформа для трейдинга.',
+  keywords: ['о компании', 'брокер', 'COMFORTRADE', 'торговля', 'финансовые рынки'],
 }
 
 export default function AboutLayout({

@@ -54,7 +54,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
   }
 }
 
@@ -88,5 +88,53 @@
 
 .article-content strong {
   @apply font-bold text-gray-900;
+}
+
+/* Скрытый скроллбар, показывается при hover и scroll */
+.scrollbar-hide-on-idle {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.scrollbar-hide-on-idle::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+
+.scrollbar-hide-on-idle::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-hide-on-idle:hover::-webkit-scrollbar-thumb,
+.scrollbar-hide-on-idle:active::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.scrollbar-hide-on-idle.scrolling::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Убираем все подсветки фокуса у инпутов в модалке логина */
+.panel-auth-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Бегущая строка — бесконечная без рывка (3 копии, сдвиг на 1/3) */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 80s linear infinite;
+  will-change: transform;
 }
 

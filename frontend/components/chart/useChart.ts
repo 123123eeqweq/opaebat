@@ -17,6 +17,7 @@ import { useChartInteractions } from './internal/interactions/useChartInteractio
 import { useHistoryLoader } from './internal/history/useHistoryLoader';
 import { useCrosshair } from './internal/crosshair/useCrosshair';
 import { useOhlcHover } from './internal/ohlc/useOhlcHover';
+import { useCandleCountdown } from './internal/countdown/useCandleCountdown';
 import { useCandleMode } from './internal/candleModes/useCandleMode';
 import { useIndicators } from './internal/indicators/useIndicators';
 import { useDrawings } from './internal/drawings/useDrawings';
@@ -30,6 +31,7 @@ import type { PriceAlert } from './internal/alerts/priceAlerts.types';
 import type { InteractionZone } from './internal/interactions/interaction.types';
 import type { TerminalSnapshot } from '@/types/terminal';
 import type { IndicatorConfig } from './internal/indicators/indicator.types';
+import type { Viewport } from './internal/viewport.types';
 
 /** FLOW O: Overlay Registry — canvas читает visibility, UI пишет в registry */
 export interface OverlayRegistryParams {
@@ -43,12 +45,18 @@ interface UseChartParams {
   timeframe?: string;
   snapshot?: TerminalSnapshot | null;
   instrument?: string;
+  payoutPercent?: number;
   digits?: number;
   activeInstrumentRef?: React.MutableRefObject<string>;
   indicatorConfigs?: IndicatorConfig[];
   drawingMode?: 'horizontal' | 'vertical' | 'trend' | 'rectangle' | 'fibonacci' | 'parallel-channel' | 'ray' | 'arrow' | null;
   overlayRegistry?: OverlayRegistryParams;
+  onInstrumentChange?: (instrumentId: string) => void; // FLOW C-MARKET-ALTERNATIVES: Callback для переключения инструмента
+  /** Режим свечей при монтировании (восстанавливается из localStorage) */
+  candleMode?: 'classic' | 'heikin_ashi' | 'bars';
 }
+
+export type HoverAction = 'CALL' | 'PUT' | null;
 
 interface UseChartReturn {
   setCandleMode: (mode: 'classic' | 'heikin_ashi' | 'bars') => void;
@@ -81,14 +89,27 @@ interface UseChartReturn {
   }) => void;
   /** FLOW T-OVERLAY: удалить trade по id */
   removeTrade: (id: string) => void;
+  /** FLOW BO-HOVER: установить hover action (CALL/PUT/null) */
+  setHoverAction: (action: HoverAction) => void;
+  /** FLOW BO-HOVER: получить текущий hover action */
+  getHoverAction: () => HoverAction;
+  /** FLOW C-MARKET-ALTERNATIVES: обработка клика по альтернативной паре */
+  handleAlternativeClick: (instrumentId: string) => void;
+  /** FLOW C-MARKET-ALTERNATIVES: обработка hover по альтернативной паре */
+  handleAlternativeHover: (mouseX: number, mouseY: number) => number | null;
 }
 
-export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, digits, activeInstrumentRef, indicatorConfigs = [], drawingMode = null, overlayRegistry }: UseChartParams): UseChartReturn {
+export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, payoutPercent = 75, digits, activeInstrumentRef, indicatorConfigs = [], drawingMode = null, overlayRegistry, onInstrumentChange, candleMode: initialCandleMode = 'classic' }: UseChartParams): UseChartReturn {
   // FLOW G1: инициализация инфраструктуры canvas
   useCanvasInfrastructure({ canvasRef });
 
   // Вычисляем timeframeMs
   const timeframeMs = parseTimeframeToMs(timeframe);
+
+  // 🔥 FLOW C-CHART-TYPE-RESET: Reset при монтировании компонента
+  // При смене chartType компонент полностью пересоздается через ChartContainer (key),
+  // поэтому reset при монтировании гарантирует чистое состояние
+  const isInitialMountRef = useRef<boolean>(true);
 
   // При price:update — только Y (auto-fit), без движения по X. Сдвиг по X только при candle:close и по кнопке «Вернуться».
   const viewportRecalculateYOnlyRef = useRef<() => void>(() => {});
@@ -101,11 +122,26 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     timeframeMs,
   });
 
+  // 🔥 FLOW C-INERTIA: Создаем refs для pan инерции (используются в useChartInteractions и useViewport)
+  const panVelocityPxPerMsRef = useRef<number>(0);
+  const panInertiaActiveRef = useRef<boolean>(false);
+  const panInertiaRefs = {
+    velocityRef: panVelocityPxPerMsRef,
+    activeRef: panInertiaActiveRef,
+  };
+
+  // 🔥 FLOW C-INERTIA: Создаем ref для onViewportChange callback (обновляется после создания historyLoader)
+  const onViewportChangeRef = useRef<((viewport: Viewport) => void) | null>(null);
+
   // FLOW G3: инициализация viewport
   const viewport = useViewport({
     getCandles: chartData.getCandles,
     getLiveCandle: chartData.getLiveCandle,
     timeframeMs,
+    canvasRef, // 🔥 FLOW: Передаем canvasRef для вычисления visibleCandles
+    panInertiaRefs,
+    onViewportChangeRef, // 🔥 FLOW C-INERTIA: Передаем ref для callback
+    getMarketStatus: chartData.getMarketStatus, // FLOW C-MARKET-CLOSED: останавливать инерцию когда рынок закрыт
   });
 
   viewportRecalculateYOnlyRef.current = viewport.recalculateYOnly;
@@ -134,6 +170,7 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
   const candleMode = useCandleMode({
     getCandles: chartData.getCandles,
     getLiveCandle: chartData.getLiveCandle,
+    initialMode: initialCandleMode,
   });
 
   // FLOW G12: Indicators
@@ -154,6 +191,7 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     entryPrice: number;
     openedAt: number;
     expiresAt: number;
+    amount?: number; // Сумма сделки для расчета прибыли
   }>>([]);
 
   const getTrades = (): typeof tradesRef.current => {
@@ -261,6 +299,71 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
   // FLOW E1: Expiration seconds — хранится в ref, меняется только UI терминала
   const expirationSecondsRef = useRef<number>(60);
 
+  // FLOW BO-HOVER: Hover action state (ref-based, не триггерит render)
+  const hoverActionRef = useRef<HoverAction>(null);
+
+  // FLOW BO-HOVER-ARROWS: Предзагрузка изображений стрелок
+  const arrowUpImgRef = useRef<HTMLImageElement | null>(null);
+  const arrowDownImgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    // Загружаем изображения один раз при монтировании
+    const up = new Image();
+    up.src = '/images/arrowup.png';
+    arrowUpImgRef.current = up;
+
+    const down = new Image();
+    down.src = '/images/arrowdown.png';
+    arrowDownImgRef.current = down;
+  }, []);
+
+  // FLOW BO-HOVER: методы для управления hover action
+  const setHoverAction = useCallback((action: HoverAction) => {
+    hoverActionRef.current = action;
+  }, []);
+
+  const getHoverAction = useCallback((): HoverAction => {
+    return hoverActionRef.current;
+  }, []);
+
+  // FLOW C-MARKET-ALTERNATIVES: Hitboxes для альтернативных пар
+  const marketAlternativesHitboxesRef = useRef<Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    instrumentId: string;
+  }>>([]);
+
+  // FLOW C-MARKET-ALTERNATIVES: Hovered index для альтернативных пар
+  const marketAlternativesHoveredIndexRef = useRef<number | null>(null);
+
+  // FLOW C-MARKET-ALTERNATIVES: Обработка клика по альтернативной паре
+  const handleAlternativeClick = useCallback((instrumentId: string) => {
+    if (onInstrumentChange) {
+      onInstrumentChange(instrumentId);
+    }
+  }, [onInstrumentChange]);
+
+  // FLOW C-MARKET-ALTERNATIVES: Обработка hover по альтернативной паре
+  const handleAlternativeHover = useCallback((mouseX: number, mouseY: number): number | null => {
+    const hitboxes = marketAlternativesHitboxesRef.current;
+    for (let i = 0; i < hitboxes.length; i++) {
+      const box = hitboxes[i];
+      if (
+        mouseX >= box.x &&
+        mouseX <= box.x + box.width &&
+        mouseY >= box.y &&
+        mouseY <= box.y + box.height
+      ) {
+        marketAlternativesHoveredIndexRef.current = i;
+        return i;
+      }
+    }
+    marketAlternativesHoveredIndexRef.current = null;
+    return null;
+  }, []);
+
   // FLOW G16: Drawing edit (hover, select, drag, resize)
   const hoveredDrawingIdRef = useRef<string | null>(null);
   const hoveredDrawingModeRef = useRef<string | null>(null);
@@ -315,6 +418,19 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     return s.timestamp + expirationSecondsRef.current * 1000;
   }, []);
 
+  // Получение секунд экспирации для отображения метки
+  const getExpirationSeconds = useCallback((): number => {
+    return expirationSecondsRef.current;
+  }, []);
+
+  // FLOW C1-C3: Таймер обратного отсчета до закрытия свечи
+  // FLOW FIX-COUNTDOWN: Не используем getLiveCandle - считаем от квантов времени
+  // Должен быть объявлен ДО useRenderLoop, так как используется в нем
+  const candleCountdown = useCandleCountdown({
+    timeframeMs,
+    getServerTimeMs,
+  });
+
   // API для UI терминала: менять только ref, без state/props
   const setExpirationSeconds = (seconds: number): void => {
     if (!Number.isFinite(seconds) || seconds <= 0) return;
@@ -327,9 +443,11 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     getRenderCandles: candleMode.getRenderCandles,
     getRenderLiveCandle: candleMode.getRenderLiveCandle,
     getAnimatedCandle: candleAnimator.getAnimatedCandle,
+    getLiveCandleForRender: candleMode.getLiveCandleForRender,
     updateAnimator: candleAnimator.update,
     getFollowMode: viewport.getFollowMode,
     advanceFollowAnimation: viewport.advanceFollowAnimation,
+    advanceYAnimation: viewport.advanceYAnimation,
     getPriceAlerts,
     registerInteractionZone,
     clearInteractionZones,
@@ -348,11 +466,27 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     getServerTimeMs,
     getDigits: () => digits,
     getExpirationTime,
+    getExpirationSeconds,
     getTrades,
+    getPayoutPercent: () => payoutPercent,
+    getTimeframeLabel: candleCountdown.getTimeframeLabel,
+    getFormattedCountdown: candleCountdown.getFormattedTime,
+    getHoverAction,
+    getArrowUpImg: () => arrowUpImgRef.current,
+    getArrowDownImg: () => arrowDownImgRef.current,
+    advancePanInertia: viewport.advancePanInertia, // 🔥 FLOW C-INERTIA: Pan inertia animation
+    getMarketStatus: chartData.getMarketStatus, // FLOW C-MARKET-CLOSED: статус рынка
+    getNextMarketOpenAt: chartData.getNextMarketOpenAt, // FLOW C-MARKET-COUNTDOWN: время следующего открытия
+    getServerTimeMs, // FLOW C-MARKET-COUNTDOWN: синхронизированное серверное время
+    getTopAlternatives: chartData.getTopAlternatives, // FLOW C-MARKET-ALTERNATIVES: альтернативные пары
+    marketAlternativesHitboxesRef, // FLOW C-MARKET-ALTERNATIVES: ref для hitboxes
+    getMarketAlternativesHoveredIndex: () => marketAlternativesHoveredIndexRef.current, // FLOW C-MARKET-ALTERNATIVES: hovered index
   });
 
   // FLOW G6/P9: history loading по instrument (id для API ?instrument=)
-  const asset = instrument || snapshot?.instrument || 'BTCUSD';
+  // FLOW R-FIX: Используем ТОЛЬКО переданный instrument, без fallback на snapshot
+  // чтобы избежать смешивания OTC и REAL инструментов
+  const asset = instrument || 'BTCUSD';
 
   const historyLoader = useHistoryLoader({
     getCandles: chartData.getCandles,
@@ -363,8 +497,15 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     asset,
   });
 
+  // 🔥 FLOW C-INERTIA: Обновляем callback для onViewportChange после создания historyLoader
+  useEffect(() => {
+    onViewportChangeRef.current = (newViewport: Viewport) => {
+      historyLoader.maybeLoadMore(newViewport);
+    };
+  }, [historyLoader]);
+
   // FLOW G5: interactions (pan / zoom)
-  useChartInteractions({
+  const chartInteractions = useChartInteractions({
     canvasRef,
     viewportRef: viewport.viewportRef,
     updateViewport: viewport.updateViewport,
@@ -374,7 +515,12 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
       // После pan/zoom проверяем, нужно ли загрузить историю
       historyLoader.maybeLoadMore(newViewport);
     },
+    panInertiaRefs, // 🔥 FLOW C-INERTIA: Передаем refs для инерции
     getIsEditingDrawing: () => isEditingDrawingRef.current, // FLOW G16: Блокируем pan при редактировании
+    getMarketStatus: chartData.getMarketStatus, // FLOW C-MARKET-CLOSED: блокируем pan/zoom когда рынок закрыт
+    marketAlternativesHitboxesRef, // FLOW C-MARKET-ALTERNATIVES: Hitboxes для альтернативных пар
+    onAlternativeClick: handleAlternativeClick, // FLOW C-MARKET-ALTERNATIVES: Обработка клика
+    onAlternativeHover: handleAlternativeHover, // FLOW C-MARKET-ALTERNATIVES: Обработка hover
     getDrawingEditState: () => editStateRef.current,
     getHoveredDrawingMode: () => hoveredDrawingModeRef.current,
     setFollowMode: viewport.setFollowMode, // 🔥 FLOW F1: Выключение follow при взаимодействии
@@ -385,28 +531,109 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     // FLOW A: Price Alerts
     getInteractionZones,
     addPriceAlert,
+    // 🔥 FLOW Y1: Reset Y-Scale при двойном клике на метки цены
+    resetYScale: viewport.resetYScale,
+    // 🔥 FLOW RETURN-TO-FOLLOW: Планирование возврата после pan/zoom
+    scheduleReturnToFollow: viewport.scheduleReturnToFollow,
   });
+
+  // 🔥 FLOW C-CHART-TYPE-RESET: Reset при монтировании компонента
+  // При смене chartType компонент полностью пересоздается через ChartContainer (key),
+  // поэтому reset при монтировании гарантирует чистое состояние
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      
+      // Полный reset при первом монтировании (или при пересоздании из-за смены chartType)
+      // Шаг 1: Reset viewport (сброс zoom/pan, follow mode = true)
+      viewport.reset();
+      
+      // Шаг 2: Reset interactions (сброс pan/zoom состояния, инерции)
+      chartInteractions.reset();
+      
+      // Шаг 3: Reset данных свечей
+      chartData.reset();
+      
+      // Шаг 4: Reset анимации
+      candleAnimator.reset();
+      
+      // Шаг 5: Reset history loader
+      historyLoader.reset();
+      
+      // Шаг 6: Reset countdown timer
+      candleCountdown.reset();
+      
+      // Шаг 7: Гарантируем follow mode и остановку инерции
+      viewport.setFollowMode(true);
+      chartInteractions.stopInertia?.();
+    }
+  }, []); // Пустой массив зависимостей - только при монтировании
 
   // FLOW T1 + P8: Инициализация из snapshot; при смене instrument/timeframe — полный reset
   // FLOW P8: если snapshot не для текущего инструмента — только reset, не инициализируем
+  // 🔥 FLOW: Timeframe Switch Reset - полный reset при смене timeframe
+  const previousTimeframeRef = useRef<string>(timeframe);
+  
   useEffect(() => {
+    // Проверяем изменение timeframe
+    const timeframeChanged = previousTimeframeRef.current !== timeframe;
+    if (timeframeChanged) {
+      previousTimeframeRef.current = timeframe;
+      
+      // 🔥 FLOW: Полный reset при смене timeframe
+      // Шаг 1: Reset viewport (сброс zoom/pan, follow mode = true)
+      viewport.reset();
+      
+      // Шаг 2: Reset interactions (сброс pan/zoom состояния)
+      chartInteractions.reset();
+      
+      // Шаг 3: Reset данных свечей
+      chartData.reset();
+      
+      // Шаг 4: Reset анимации
+      candleAnimator.reset();
+      
+      // Шаг 5: Reset history loader
+      historyLoader.reset();
+      
+      // Шаг 6: Reset countdown timer (FLOW C6)
+      candleCountdown.reset();
+    }
+    
     if (!snapshot) return;
     if (instrument && snapshot.instrument !== instrument) {
-      chartData.reset();
-      candleAnimator.reset();
-      historyLoader.reset();
+      // Если snapshot не для текущего инструмента — только reset
+      if (!timeframeChanged) {
+        chartData.reset();
+        candleAnimator.reset();
+        historyLoader.reset();
+        candleCountdown.reset();
+      }
       return;
     }
 
-    chartData.reset();
-    candleAnimator.reset();
-    historyLoader.reset();
+    // Если timeframe не изменился, но snapshot изменился (например, при загрузке)
+    if (!timeframeChanged) {
+      chartData.reset();
+      candleAnimator.reset();
+      historyLoader.reset();
+      candleCountdown.reset();
+    }
 
     const candles = snapshot.candles.items;
-    const currentPrice = snapshot.price.value;
-    const currentTime = snapshot.price.timestamp;
+    // FLOW C-MARKET-CLOSED: price может быть null когда рынок закрыт
+    const currentPrice = snapshot.price?.value ?? null;
+    const currentTime = snapshot.price?.timestamp ?? snapshot.serverTime;
 
-    chartData.initializeFromSnapshot(candles, currentPrice, currentTime, timeframeMs);
+    chartData.initializeFromSnapshot(
+      candles, 
+      currentPrice, 
+      currentTime, 
+      timeframeMs,
+      snapshot.marketStatus, // FLOW C-MARKET-CLOSED: передаем статус рынка
+      snapshot.nextMarketOpenAt, // FLOW C-MARKET-COUNTDOWN: передаем время следующего открытия
+      snapshot.topAlternatives ?? [] // FLOW C-MARKET-ALTERNATIVES: передаем альтернативные пары
+    );
 
     // FLOW T2: init server time из snapshot (baseline), drift compensation — lastSyncTime
     serverTimeRef.current = {
@@ -418,18 +645,37 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     setTimeout(() => {
       viewport.recalculateViewport();
       viewport.setLatestCandleTime(chartData.getLiveCandle()?.endTime ?? currentTime);
+      
+      // FLOW IS-0: Initial History Check — проверяем нужно ли догрузить историю при старте
+      // Вызывается один раз после инициализации viewport, без user input
+      // Использует тот же алгоритм maybeLoadMore, что и при pan/zoom
+      const currentViewport = viewport.getViewport();
+      if (currentViewport && chartData.getCandles().length > 0) {
+        // Проверяем что viewport рассчитан и есть данные
+        historyLoader.maybeLoadMore(currentViewport);
+      }
     }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshot, timeframe, instrument]);
 
   // FLOW P5/P8 + T3: WebSocket — price/candle + server:time (источник истины для времени)
+  // 🔥 ИСПРАВЛЕНО: enabled должен быть true всегда, когда есть instrument и activeInstrumentRef
+  // snapshot нужен только для инициализации данных, но WebSocket должен работать и без него
   useWebSocket({
     activeInstrumentRef,
+    onTradeClose: (tradeId: string) => {
+      // Удаляем закрытую сделку с графика
+      removeTrade(tradeId);
+    },
     onServerTime: (timestamp) => {
       if (serverTimeRef.current) serverTimeRef.current.timestamp = timestamp;
       lastSyncTimeRef.current = performance.now();
     },
     onPriceUpdate: (price, timestamp) => {
+      // Логирование только для AUDCHF
+      if (instrument === 'AUDCHF') {
+        console.log(`[AUDCHF] [useChart] Price update received:`, price, '@', new Date(timestamp).toISOString());
+      }
       chartData.handlePriceUpdate(price, timestamp);
       // FLOW F3: якорь «текущее время» для кнопки «Вернуться к текущим»
       viewport.setLatestCandleTime(chartData.getLiveCandle()?.endTime ?? timestamp);
@@ -461,9 +707,20 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
         }
       }
     },
+    onTradeClose: (tradeId: string) => {
+      // Удаляем закрытую сделку с графика
+      removeTrade(tradeId);
+    },
     onCandleClose: (wsCandle, timeframeStr) => {
+      // Логирование только для AUDCHF
+      if (instrument === 'AUDCHF') {
+        console.log(`[AUDCHF] [useChart] Candle close received:`, timeframeStr, wsCandle, 'current timeframe:', timeframe);
+      }
       // Фильтруем по timeframe - обрабатываем только свечи текущего timeframe
       if (timeframeStr !== timeframe) {
+        if (instrument === 'AUDCHF') {
+          console.log('[AUDCHF] [useChart] Candle timeframe mismatch, ignoring');
+        }
         return;
       }
 
@@ -493,7 +750,7 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
         }
       }, 0);
     },
-    enabled: !!snapshot,
+    enabled: !!(activeInstrumentRef && instrument), // FLOW WS-1: WebSocket управляет своим состоянием
   });
 
   /** FLOW F5/F6: вернуться к актуальным свечам, включить follow */
@@ -509,27 +766,43 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     entryPrice: string;
     openedAt: string;
     expiresAt: string;
+    amount?: string; // Сумма сделки
   }): void => {
+    console.log('[useChart] addTradeOverlayFromDTO called with:', trade);
+    
     const entryPrice = parseFloat(trade.entryPrice);
     const openedAt = new Date(trade.openedAt).getTime();
     const expiresAt = new Date(trade.expiresAt).getTime();
+    const amount = trade.amount ? parseFloat(trade.amount) : undefined;
 
     if (!Number.isFinite(entryPrice) || !Number.isFinite(openedAt) || !Number.isFinite(expiresAt)) {
-      console.error('[useChart] Invalid trade data', trade);
+      console.error('[useChart] Invalid trade data', trade, {
+        entryPrice,
+        openedAt,
+        expiresAt,
+        amount,
+      });
       return;
     }
+    
+
+    const tradeData = {
+      id: trade.id,
+      direction: trade.direction,
+      entryPrice,
+      openedAt,
+      expiresAt,
+      amount,
+    };
+
+    console.log('[useChart] Adding trade:', tradeData);
 
     // Добавляем trade в хранилище
     tradesRef.current = [
       ...tradesRef.current.filter(t => t.id !== trade.id),
-      {
-        id: trade.id,
-        direction: trade.direction,
-        entryPrice,
-        openedAt,
-        expiresAt,
-      },
+      tradeData,
     ];
+
 
     // Добавляем в overlay registry для отображения в панели
     const onTradeAdded = overlayRegistry?.onTradeAdded;
@@ -564,5 +837,9 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, di
     setExpirationSeconds,
     addTradeOverlayFromDTO,
     removeTrade,
+    setHoverAction,
+    getHoverAction,
+    handleAlternativeClick,
+    handleAlternativeHover,
   };
 }

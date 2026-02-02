@@ -26,6 +26,16 @@ export function useAuth() {
   });
 
   const checkAuth = useCallback(async () => {
+    // Только на клиенте - никогда не выполняем на сервере
+    if (typeof window === 'undefined') {
+      setState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
+      return;
+    }
+
     try {
       const response = await authApi.me();
       setState({
@@ -34,6 +44,7 @@ export function useAuth() {
         isAuthenticated: true,
       });
     } catch (error) {
+      // Игнорируем ошибки - просто считаем что не авторизован
       setState({
         user: null,
         isLoading: false,
@@ -45,6 +56,40 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await authApi.login(email, password);
+      
+      // 🔥 FLOW S3: Check if 2FA is required
+      if (response.requires2FA && response.tempToken) {
+        return {
+          success: false,
+          requires2FA: true,
+          tempToken: response.tempToken,
+        };
+      }
+
+      if (response.user) {
+        setState({
+          user: response.user,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+        return { success: true };
+      }
+
+      return { success: false, error: 'Unexpected response format' };
+    } catch (error: any) {
+      const status = error?.status;
+      if (status === 401) return { success: false, error: 'Неверный email или пароль' };
+      return {
+        success: false,
+        error: (error.data?.message || error.message || 'Ошибка входа') as string,
+      };
+    }
+  }, []);
+
+  // 🔥 FLOW S3: Verify 2FA code and complete login
+  const verify2FA = useCallback(async (tempToken: string, code: string) => {
+    try {
+      const response = await authApi.verify2FA(tempToken, code);
       setState({
         user: response.user,
         isLoading: false,
@@ -54,7 +99,7 @@ export function useAuth() {
     } catch (error: any) {
       return {
         success: false,
-        error: error.data?.message || error.message || 'Login failed',
+        error: error.data?.message || error.message || '2FA verification failed',
       };
     }
   }, []);
@@ -69,9 +114,11 @@ export function useAuth() {
       });
       return { success: true };
     } catch (error: any) {
+      const status = error?.status;
+      if (status === 409) return { success: false, error: 'Пользователь с этим email уже зарегистрирован. Войдите в систему.' };
       return {
         success: false,
-        error: error.data?.message || error.message || 'Registration failed',
+        error: (error.data?.message || error.message || 'Ошибка регистрации') as string,
       };
     }
   }, []);
@@ -94,9 +141,11 @@ export function useAuth() {
     }
   }, []);
 
-  // Check auth on mount
+  // Check auth on mount - только на клиенте
   useEffect(() => {
-    checkAuth();
+    if (typeof window !== 'undefined') {
+      checkAuth();
+    }
   }, [checkAuth]);
 
   return {
@@ -104,6 +153,7 @@ export function useAuth() {
     login,
     register,
     logout,
+    verify2FA,
     checkAuth,
   };
 }

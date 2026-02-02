@@ -3,13 +3,30 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import ReactCountryFlag from 'react-country-flag'
+// ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ТЕСТА
 import { useAuth } from '@/lib/hooks/useAuth'
 import Footer from '@/components/Footer'
+import { INSTRUMENTS } from '@/lib/instruments'
+
+function getCurrencyCountryCodes(pair: string): [string | null, string | null] {
+  const parts = pair.split('/')
+  if (parts.length !== 2) return [null, null]
+  const [base, quote] = parts
+  const currencyToCountry: Record<string, string> = {
+    EUR: 'EU', USD: 'US', GBP: 'GB', JPY: 'JP', AUD: 'AU', CAD: 'CA', CHF: 'CH', NZD: 'NZ', NOK: 'NO', UAH: 'UA', BTC: 'US', ETH: 'US', SOL: 'US', BNB: 'US',
+  }
+  return [currencyToCountry[base] || null, currencyToCountry[quote] || null]
+}
+
+const NON_OTC_INSTRUMENTS = INSTRUMENTS.filter((i) => !i.label.includes('OTC'))
 
 export default function Home() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, isAuthenticated, isLoading, login, register, logout } = useAuth()
+  
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false)
   const [showRegisterPanel, setShowRegisterPanel] = useState(false)
@@ -25,6 +42,8 @@ export default function Home() {
   const [promoCode, setPromoCode] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
 
   const languages = [
     { code: 'UA', label: 'Українська', flag: '/images/flags/ua.svg' },
@@ -53,6 +72,15 @@ export default function Home() {
       router.push('/terminal')
     }
   }, [isAuthenticated, isLoading, router])
+
+  // Открыть модалку логина при ?auth=login (редирект с терминала)
+  useEffect(() => {
+    if (searchParams.get('auth') === 'login') {
+      setPanelMode('login')
+      setShowRegisterPanel(true)
+      router.replace('/')
+    }
+  }, [searchParams, router])
 
   const handleFormSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -83,6 +111,8 @@ export default function Home() {
       } else {
         setError(result.error || 'Ошибка регистрации')
         setIsSubmitting(false)
+        // Если email уже занят — переключаем на вкладку входа
+        if (result.error?.includes('уже зарегистрирован')) setPanelMode('login')
       }
     } else {
       const result = await login(email, password)
@@ -205,13 +235,13 @@ export default function Home() {
                   <>
                     <button
                       onClick={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
-                      className="bg-transparent text-white px-6 py-2 rounded-lg font-medium border border-white/50 hover:bg-white/10 transition-colors"
+                      className="bg-transparent text-white px-6 py-2 rounded-lg font-semibold border border-white/50 hover:bg-white/10 transition-colors"
                     >
                       Войти
                     </button>
                     <button
                       onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
-                      className="bg-[#3347ff] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors"
+                      className="bg-[#3347ff] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#2a3ae6] transition-colors"
                     >
                       Регистрация
                     </button>
@@ -230,7 +260,17 @@ export default function Home() {
               {/* Left Column - Text Content */}
               <div className="space-y-8">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
-                  Твоя прибыль на валютном рынке начинается с COMFORTRADE
+                  Твоя прибыль на валютном рынке начинается с{' '}
+                  <span className="relative inline-block">
+                    COMFORTRADE
+                    <Image
+                      src="/images/star.png"
+                      alt=""
+                      width={24}
+                      height={24}
+                      className="absolute -top-2 -right-4 md:-top-3 md:-right-5 w-4 h-4 md:w-6 md:h-6 object-contain drop-shadow-lg"
+                    />
+                  </span>
                 </h1>
                 
                 <p className="text-lg text-gray-300 leading-relaxed max-w-lg">
@@ -238,10 +278,10 @@ export default function Home() {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors">
+                  <button onClick={() => setShowRegisterPanel(true)} className="text-white px-8 py-4 rounded-lg font-semibold transition-colors hover:opacity-95" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
                     Создать аккаунт
                   </button>
-                  <button className="bg-transparent text-white px-8 py-4 rounded-lg font-medium border border-white/50 hover:bg-white/10 transition-colors">
+                  <button className="bg-transparent text-white px-8 py-4 rounded-lg font-semibold border border-white/50 hover:bg-white/10 transition-colors">
                     Начать в 1 клик
                   </button>
                 </div>
@@ -251,10 +291,10 @@ export default function Home() {
               <div className="flex items-center justify-center md:justify-end">
                 <Image
                   src="/images/hero.png"
-                  alt="Крипто-приложение на телефоне"
-                  width={300}
-                  height={500}
-                  className="w-full h-auto max-w-[300px]"
+                  alt="Торговая платформа ComforTrade"
+                  width={280}
+                  height={467}
+                  className="w-full h-auto max-w-[280px]"
                   priority
                 />
               </div>
@@ -262,14 +302,40 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Company Logos Section */}
-        <section className="container mx-auto px-4 py-12 border-t border-gray-700 relative z-10">
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16">
-            <span className="text-gray-300 text-lg font-medium">EUR/USD</span>
-            <span className="text-gray-300 text-lg font-medium">AUD/CAD</span>
-            <span className="text-gray-300 text-lg font-medium">GBP/USD</span>
-            <span className="text-gray-300 text-lg font-medium">USD/JPY</span>
-            <span className="text-gray-300 text-lg font-medium">USD/CHF</span>
+        {/* Company Logos Section - Бегущая строка */}
+        <section className="w-full py-12 px-4 border-t border-gray-700 relative z-10 overflow-hidden">
+          <div className="relative w-full">
+            <div className="flex animate-marquee gap-8 md:gap-12 whitespace-nowrap w-max" style={{ width: 'max-content' }}>
+              {[...NON_OTC_INSTRUMENTS, ...NON_OTC_INSTRUMENTS, ...NON_OTC_INSTRUMENTS].map((inst, idx) => {
+                const pair = inst.label.replace(' Real', '')
+                const [country1, country2] = getCurrencyCountryCodes(pair)
+                return (
+                  <div key={`${inst.id}-${idx}`} className="flex items-center gap-2 shrink-0">
+                    {country1 && (
+                      <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-white/70 flex-shrink-0 flex items-center justify-center">
+                        <ReactCountryFlag
+                          countryCode={country1}
+                          svg
+                          style={{ width: '24px', height: '24px', objectFit: 'cover', display: 'block' }}
+                          title={country1}
+                        />
+                      </div>
+                    )}
+                    {country2 && (
+                      <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-white/70 flex-shrink-0 flex items-center justify-center -ml-2.5 relative z-10">
+                        <ReactCountryFlag
+                          countryCode={country2}
+                          svg
+                          style={{ width: '24px', height: '24px', objectFit: 'cover', display: 'block' }}
+                          title={country2}
+                        />
+                      </div>
+                    )}
+                    <span className="text-gray-300 text-lg font-medium">{pair}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </section>
       </div>
@@ -284,7 +350,7 @@ export default function Home() {
 
           {/* Main Heading */}
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
-            Всё необходимое для покупки, торговли и инвестиций в криптовалюту
+            Всё для торговли на Forex и криптовалютах
           </h2>
 
           {/* Features Grid */}
@@ -294,11 +360,11 @@ export default function Home() {
               {/* Feature 1 Content */}
               <div className="p-6 flex-1 flex flex-col justify-center">
                 <div className="w-20 h-20 flex items-center justify-center mb-4 rounded-lg overflow-hidden">
-                  <Image src="/images/1.svg" alt="Покупка криптовалюты" width={64} height={64} className="rounded-lg" />
+                  <Image src="/images/1.svg" alt="Торговые инструменты" width={64} height={64} className="rounded-lg" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Покупка 100+ криптоактивов</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">40+ валютных пар и криптовалют</h3>
                 <p className="text-base font-medium text-[#7c7f9c]">
-                  Широкий выбор монет и токенов для торговли и инвестиций в одном приложении.
+                  Forex (EUR/USD, GBP/USD, USD/JPY и др.), крипто (BTC, ETH, SOL) — торгуйте тем, что вам удобно.
                 </p>
               </div>
 
@@ -307,7 +373,7 @@ export default function Home() {
                 <div className="relative w-full max-w-[220px] h-[220px] overflow-hidden">
                   <Image
                     src="/images/second.png"
-                    alt="Скриншот крипто-приложения"
+                    alt="Интерфейс терминала"
                     width={300}
                     height={600}
                     className="w-full h-full object-cover object-top"
@@ -319,33 +385,33 @@ export default function Home() {
             {/* Feature 2 */}
             <div className="bg-white rounded-3xl feature-card-shadow p-6 flex flex-col justify-center">
               <div className="w-20 h-20 flex items-center justify-center mb-4 rounded-lg overflow-hidden">
-                <Image src="/images/2.svg" alt="Защищённый кошелёк" width={64} height={64} className="rounded-lg" />
+                <Image src="/images/2.svg" alt="Счета" width={64} height={64} className="rounded-lg" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Защищённый и зашифрованный кошелёк</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Демо и реальный счёт</h3>
               <p className="text-base font-medium text-[#7c7f9c]">
-                Ваши средства под надёжной защитой с современным шифрованием.
+                Начните с демо-счёта без риска или сразу торгуйте на реальном — выбор за вами.
               </p>
             </div>
 
             {/* Feature 3 */}
             <div className="bg-white rounded-3xl feature-card-shadow p-6 flex flex-col justify-center min-h-[320px]">
               <div className="w-20 h-20 flex items-center justify-center mb-4 rounded-lg overflow-hidden">
-                <Image src="/images/3.svg" alt="Отправка и получение" width={64} height={64} className="rounded-lg" />
+                <Image src="/images/3.svg" alt="Исполнение" width={64} height={64} className="rounded-lg" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Отправляйте и получайте легко</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Быстрое исполнение сделок</h3>
               <p className="text-base font-medium text-[#7c7f9c]">
-                Быстрые переводы по всему миру с минимальными комиссиями.
+                Мгновенное открытие и закрытие позиций, прозрачные условия и честная доходность до 89%.
               </p>
             </div>
 
             {/* Feature 4 */}
             <div className="bg-white rounded-3xl feature-card-shadow p-6 flex flex-col justify-center min-h-[320px]">
               <div className="w-20 h-20 flex items-center justify-center mb-4 rounded-lg overflow-hidden">
-                <Image src="/images/4.svg" alt="Инвестиции" width={64} height={64} className="rounded-lg" />
+                <Image src="/images/4.svg" alt="Рынок" width={64} height={64} className="rounded-lg" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Инвестируйте в реальном времени</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Торговля в реальном времени</h3>
               <p className="text-base font-medium text-[#7c7f9c]">
-                Мгновенное исполнение сделок и актуальные рыночные данные.
+                Актуальные котировки, свечные и линейные графики, таймфреймы от 5 секунд до 1 дня.
               </p>
             </div>
 
@@ -354,9 +420,9 @@ export default function Home() {
               <div className="w-20 h-20 flex items-center justify-center mb-4 rounded-lg overflow-hidden">
                 <Image src="/images/5.svg" alt="Графики" width={64} height={64} className="rounded-lg" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Следите и анализируйте графики</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Профессиональные графики и индикаторы</h3>
               <p className="text-base font-medium text-[#7c7f9c]">
-                Профессиональные инструменты для технического анализа.
+                Свечи, линии, индикаторы, рисунки — всё для удобного технического анализа.
               </p>
             </div>
           </div>
@@ -386,12 +452,12 @@ export default function Home() {
 
               {/* Main Heading */}
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                Криптокошелёк из будущего
+                Торговая платформа нового поколения
               </h2>
 
               {/* Description */}
               <p className="text-lg text-gray-600 leading-relaxed">
-                Современный кошелёк с продуманным интерфейсом, низкими комиссиями и максимальной защитой ваших активов.
+                Удобный терминал с интуитивным интерфейсом: выбирайте актив, ставку и время — торгуйте без лишних действий.
               </p>
 
               {/* Features List */}
@@ -402,7 +468,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">Самые низкие комиссии на рынке</span>
+                  <span className="text-lg font-bold text-gray-900">Высокая доходность до 89%</span>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -411,7 +477,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">Быстрые и безопасные переводы</span>
+                  <span className="text-lg font-bold text-gray-900">Прозрачные условия Call/Put</span>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -420,7 +486,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">256-битное шифрование</span>
+                  <span className="text-lg font-bold text-gray-900">Защита данных и средств</span>
                 </div>
               </div>
             </div>
@@ -429,7 +495,7 @@ export default function Home() {
             <div className="relative flex items-center justify-center">
               <Image
                 src="/images/third.png"
-                alt="Интерфейс криптокошелька"
+                alt="Интерфейс торгового терминала"
                 width={400}
                 height={800}
                 className="w-full h-auto max-w-md rounded-2xl shadow-md"
@@ -451,7 +517,7 @@ export default function Home() {
                   Будьте в курсе обновлений
                 </h2>
                 <p className="text-gray-400 text-base md:text-lg">
-                  Подпишитесь на рассылку — новости, акции и полезные материалы о торговле и инвестициях.
+                  Подпишитесь на рассылку — новости брокера, акции и полезные материалы по торговле на Forex и крипте.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 flex-1 md:flex-initial md:min-w-[320px]">
@@ -480,7 +546,7 @@ export default function Home() {
             <div className="relative flex items-center justify-center order-2 md:order-1">
               <Image
                 src="/images/fourth.png"
-                alt="Интерфейс проверки безопасности"
+                alt="Безопасность платформы"
                 width={400}
                 height={800}
                 className="w-full h-auto max-w-md rounded-2xl shadow-md"
@@ -497,12 +563,12 @@ export default function Home() {
 
               {/* Main Heading */}
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                Пуленепробиваемая безопасность по замыслу
+                Надёжная защита ваших данных и средств
               </h2>
 
               {/* Description */}
               <p className="text-lg text-gray-600 leading-relaxed">
-                Безопасность заложена в основу архитектуры: многоуровневая защита и соответствие международным стандартам.
+                Безопасность в приоритете: защищённые счета, шифрование данных и соответствие стандартам AML/KYC.
               </p>
 
               {/* Security Metrics Grid */}
@@ -561,10 +627,10 @@ export default function Home() {
             {/* Review Card 1 */}
             <div className="bg-white rounded-2xl testimonial-card-shadow p-8">
               <div className="text-xl md:text-2xl font-bold text-gray-900 mb-4 leading-snug">
-                «Покупать крипту ещё никогда не было так просто»
+                «Торговать ещё никогда не было так просто»
               </div>
               <p className="text-base text-gray-600 mb-6 leading-relaxed">
-                Удобное приложение, быстрая верификация и приятная поддержка. Рекомендую всем, кто только начинает разбираться в криптовалюте.
+                Удобный терминал, быстрая регистрация и отзывчивая поддержка. Рекомендую всем, кто только начинает на Forex.
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -593,10 +659,10 @@ export default function Home() {
             {/* Review Card 2 */}
             <div className="bg-white rounded-2xl testimonial-card-shadow p-8">
               <div className="text-xl md:text-2xl font-bold text-gray-900 mb-4 leading-snug">
-                «Лучший криптокошелёк, точка»
+                «Лучшая торговая платформа, точка»
               </div>
               <p className="text-base text-gray-600 mb-6 leading-relaxed">
-                Пользовался разными сервисами — здесь самый продуманный интерфейс и стабильная работа. Ни разу не было сбоев или задержек с выводом.
+                Пользовался разными брокерами — здесь самый продуманный интерфейс и стабильная работа. Ни разу не было сбоев или задержек с исполнением.
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -628,7 +694,7 @@ export default function Home() {
                 «Отличный опыт торговли»
               </div>
               <p className="text-base text-gray-600 mb-6 leading-relaxed">
-                Графики, уведомления, быстрые ордера — всё на месте. Для активной торговли это именно то, что нужно. Плюс низкие комиссии.
+                Графики, индикаторы, быстрые сделки Call/Put — всё на месте. Для активной торговли это именно то, что нужно. Плюс высокая доходность.
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -657,10 +723,10 @@ export default function Home() {
             {/* Review Card 4 */}
             <div className="bg-white rounded-2xl testimonial-card-shadow p-8">
               <div className="text-xl md:text-2xl font-bold text-gray-900 mb-4 leading-snug">
-                «Будущее криптотрейдинга»
+                «Будущее онлайн-трейдинга»
               </div>
               <p className="text-base text-gray-600 mb-6 leading-relaxed">
-                ComforTrade — это то, как должны выглядеть современные криптобиржи: быстро, понятно и безопасно. Очень доволен выбором.
+                ComforTrade — это то, как должен выглядеть современный брокер: быстро, понятно и безопасно. Очень доволен выбором.
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -702,7 +768,7 @@ export default function Home() {
                 Последние материалы
               </h2>
               <p className="text-lg text-gray-600 max-w-md">
-                Статьи, руководства и новости о криптовалюте и торговле. Будьте в курсе трендов и обновлений.
+                Статьи, руководства и новости о Forex, крипте и торговле. Будьте в курсе трендов и обновлений платформы.
               </p>
             </div>
           </div>
@@ -714,7 +780,7 @@ export default function Home() {
               <div className="relative h-48 overflow-hidden">
                 <Image
                   src="/images/111.jpeg"
-                  alt="Лучшая платформа для торговли BTC"
+                  alt="Торговля на Forex"
                   width={400}
                   height={300}
                   className="w-full h-full object-cover"
@@ -727,7 +793,7 @@ export default function Home() {
                   <span>9 ноя 2021</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  Лучшая платформа для торговли BTC с телефона
+                  Как начать торговать на Forex: пошаговое руководство
                 </h3>
                 <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
                   Читать далее
@@ -743,7 +809,7 @@ export default function Home() {
               <div className="relative h-48 overflow-hidden">
                 <Image
                   src="/images/222.jpeg"
-                  alt="Лучший криптокошелёк"
+                  alt="Торговля криптовалютами"
                   width={400}
                   height={300}
                   className="w-full h-full object-cover"
@@ -756,7 +822,7 @@ export default function Home() {
                   <span>9 ноя 2021</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  Какой самый надёжный криптокошелёк 2020 года?
+                  Торговля криптовалютами: BTC, ETH и другие активы
                 </h3>
                 <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
                   Читать далее
@@ -772,7 +838,7 @@ export default function Home() {
               <div className="relative h-48 overflow-hidden">
                 <Image
                   src="/images/333.jpeg"
-                  alt="Лучшие крипто-приложения"
+                  alt="Торговые инструменты"
                   width={400}
                   height={300}
                   className="w-full h-full object-cover"
@@ -785,7 +851,7 @@ export default function Home() {
                   <span>9 ноя 2021</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  5 крипто-приложений, которые стоит попробовать
+                  5 советов для успешной торговли на бинарных опционах
                 </h3>
                 <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
                   Читать далее
@@ -810,23 +876,17 @@ export default function Home() {
 
             {/* Main Heading */}
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-8">
-              Скачайте криптокошелёк будущего уже сегодня
+              Начните торговать уже сегодня
             </h2>
 
-            {/* Download Buttons */}
+            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <button className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.96-3.24-1.44-1.88-.78-3.24-1.35-4.13-1.7C6.58 17.67 5.39 17 4.56 16.09c-.83-.9-1.24-2.03-1.24-3.4 0-1.35.44-2.74 1.32-4.17.88-1.43 2.04-2.76 3.48-3.98 1.44-1.23 3.1-2.15 4.97-2.75.78-.25 1.58-.44 2.39-.59.41-.08.82-.14 1.23-.17.41-.03.82-.05 1.23-.05.41 0 .82.02 1.23.05.41.03.82.09 1.23.17.81.15 1.61.34 2.39.59 1.87.6 3.53 1.52 4.97 2.75 1.44 1.22 2.6 2.55 3.48 3.98.88 1.43 1.32 2.82 1.32 4.17 0 1.37-.41 2.5-1.24 3.4-.83.91-2.02 1.58-3.64 1.95-.89.35-2.25.92-4.13 1.7-1.16.48-2.15.94-3.24 1.44-1.03.48-2.1.55-3.08-.4-.27-.26-.48-.58-.65-.92-.17-.35-.26-.72-.26-1.09 0-.37.09-.74.26-1.09.17-.34.38-.66.65-.92.98-.95 2.05-.88 3.08-.4 1.09.5 2.08.96 3.24 1.44 1.88.78 3.24 1.35 4.13 1.7 1.62.37 2.81 1.04 3.64 1.95.83.9 1.24 2.03 1.24 3.4 0 1.35-.44 2.74-1.32 4.17-.88 1.43-2.04 2.76-3.48 3.98-1.44 1.23-3.1 2.15-4.97 2.75-.78.25-1.58.44-2.39.59-.41.08-.82.14-1.23.17-.41.03-.82.05-1.23.05-.41 0-.82-.02-1.23-.05-.41-.03-.82-.09-1.23-.17-.81-.15-1.61-.34-2.39-.59-1.87-.6-3.53-1.52-4.97-2.75-1.44-1.22-2.6-2.55-3.48-3.98-.88-1.43-1.32-2.82-1.32-4.17 0-1.37.41-2.5 1.24-3.4.83-.91 2.02-1.58 3.64-1.95.89-.35 2.25-.92 4.13-1.7 1.16-.48 2.15-.94 3.24-1.44 1.03-.48 2.1-.55 3.08.4.27.26.48.58.65.92.17.35.26.72.26 1.09 0 .37-.09.74-.26 1.09-.17.34-.38.66-.65.92z"/>
-                </svg>
-                Скачать для iOS
+              <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
+                Создать аккаунт
               </button>
-              <button className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5508 0 .9993.4482.9993.9993.0001.5511-.4485.9997-.9993.9997m-11.022 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5508 0 .9993.4482.9993.9993 0 .5511-.4485.9997-.9993.9997m11.022-6.2136H6.082c-.8042 0-1.4587-.6545-1.4587-1.4587s.6545-1.4587 1.4587-1.4587h11.439c.8042 0 1.4587.6545 1.4587 1.4587s.6545 1.4587-1.4587 1.4587M17.523 21.59H6.082c-4.689 0-8.5-3.8107-8.5-8.4997s3.811-8.4997 8.5-8.4997h11.439c4.689 0 8.5 3.8107 8.5 8.4997s-3.811 8.4997-8.5 8.4997M6.082 7.5903c-2.8956 0-5.2497 2.3541-5.2497 5.2497s2.3541 5.2497 5.2497 5.2497h11.439c2.8956 0 5.2497-2.3541 5.2497-5.2497s-2.3541-5.2497-5.2497-5.2497H6.082z"/>
-                </svg>
-                Скачать для Android
-              </button>
+              <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors flex items-center justify-center gap-3">
+                Перейти в терминал
+              </Link>
             </div>
           </div>
 
@@ -835,7 +895,7 @@ export default function Home() {
             <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl" style={{ maxHeight: '400px', overflow: 'hidden' }}>
               <Image
                 src="/images/end.png"
-                alt="Криптокошелёк — приложение"
+                alt="Торговый терминал ComforTrade"
                 width={600}
                 height={800}
                 className="w-full h-auto"
@@ -856,24 +916,18 @@ export default function Home() {
                 <span className="text-2xl font-bold text-gray-900 uppercase">ComforTrade</span>
               </div>
               <p className="text-gray-600 max-w-md">
-                Удобный криптокошелёк для покупки, хранения и торговли. Безопасно, быстро и просто.
+                Брокер для торговли на Forex и криптовалютах. Демо и реальный счёт, честная доходность, удобный терминал.
               </p>
             </div>
 
-            {/* Right Section - Download Buttons */}
+            {/* Right Section - CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-[#3347ff] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.96-3.24-1.44-1.88-.78-3.24-1.35-4.13-1.7C6.58 17.67 5.39 17 4.56 16.09c-.83-.9-1.24-2.03-1.24-3.4 0-1.35.44-2.74 1.32-4.17.88-1.43 2.04-2.76 3.48-3.98 1.44-1.23 3.1-2.15 4.97-2.75.78-.25 1.58-.44 2.39-.59.41-.08.82-.14 1.23-.17.41-.03.82-.05 1.23-.05.41 0 .82.02 1.23.05.41.03.82.09 1.23.17.81.15 1.61.34 2.39.59 1.87.6 3.53 1.52 4.97 2.75 1.44 1.22 2.6 2.55 3.48 3.98.88 1.43 1.32 2.82 1.32 4.17 0 1.37-.41 2.5-1.24 3.4-.83.91-2.02 1.58-3.64 1.95-.89.35-2.25.92-4.13 1.7-1.16.48-2.15.94-3.24 1.44-1.03.48-2.1.55-3.08-.4-.27-.26-.48-.58-.65-.92-.17-.35-.26-.72-.26-1.09 0-.37.09-.74.26-1.09.17-.34.38-.66.65-.92.98-.95 2.05-.88 3.08-.4 1.09.5 2.08.96 3.24 1.44 1.88.78 3.24 1.35 4.13 1.7 1.62.37 2.81 1.04 3.64 1.95.83.9 1.24 2.03 1.24 3.4 0 1.35-.44 2.74-1.32 4.17-.88 1.43-2.04 2.76-3.48 3.98-1.44 1.23-3.1 2.15-4.97 2.75-.78.25-1.58.44-2.39.59-.41.08-.82.14-1.23.17-.41.03-.82.05-1.23.05-.41 0-.82-.02-1.23-.05-.41-.03-.82-.09-1.23-.17-.81-.15-1.61-.34-2.39-.59-1.87-.6-3.53-1.52-4.97-2.75-1.44-1.22-2.6-2.55-3.48-3.98-.88-1.43-1.32-2.82-1.32-4.17 0-1.37.41-2.5 1.24-3.4.83-.91 2.02-1.58 3.64-1.95.89-.35 2.25-.92 4.13-1.7 1.16-.48 2.15-.94 3.24-1.44 1.03-.48 2.1-.55 3.08.4.27.26.48.58.65.92.17.35.26.72.26 1.09 0 .37-.09.74-.26 1.09-.17.34-.38.66-.65.92z"/>
-                </svg>
-                Скачать для iOS
+              <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
+                Регистрация
               </button>
-              <button className="bg-[#3347ff] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5508 0 .9993.4482.9993.9993.0001.5511-.4485.9997-.9993.9997m-11.022 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5508 0 .9993.4482.9993.9993 0 .5511-.4485.9997-.9993.9997m11.022-6.2136H6.082c-.8042 0-1.4587-.6545-1.4587-1.4587s.6545-1.4587 1.4587-1.4587h11.439c.8042 0 1.4587.6545 1.4587 1.4587s.6545 1.4587-1.4587 1.4587M17.523 21.59H6.082c-4.689 0-8.5-3.8107-8.5-8.4997s3.811-8.4997 8.5-8.4997h11.439c4.689 0 8.5 3.8107 8.5 8.4997s-3.811 8.4997-8.5 8.4997M6.082 7.5903c-2.8956 0-5.2497 2.3541-5.2497 5.2497s2.3541 5.2497 5.2497 5.2497h11.439c2.8956 0 5.2497-2.3541 5.2497-5.2497s-2.3541-5.2497-5.2497-5.2497H6.082z"/>
-                </svg>
-                Скачать для Android
-              </button>
+              <Link href="/terminal" className="bg-white text-[#3347ff] px-6 py-3 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors flex items-center justify-center gap-3">
+                Терминал
+              </Link>
             </div>
           </div>
         </div>
@@ -893,37 +947,22 @@ export default function Home() {
             setConfirmPassword('');
             setPromoCode('');
             setAgreeToTerms(false);
+            setShowForgotPassword(false);
+            setForgotPasswordEmail('');
           }}
           aria-hidden="true"
         />
         <div
-          className={`fixed top-0 right-0 h-full w-full max-w-sm bg-[#061230] shadow-2xl z-[101] flex flex-col transition-transform duration-300 ease-out ${showRegisterPanel ? 'translate-x-0' : 'translate-x-full pointer-events-none'}`}
+          className={`fixed top-0 right-0 h-full w-full max-w-[400px] bg-[#0a1835] backdrop-blur-xl shadow-2xl z-[101] flex flex-col transition-transform duration-300 ease-out border-l border-white/5 ${showRegisterPanel ? 'translate-x-0' : 'translate-x-full pointer-events-none'}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="panel-title"
           aria-hidden={!showRegisterPanel}
         >
-            <h2 id="panel-title" className="sr-only">{panelMode === 'login' ? 'Войти' : 'Регистрация'}</h2>
-            <div className="relative pt-6 px-6 pb-0 border-b border-white/10">
-              <button
-                onClick={() => {
-                  setShowRegisterPanel(false);
-                  setError('');
-                  setEmail('');
-                  setPassword('');
-                  setConfirmPassword('');
-                  setPromoCode('');
-                  setAgreeToTerms(false);
-                }}
-                className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors z-10"
-                aria-label="Закрыть"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              
-              <div className="flex w-full">
+            <h2 id="panel-title" className="sr-only">{showForgotPassword ? 'Восстановление пароля' : panelMode === 'login' ? 'Войти' : 'Регистрация'}</h2>
+            {!showForgotPassword && (
+            <div className="relative pt-8 px-6 pb-4">
+              <div className="flex w-full gap-2 p-1 rounded-xl bg-white/5">
                 <button
                   type="button"
                   onClick={() => {
@@ -933,15 +972,13 @@ export default function Home() {
                     setPassword('');
                     setConfirmPassword('');
                     setPromoCode('');
+                    setShowForgotPassword(false);
                   }}
-                  className={`flex-1 pb-4 text-center text-lg font-medium transition-colors relative ${
-                    panelMode === 'register' ? 'text-white' : 'text-gray-400 hover:text-gray-300'
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    panelMode === 'register' ? 'bg-white/15 text-white shadow-sm' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   Регистрация
-                  {panelMode === 'register' && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white" />
-                  )}
                 </button>
                 <button
                   type="button"
@@ -952,31 +989,70 @@ export default function Home() {
                     setPassword('');
                     setConfirmPassword('');
                     setPromoCode('');
+                    setShowForgotPassword(false);
                   }}
-                  className={`flex-1 pb-4 text-center text-lg font-medium transition-colors relative ${
-                    panelMode === 'login' ? 'text-white' : 'text-gray-400 hover:text-gray-300'
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    panelMode === 'login' ? 'bg-white/15 text-white shadow-sm' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   Вход
-                  {panelMode === 'login' && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white" />
-                  )}
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              {error && (
-                <div className="mb-4 p-3 bg-red-500/20 text-red-300 rounded-lg text-sm">
-                  {error}
+            )}
+            <div className="flex-1 overflow-y-auto px-6 pb-12">
+              {showForgotPassword ? (
+                <div className="space-y-5 pt-8">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(false)}
+                    className="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-1 -ml-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Назад к входу
+                  </button>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-1">Восстановление пароля</h3>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Введите email, и мы отправим вам ссылку для сброса пароля.
+                    </p>
+                    <div className="space-y-2">
+                      <label htmlFor="forgot-email" className="block text-xs font-medium text-gray-400 ml-1">Email</label>
+                      <input
+                        id="forgot-email"
+                        type="email"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        placeholder="Введите Email"
+                        className="panel-auth-input w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:shadow-none focus:border-white/10 focus:bg-white/[0.08] transition-all"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!forgotPasswordEmail) {
+                          setError('Введите email');
+                          return;
+                        }
+                        setError('');
+                        // TODO: вызвать API восстановления пароля
+                        alert('Ссылка для восстановления пароля будет отправлена на указанный email. (Функция в разработке)');
+                      }}
+                      className="w-full mt-4 py-3.5 rounded-xl bg-[#3347ff] text-white font-semibold hover:bg-[#2a3ae6] active:scale-[0.99] transition-all shadow-lg shadow-[#3347ff]/20"
+                    >
+                      Восстановить пароль
+                    </button>
+                  </div>
                 </div>
-              )}
-              <form className="space-y-4" onSubmit={handleFormSubmit}>
+              ) : (
+              <form className="space-y-5" onSubmit={handleFormSubmit}>
                 <button
                   type="button"
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-white text-gray-800 font-medium hover:bg-gray-100 transition-colors"
-                  disabled
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-white/8 border border-white/15 text-white font-medium hover:bg-white/12 transition-colors"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -984,128 +1060,100 @@ export default function Home() {
                   </svg>
                   Продолжить с Google
                 </button>
-                <div className="relative">
+                <div className="relative py-2">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-white/10" />
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-[#061230] text-gray-400">или</span>
+                  <div className="relative flex justify-center">
+                    <span className="px-3 bg-[#0a1835] text-xs text-gray-500">или</span>
                   </div>
                 </div>
-                <div className="relative group">
+                <div className="space-y-2">
+                  <label htmlFor="panel-email" className="block text-xs font-medium text-gray-400 ml-1">Email</label>
                   <input
                     id="panel-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder=" "
+                    placeholder="Введите Email"
                     required
                     disabled={isSubmitting}
-                    className="peer w-full pt-5 pb-3 px-4 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 transition-all disabled:opacity-50"
+                    className="panel-auth-input w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:shadow-none focus:border-white/10 focus:bg-white/[0.08] transition-all disabled:opacity-50"
                   />
-                  <label
-                    htmlFor="panel-email"
-                    className="absolute left-4 text-gray-500 transition-all duration-200 pointer-events-none origin-left
-                      top-1/2 -translate-y-1/2
-                      peer-focus:top-3 peer-focus:-translate-y-0 peer-focus:text-xs peer-focus:text-gray-400
-                      peer-[:not(:placeholder-shown)]:top-3 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-gray-400"
-                  >
-                    Email
-                  </label>
                 </div>
-                <div className="relative group">
+                <div className="space-y-2">
+                  <label htmlFor="panel-password" className="block text-xs font-medium text-gray-400 ml-1">Пароль</label>
                   <input
                     id="panel-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder=" "
+                    placeholder="Введите пароль"
                     required
                     minLength={6}
                     disabled={isSubmitting}
-                    className="peer w-full pt-5 pb-3 px-4 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 transition-all disabled:opacity-50"
+                    className="panel-auth-input w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:shadow-none focus:border-white/10 focus:bg-white/[0.08] transition-all disabled:opacity-50"
                   />
-                  <label
-                    htmlFor="panel-password"
-                    className="absolute left-4 text-gray-500 transition-all duration-200 pointer-events-none origin-left
-                      top-1/2 -translate-y-1/2
-                      peer-focus:top-3 peer-focus:-translate-y-0 peer-focus:text-xs peer-focus:text-gray-400
-                      peer-[:not(:placeholder-shown)]:top-3 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-gray-400"
-                  >
-                    Пароль
-                  </label>
                 </div>
                 {panelMode === 'register' && (
-                  <div className="relative group">
+                  <div className="space-y-2">
+                    <label htmlFor="panel-confirm-password" className="block text-xs font-medium text-gray-400 ml-1">Подтвердите пароль</label>
                     <input
                       id="panel-confirm-password"
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder=" "
+                      placeholder="Подтвердите пароль"
                       required
                       minLength={6}
                       disabled={isSubmitting}
-                      className="peer w-full pt-5 pb-3 px-4 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 transition-all disabled:opacity-50"
+                      className="panel-auth-input w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:shadow-none focus:border-white/10 focus:bg-white/[0.08] transition-all disabled:opacity-50"
                     />
-                    <label
-                      htmlFor="panel-confirm-password"
-                      className="absolute left-4 text-gray-500 transition-all duration-200 pointer-events-none origin-left
-                        top-1/2 -translate-y-1/2
-                        peer-focus:top-3 peer-focus:-translate-y-0 peer-focus:text-xs peer-focus:text-gray-400
-                        peer-[:not(:placeholder-shown)]:top-3 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-gray-400"
-                    >
-                      Подтвердите пароль
-                    </label>
                   </div>
                 )}
                 {panelMode === 'login' && (
-                  <div className="flex justify-end -mt-2">
-                    <button type="button" className="text-sm text-[#3347ff] hover:text-[#2a3ae6] transition-colors">
+                  <div className="flex justify-end -mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm text-gray-400 hover:text-[#3347ff] transition-colors font-medium underline underline-offset-2 decoration-gray-600/30"
+                    >
                       Забыли пароль?
                     </button>
                   </div>
                 )}
                 {panelMode === 'register' && (
-                  <div className="relative group">
+                  <div className="space-y-2">
+                    <label htmlFor="panel-promo" className="block text-xs font-medium text-gray-400 ml-1">Промокод <span className="text-gray-600">(опционально)</span></label>
                     <input
                       id="panel-promo"
                       type="text"
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
-                      placeholder=" "
+                      placeholder="Введите промокод"
                       disabled={isSubmitting}
-                      className="peer w-full pt-5 pb-3 px-4 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 transition-all disabled:opacity-50"
+                      className="panel-auth-input w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:shadow-none focus:border-white/10 focus:bg-white/[0.08] transition-all disabled:opacity-50"
                     />
-                    <label
-                      htmlFor="panel-promo"
-                      className="absolute left-4 text-gray-500 transition-all duration-200 pointer-events-none origin-left
-                        top-1/2 -translate-y-1/2
-                        peer-focus:top-3 peer-focus:-translate-y-0 peer-focus:text-xs peer-focus:text-gray-400
-                        peer-[:not(:placeholder-shown)]:top-3 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-gray-400"
-                    >
-                      Промокод <span className="text-gray-500/80">(опционально)</span>
-                    </label>
                   </div>
                 )}
                 {panelMode === 'register' && (
-                  <label className="flex items-start gap-3 cursor-pointer">
+                  <label className="flex items-start gap-3 cursor-pointer group">
                     <input
                       type="checkbox"
                       checked={agreeToTerms}
                       onChange={(e) => setAgreeToTerms(e.target.checked)}
                       disabled={isSubmitting}
-                      className="mt-1 w-4 h-4 rounded border-white/30 bg-white/10 text-[#3347ff] focus:ring-[#3347ff]/50 disabled:opacity-50"
+                      className="mt-1 w-4 h-4 rounded border-white/30 bg-white/5 text-[#3347ff] focus:ring-[#3347ff]/50 focus:ring-offset-0 disabled:opacity-50"
                     />
-                    <span className="text-sm text-gray-400">
-                      Согласен с <Link href="/policy/terms" className="text-[#3347ff] hover:underline">условиями использования</Link> и <Link href="/policy/privacy" className="text-[#3347ff] hover:underline">политикой конфиденциальности</Link>
+                    <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                      Согласен с <Link href="/policy/terms" className="text-gray-400 hover:text-[#3347ff] transition-colors underline decoration-gray-600/30 underline-offset-2">условиями использования</Link> и <Link href="/policy/privacy" className="text-gray-400 hover:text-[#3347ff] transition-colors underline decoration-gray-600/30 underline-offset-2">политикой конфиденциальности</Link>
                     </span>
                   </label>
                 )}
                 <button
                   type="submit"
                   disabled={(panelMode === 'register' && !agreeToTerms) || isSubmitting}
-                  className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 rounded-xl bg-[#3347ff] text-white font-semibold hover:bg-[#2a3ae6] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#3347ff]/20"
                 >
                   {isSubmitting 
                     ? (panelMode === 'login' ? 'Вход...' : 'Регистрация...') 
@@ -1113,12 +1161,36 @@ export default function Home() {
                   }
                 </button>
               </form>
+              )}
             </div>
-            {panelMode === 'register' && (
-              <div className="p-6 border-t border-white/10 bg-[#061230]">
-                <p className="text-xs text-center text-gray-500 leading-relaxed">
+            {panelMode === 'register' ? (
+              <div className="p-6 border-t border-white/10 bg-[#0a1835]/80">
+                <p className="text-xs text-center text-gray-500 leading-relaxed font-medium">
                   Мы гарантируем защиту ваших данных. Перед началом работы ознакомьтесь с <Link href="/policy/terms" className="text-gray-400 hover:text-[#3347ff] transition-colors underline decoration-gray-600/30 underline-offset-2">Политикой использования</Link> и <Link href="/policy/aml-kyc" className="text-gray-400 hover:text-[#3347ff] transition-colors underline decoration-gray-600/30 underline-offset-2">правилами AML/KYC</Link>.
                 </p>
+              </div>
+            ) : (
+              <div className="p-6 border-t border-white/10 bg-[#0a1835]/80">
+                <div>
+                  <p className="text-xs text-center text-gray-500 mb-3 font-medium">Подпишитесь на наши соц сети</p>
+                  <div className="flex justify-center gap-4">
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label="Instagram">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                    </a>
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label="Telegram">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                      </svg>
+                    </a>
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label="YouTube">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
               </div>
             )}
           </div>

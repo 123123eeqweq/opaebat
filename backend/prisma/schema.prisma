@@ -11,15 +11,30 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
+  id        String   @id @default(uuid())
+  email     String   @unique
   password  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  sessions Session[]
-  accounts Account[]
-  trades   Trade[]
+  // FLOW U1: Base Profile fields
+  firstName   String?
+  lastName    String?
+  nickname    String?   @unique
+  phone       String?   @unique
+  country     String?
+  dateOfBirth DateTime?
+  avatarUrl   String?
+
+  // 🔥 FLOW S3: Two-Factor Authentication
+  twoFactorSecret    String?
+  twoFactorEnabled   Boolean  @default(false)
+  twoFactorBackupCodes String[] // Array of hashed backup codes
+
+  sessions     Session[]
+  accounts     Account[]
+  trades       Trade[]
+  transactions Transaction[]
 
   @@map("users")
 }
@@ -30,6 +45,10 @@ model Session {
   tokenHash String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  // 🔥 FLOW S1: Session metadata for UI
+  userAgent String?
+  ipAddress String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -51,8 +70,9 @@ model Account {
   isActive  Boolean     @default(true)
   createdAt DateTime    @default(now())
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trades Trade[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades       Trade[]
+  transactions Transaction[]
 
   @@unique([userId, type])
   @@index([userId])
@@ -68,6 +88,7 @@ enum TradeStatus {
   OPEN
   WIN
   LOSS
+  TIE // Ничья: exitPrice === entryPrice → возврат ставки
 }
 
 model Trade {
@@ -75,6 +96,7 @@ model Trade {
   userId     String
   accountId  String
   direction  TradeDirection
+  instrument String // Trading instrument (e.g., 'AUDCHF', 'BTCUSD')
   amount     Decimal
   entryPrice Decimal
   exitPrice  Decimal?
@@ -90,15 +112,16 @@ model Trade {
   @@index([status, expiresAt])
   @@index([userId])
   @@index([accountId])
+  @@index([instrument])
   @@map("trades")
 }
 
 // Свечи котировок — хранятся в БД постоянно (не в Redis)
 model Candle {
-  id        String   @id @default(cuid())
-  symbol    String   @default("BTC/USD")
-  timeframe String   // '5s', '15s', '30s', '1m'
-  timestamp BigInt   // начало свечи, ms
+  id        String  @id @default(cuid())
+  symbol    String  @default("BTC/USD")
+  timeframe String // '5s'
+  timestamp BigInt // начало свечи, ms
   open      Decimal
   high      Decimal
   low       Decimal
@@ -107,4 +130,76 @@ model Candle {
   @@unique([symbol, timeframe, timestamp])
   @@index([symbol, timeframe, timestamp(sort: Desc)])
   @@map("candles")
+}
+
+// Price Points для линейного графика — 1 точка в секунду
+model PricePoint {
+  id        String  @id @default(cuid())
+  symbol    String
+  timestamp BigInt // начало секунды (ms), Math.floor(time / 1000) * 1000
+  price     Decimal
+
+  @@unique([symbol, timestamp])
+  @@index([symbol, timestamp(sort: Desc)])
+  @@map("price_points")
+}
+
+// 🔥 FLOW W1: Transaction model for deposits/withdrawals
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  TRADE_RESULT
+  BONUS
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum PaymentMethod {
+  CARD
+  CRYPTO
+  BANK
+}
+
+model Transaction {
+  id        String @id @default(uuid())
+  userId    String
+  accountId String
+
+  type   TransactionType
+  status TransactionStatus
+
+  amount   Decimal @db.Decimal(18, 2)
+  currency String // "USD"
+
+  paymentMethod PaymentMethod
+  provider      String? // stripe / crypto / manual
+
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([status])
+  @@map("transactions")
+}
+
+// 🔥 FLOW I-PAYOUT: Instrument model для хранения доходности
+model Instrument {
+  id           String   @id // 'EURUSD', 'GBPUSD', 'AUDCHF_REAL', etc.
+  name         String   // Display name: 'EUR / USD', 'GBP / USD'
+  base         String   // 'EUR', 'GBP', 'USD'
+  quote        String   // 'USD', 'JPY', 'CHF'
+  isActive     Boolean  @default(true)
+  payoutPercent Int     @default(75) // 60–90%
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("instruments")
 }

@@ -17,24 +17,26 @@
  * - WebSocket данные
  */
 
-import type { IndicatorConfig } from '@/components/chart/internal/indicators/indicator.types';
-import type { Drawing } from '@/components/chart/internal/drawings/drawing.types';
+// График удален - импорты удалены
 
 export type TerminalLayout = {
-  instrument: string;
-  timeframe: string;
-  indicators: {
+  instrument?: string;
+  timeframe?: string;
+  indicators?: {
     id: string;
     params: Record<string, any>;
     visible: boolean;
   }[];
-  drawings: {
+  drawings?: {
     id: string;
     type: 'horizontal' | 'vertical' | 'trend' | 'rectangle' | 'fibonacci' | 'parallel-channel' | 'ray' | 'arrow';
     points: { time: number; price: number }[];
     color?: string;
     offset?: number; // для parallel-channel
   }[];
+  // 🆕 FLOW T-LS1: ChartType & CandleMode persistence
+  chartType?: 'candles' | 'line';
+  candleMode?: 'classic' | 'heikin_ashi' | 'bars';
 };
 
 export const TERMINAL_LAYOUT_KEY = 'terminal.layout.v1';
@@ -60,12 +62,14 @@ export function loadLayoutFromLocalStorage(): TerminalLayout | null {
 
     const parsed = JSON.parse(raw) as TerminalLayout;
     
-    // Валидация структуры
+    // Валидация структуры (опциональные поля)
     if (
-      typeof parsed.instrument === 'string' &&
-      typeof parsed.timeframe === 'string' &&
-      Array.isArray(parsed.indicators) &&
-      Array.isArray(parsed.drawings)
+      (parsed.instrument === undefined || typeof parsed.instrument === 'string') &&
+      (parsed.timeframe === undefined || typeof parsed.timeframe === 'string') &&
+      (parsed.indicators === undefined || Array.isArray(parsed.indicators)) &&
+      (parsed.drawings === undefined || Array.isArray(parsed.drawings)) &&
+      (parsed.chartType === undefined || (parsed.chartType === 'candles' || parsed.chartType === 'line')) &&
+      (parsed.candleMode === undefined || ['classic', 'heikin_ashi', 'bars'].includes(parsed.candleMode))
     ) {
       return parsed;
     }
@@ -79,8 +83,9 @@ export function loadLayoutFromLocalStorage(): TerminalLayout | null {
 
 /**
  * Конвертировать IndicatorConfig в формат для сохранения
+ * График удален - функция оставлена для совместимости, но не используется
  */
-export function indicatorConfigToLayout(config: IndicatorConfig): TerminalLayout['indicators'][0] {
+export function indicatorConfigToLayout(config: any): TerminalLayout['indicators'][0] {
   const params: Record<string, any> = {
     period: config.period,
   };
@@ -111,8 +116,8 @@ export function indicatorConfigToLayout(config: IndicatorConfig): TerminalLayout
  */
 export function layoutIndicatorToConfig(
   layoutIndicator: TerminalLayout['indicators'][0],
-  indicatorType: IndicatorConfig['type']
-): Partial<IndicatorConfig> {
+  indicatorType: string
+): any {
   const config: Partial<IndicatorConfig> = {
     id: layoutIndicator.id,
     enabled: layoutIndicator.visible,
@@ -138,8 +143,9 @@ export function layoutIndicatorToConfig(
 
 /**
  * Конвертировать Drawing в формат для сохранения
+ * График удален - функция оставлена для совместимости, но не используется
  */
-export function drawingToLayout(drawing: Drawing): TerminalLayout['drawings'][0] {
+export function drawingToLayout(drawing: any): TerminalLayout['drawings'][0] {
   const base = {
     id: drawing.id,
     type: drawing.type,
@@ -193,7 +199,7 @@ export function drawingToLayout(drawing: Drawing): TerminalLayout['drawings'][0]
  */
 export function layoutDrawingToDrawing(
   layoutDrawing: TerminalLayout['drawings'][0]
-): Drawing | null {
+): any | null {
   const { id, type, points, color = '#3347ff', offset } = layoutDrawing;
   
   if (type === 'horizontal' && points.length > 0) {

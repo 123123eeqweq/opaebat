@@ -1,8 +1,8 @@
 /**
- * Candle store — per instrument (symbol):
- * - active candle — in-memory key candle:active:${symbol}
- * - closed candles — PostgreSQL, symbol = engine.asset (e.g. "BTC/USD")
- * FLOW P3: instrument-scoped
+ * Candle store — per instrument (instrumentId):
+ * - active candle — in-memory key candle:active:${instrumentId}
+ * - closed candles — PostgreSQL, symbol = instrumentId (e.g. "EURUSD", "EURUSD_REAL")
+ * FLOW FIX-AGGREGATION: Используем instrumentId для разделения OTC и REAL источников
  */
 
 import { getRedisClient } from '../../bootstrap/redis.js';
@@ -10,26 +10,26 @@ import { getPrismaClient } from '../../bootstrap/database.js';
 import type { Candle, Timeframe } from '../PriceTypes.js';
 import { logger } from '../../shared/logger.js';
 
-function activeKey(symbol: string): string {
-  return `candle:active:${symbol}`;
+function activeKey(instrumentId: string): string {
+  return `candle:active:${instrumentId}`;
 }
 
 export class CandleStore {
   /**
-   * Store active candle (in-memory) for symbol
+   * Store active candle (in-memory) for instrumentId
    */
-  async setActiveCandle(symbol: string, candle: Candle): Promise<void> {
+  async setActiveCandle(instrumentId: string, candle: Candle): Promise<void> {
     const redis = getRedisClient();
     const data = JSON.stringify(candle);
-    await redis.set(activeKey(symbol), data);
+    await redis.set(activeKey(instrumentId), data);
   }
 
   /**
-   * Get active candle (in-memory) for symbol
+   * Get active candle (in-memory) for instrumentId
    */
-  async getActiveCandle(symbol: string): Promise<Candle | null> {
+  async getActiveCandle(instrumentId: string): Promise<Candle | null> {
     const redis = getRedisClient();
-    const data = await redis.get(activeKey(symbol));
+    const data = await redis.get(activeKey(instrumentId));
 
     if (!data) {
       return null;
@@ -50,16 +50,16 @@ export class CandleStore {
   }
 
   /**
-   * Add closed candle — пишем в БД по symbol
+   * Add closed candle — пишем в БД по instrumentId
    */
-  async addClosedCandle(symbol: string, candle: Candle): Promise<void> {
+  async addClosedCandle(instrumentId: string, candle: Candle): Promise<void> {
     const prisma = getPrismaClient();
     const ts = typeof candle.timestamp === 'number' ? candle.timestamp : new Date(candle.timestamp).getTime();
 
     try {
       await prisma.candle.create({
         data: {
-          symbol,
+          symbol: instrumentId, // В БД поле называется symbol, но хранит instrumentId
           timeframe: candle.timeframe,
           timestamp: BigInt(ts),
           open: candle.open,
@@ -79,13 +79,13 @@ export class CandleStore {
   }
 
   /**
-   * Get closed candles (последние N по времени) for symbol
+   * Get closed candles (последние N по времени) for instrumentId
    */
-  async getClosedCandles(symbol: string, timeframe: Timeframe, limit: number = 100): Promise<Candle[]> {
+  async getClosedCandles(instrumentId: string, timeframe: Timeframe, limit: number = 100): Promise<Candle[]> {
     const prisma = getPrismaClient();
 
     const rows = await prisma.candle.findMany({
-      where: { symbol, timeframe },
+      where: { symbol: instrumentId, timeframe }, // В БД поле называется symbol, но хранит instrumentId
       orderBy: { timestamp: 'desc' },
       take: limit,
     });
@@ -104,10 +104,10 @@ export class CandleStore {
   }
 
   /**
-   * Get closed candles before a specific time for symbol
+   * Get closed candles before a specific time for instrumentId
    */
   async getClosedCandlesBefore(
-    symbol: string,
+    instrumentId: string,
     timeframe: Timeframe,
     toTime: number,
     limit: number = 200
@@ -116,7 +116,7 @@ export class CandleStore {
 
     const rows = await prisma.candle.findMany({
       where: {
-        symbol,
+        symbol: instrumentId, // В БД поле называется symbol, но хранит instrumentId
         timeframe,
         timestamp: { lt: BigInt(toTime) },
       },
@@ -138,10 +138,10 @@ export class CandleStore {
   }
 
   /**
-   * Clear active candle (in-memory) for symbol. БД не трогаем.
+   * Clear active candle (in-memory) for instrumentId. БД не трогаем.
    */
-  async clear(symbol: string): Promise<void> {
+  async clear(instrumentId: string): Promise<void> {
     const redis = getRedisClient();
-    await redis.del(activeKey(symbol));
+    await redis.del(activeKey(instrumentId));
   }
 }

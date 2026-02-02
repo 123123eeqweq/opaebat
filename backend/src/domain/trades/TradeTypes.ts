@@ -11,6 +11,7 @@ export enum TradeStatus {
   OPEN = 'OPEN',
   WIN = 'WIN',
   LOSS = 'LOSS',
+  TIE = 'TIE', // Ничья: exitPrice === entryPrice → возврат ставки
 }
 
 export interface Trade {
@@ -18,6 +19,7 @@ export interface Trade {
   userId: string;
   accountId: string;
   direction: TradeDirection;
+  instrument: string; // Trading instrument (e.g., 'AUDCHF', 'BTCUSD')
   amount: number; // Decimal as number for domain
   entryPrice: number;
   exitPrice: number | null;
@@ -34,12 +36,14 @@ export interface OpenTradeInput {
   direction: TradeDirection;
   amount: number;
   expirationSeconds: number; // Must be multiple of 5, min 5, max 300 (5m)
+  instrument: string; // Trading instrument (e.g., 'AUDCHF', 'BTCUSD')
 }
 
 export interface TradeDTO {
   id: string;
   accountId: string;
   direction: TradeDirection;
+  instrument: string; // Trading instrument
   amount: string; // Decimal as string for API
   entryPrice: string;
   exitPrice: string | null;

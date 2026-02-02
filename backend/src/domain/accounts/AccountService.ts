@@ -3,6 +3,7 @@
  */
 
 import type { AccountRepository } from '../../ports/repositories/AccountRepository.js';
+import type { TransactionRepository } from '../../ports/repositories/TransactionRepository.js';
 import type { Account, CreateAccountInput, AccountDTO } from './AccountTypes.js';
 import { AccountType } from './AccountTypes.js';
 import {
@@ -10,10 +11,15 @@ import {
   AccountAlreadyExistsError,
   InvalidAccountTypeError,
   UnauthorizedAccountAccessError,
+  DemoResetNotAllowedError,
+  DemoAccountNotFoundError,
 } from './AccountErrors.js';
 
 export class AccountService {
-  constructor(private accountRepository: AccountRepository) {}
+  constructor(
+    private accountRepository: AccountRepository,
+    private transactionRepository?: TransactionRepository,
+  ) {}
 
   /**
    * Get all accounts for user
@@ -120,6 +126,73 @@ export class AccountService {
 
     // Update balance atomically
     return this.accountRepository.updateBalance(accountId, delta);
+  }
+
+  /**
+   * 🔥 FLOW D-RESET-DEMO: Reset demo account balance to $10,000
+   * Rules:
+   * - Only for DEMO accounts
+   * - Only if balance < $1,000
+   * - Sets balance to exactly $10,000
+   */
+  async resetDemoAccount(userId: string): Promise<AccountDTO> {
+    const DEMO_RESET_LIMIT = 1000;
+    const DEMO_RESET_BALANCE = 10000;
+
+    const demoAccount = await this.accountRepository.findDemoByUserId(userId);
+
+    if (!demoAccount) {
+      throw new DemoAccountNotFoundError();
+    }
+
+    // Ensure balance is a number for comparison
+    const balanceValue = typeof demoAccount.balance === 'number' 
+      ? demoAccount.balance 
+      : Number(demoAccount.balance);
+
+    if (balanceValue >= DEMO_RESET_LIMIT) {
+      throw new DemoResetNotAllowedError();
+    }
+
+    const updatedAccount = await this.accountRepository.setBalance(
+      demoAccount.id,
+      DEMO_RESET_BALANCE,
+    );
+
+    return this.toDTO(updatedAccount);
+  }
+
+  /**
+   * 🔥 FLOW A-ACCOUNT: Get account snapshot for real-time updates
+   * Returns active account as snapshot format
+   */
+  async getAccountSnapshot(userId: string): Promise<{
+    accountId: string;
+    type: 'REAL' | 'DEMO';
+    balance: number;
+    currency: 'USD' | 'RUB' | 'UAH';
+    updatedAt: number;
+  } | null> {
+    const account = await this.accountRepository.findActiveByUserId(userId);
+    if (!account) {
+      return null;
+    }
+
+    // 🔥 REAL account: balance from transactions (deposits/withdrawals), not Account.balance
+    let balance: number;
+    if (account.type === AccountType.REAL && this.transactionRepository) {
+      balance = await this.transactionRepository.getBalance(account.id);
+    } else {
+      balance = typeof account.balance === 'number' ? account.balance : Number(account.balance);
+    }
+
+    return {
+      accountId: account.id,
+      type: account.type === AccountType.DEMO ? 'DEMO' : 'REAL',
+      balance,
+      currency: account.currency as 'USD' | 'RUB' | 'UAH',
+      updatedAt: Date.now(),
+    };
   }
 
   /**

@@ -11,6 +11,7 @@ export class TradeEntity {
     public readonly userId: string,
     public readonly accountId: string,
     public readonly direction: TradeDirection,
+    public readonly instrument: string, // Trading instrument (e.g., 'AUDCHF', 'BTCUSD')
     public readonly amount: number,
     public readonly entryPrice: number,
     public exitPrice: number | null,
@@ -22,11 +23,18 @@ export class TradeEntity {
   ) {}
 
   /**
-   * Determine if trade is WIN or LOSS based on exit price
+   * Determine trade result: WIN, LOSS, or TIE
+   * 
+   * TIE (ничья): exitPrice === entryPrice → возврат ставки
    */
   determineResult(): TradeStatus {
     if (this.exitPrice === null) {
       throw new Error('Cannot determine result: exit price is not set');
+    }
+
+    // 🔥 TIE: Цена не изменилась → возврат ставки
+    if (this.exitPrice === this.entryPrice) {
+      return TradeStatus.TIE;
     }
 
     if (this.direction === TradeDirection.CALL) {

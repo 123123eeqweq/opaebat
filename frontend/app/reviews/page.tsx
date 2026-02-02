@@ -26,7 +26,7 @@ export default function ReviewsPage() {
       id: 1,
       name: 'Александр Петров',
       rating: 5,
-      text: 'Отличная платформа! Торгую уже полгода, все работает стабильно. Исполнение сделок быстрое, спреды низкие. Особенно нравится удобный интерфейс и качественная поддержка 24/7.',
+      text: 'Отличный брокер! Торгую уже полгода, всё работает стабильно. Исполнение сделок Call/Put быстрое, доходность до 89%. Удобный терминал и поддержка 24/7.',
       date: '15 января 2025',
       verified: true
     },
@@ -34,7 +34,7 @@ export default function ReviewsPage() {
       id: 2,
       name: 'Мария Иванова',
       rating: 5,
-      text: 'Очень довольна COMFORTRADE. Начала с небольшой суммы, но уже вижу хорошие результаты. Обучение на сайте помогло разобраться с основами. Рекомендую новичкам!',
+      text: 'Очень довольна ComforTrade. Начала с демо-счёта, потом перешла на реальный. Обучение на сайте помогло разобраться с основами. Рекомендую новичкам!',
       date: '12 января 2025',
       verified: true
     },
@@ -42,7 +42,7 @@ export default function ReviewsPage() {
       id: 3,
       name: 'Дмитрий Смирнов',
       rating: 4,
-      text: 'Хороший брокер, все устраивает. Единственное - хотелось бы больше инструментов для анализа. В остальном все на высоте: быстрый вывод средств, прозрачные условия.',
+      text: 'Хороший брокер, всё устраивает. Графики и индикаторы на уровне. Быстрый вывод средств, прозрачные условия. Торгую Forex и крипту.',
       date: '10 января 2025',
       verified: true
     },
@@ -50,7 +50,7 @@ export default function ReviewsPage() {
       id: 4,
       name: 'Елена Козлова',
       rating: 5,
-      text: 'Лучшая платформа для торговли криптовалютами! Мобильное приложение удобное, можно торговать в любое время. За полгода вывела уже приличную прибыль. Спасибо команде!',
+      text: 'Лучшая платформа для торговли Forex и криптой! Терминал удобный, можно торговать в любое время. Высокая доходность по Call/Put. Спасибо команде!',
       date: '8 января 2025',
       verified: true
     },
@@ -58,7 +58,7 @@ export default function ReviewsPage() {
       id: 5,
       name: 'Игорь Волков',
       rating: 5,
-      text: 'Торгую на разных платформах, но COMFORTRADE - одна из лучших. Низкие комиссии, отличное исполнение ордеров, нет проскальзываний. Поддержка всегда на связи и помогает решить любые вопросы.',
+      text: 'Торгую на разных платформах, но ComforTrade — одна из лучших. Честная доходность, мгновенное исполнение. Поддержка всегда на связи.',
       date: '5 января 2025',
       verified: true
     },
@@ -66,7 +66,7 @@ export default function ReviewsPage() {
       id: 6,
       name: 'Ольга Новикова',
       rating: 4,
-      text: 'Хорошая платформа для начинающих. Много обучающих материалов, демо-счет для практики. Начала с малого, постепенно увеличиваю депозит. Все прозрачно и понятно.',
+      text: 'Хорошая платформа для начинающих. Демо-счёт для практики — отлично! Начала с малого, постепенно увеличиваю депозит. Всё прозрачно и понятно.',
       date: '3 января 2025',
       verified: true
     },
@@ -74,7 +74,7 @@ export default function ReviewsPage() {
       id: 7,
       name: 'Сергей Лебедев',
       rating: 5,
-      text: 'Профессиональная платформа с отличными условиями. Торгую валютными парами, спреды конкурентоспособные. Особенно ценю аналитику и ежедневные обзоры рынка от экспертов.',
+      text: 'Профессиональный терминал с отличными условиями. Торгую валютными парами EUR/USD, GBP/USD. Доходность фиксированная, без сюрпризов. Рекомендую!',
       date: '1 января 2025',
       verified: true
     },
@@ -82,7 +82,7 @@ export default function ReviewsPage() {
       id: 8,
       name: 'Анна Федорова',
       rating: 5,
-      text: 'Отличный сервис! Регистрация заняла 5 минут, верификация прошла быстро. Торгую акциями и криптой, все работает без сбоев. Вывод средств быстрый, комиссии разумные.',
+      text: 'Отличный сервис! Регистрация заняла 5 минут. Торгую Forex и криптой, всё работает без сбоев. Вывод средств быстрый. Платформа как надо.',
       date: '28 декабря 2024',
       verified: true
     }
@@ -207,7 +207,7 @@ export default function ReviewsPage() {
           </nav>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Отзывы</h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            Что говорят клиенты о COMFORTRADE — отзывы о платформе, поддержке и качестве исполнения сделок.
+            Отзывы трейдеров о ComforTrade — о терминале, торговле Forex и криптой, поддержке и исполнении сделок.
           </p>
         </div>
       </section>
@@ -218,7 +218,7 @@ export default function ReviewsPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Отзывы клиентов</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Реальные отзывы от трейдеров, которые используют COMFORTRADE для торговли
+              Реальные отзывы от трейдеров, которые используют ComforTrade для торговли на Forex и криптовалютах
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
@@ -267,7 +267,7 @@ export default function ReviewsPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Оставьте свой отзыв</h2>
             <p className="text-lg text-gray-600">
-              Поделитесь своим опытом работы с COMFORTRADE
+              Поделитесь своим опытом торговли с ComforTrade
             </p>
           </div>
           <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8 md:p-12">
@@ -357,7 +357,7 @@ export default function ReviewsPage() {
                   onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
                   rows={6}
                   required
-                  placeholder="Расскажите о своем опыте работы с COMFORTRADE..."
+                  placeholder="Расскажите о своём опыте торговли с ComforTrade..."
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff] transition-all resize-none"
                 />
               </div>

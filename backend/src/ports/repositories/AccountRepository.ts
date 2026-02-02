@@ -12,4 +12,7 @@ export interface AccountRepository {
   create(account: Omit<Account, 'id' | 'createdAt'>): Promise<Account>;
   setActive(userId: string, accountId: string): Promise<void>;
   updateBalance(accountId: string, delta: number): Promise<Account>;
+  getRealAccount(userId: string): Promise<Account>; // 🔥 FLOW W1: Get or create REAL account
+  findDemoByUserId(userId: string): Promise<Account | null>; // 🔥 FLOW D-RESET-DEMO: Find demo account
+  setBalance(accountId: string, balance: number): Promise<Account>; // 🔥 FLOW D-RESET-DEMO: Set absolute balance
 }
