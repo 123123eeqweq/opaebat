@@ -3,50 +3,58 @@
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+const REQUEST_TIMEOUT_MS = 15000; // 15 сек — чтобы не зависать при недоступном бэкенде
 
 export async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
   const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
 
   // Устанавливаем Content-Type только если есть body
   const headers: Record<string, string> = {
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
   
   if (options.body) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(fullUrl, {
-    ...options,
-    credentials: 'include',
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  if (!response.ok) {
-    let errorMessage = `API error ${response.status}`;
-    let errorData: any = null;
-    try {
-      errorData = await response.json();
-      errorMessage = errorData.error || errorData.message || errorMessage;
-    } catch {
-      errorMessage = response.statusText || errorMessage;
+  try {
+    const response = await fetch(fullUrl, {
+      ...options,
+      credentials: 'include',
+      headers,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let errorMessage = `API error ${response.status}`;
+      let errorData: unknown = null;
+      try {
+        errorData = await response.json();
+        errorMessage = (errorData as { error?: string; message?: string })?.error ?? (errorData as { error?: string; message?: string })?.message ?? errorMessage;
+      } catch {
+        errorMessage = response.statusText || errorMessage;
+      }
+      const error = new Error(errorMessage) as Error & { response?: { status: number; statusText: string; data: unknown } };
+      error.response = { status: response.status, statusText: response.statusText, data: errorData };
+      throw error;
     }
-    
-    // 🔥 FLOW U1.1: Создаем расширенную ошибку с данными ответа
-    const error = new Error(errorMessage) as any;
-    error.response = {
-      status: response.status,
-      statusText: response.statusText,
-      data: errorData,
-    };
-    throw error;
-  }
 
-  // Handle empty responses
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    }
+    return {} as T;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      const timeoutErr = new Error('Сервер не отвечает. Проверьте, что бэкенд запущен (npm run dev в папке backend).') as Error & { response?: { status: number; statusText: string; data: unknown } };
+      timeoutErr.response = { status: 408, statusText: 'Request Timeout', data: { message: 'Request timeout' } };
+      throw timeoutErr;
+    }
+    throw err;
   }
-
-  return {} as T;
 }

@@ -79,7 +79,7 @@ export function TimeframeMenu({ timeframe, onTimeframeChange }: TimeframeMenuPro
                   }}
                   className={`flex items-center justify-center px-1 py-1.5 rounded-lg text-[11px] transition-colors ${
                     isActive
-                      ? 'bg-[#3347ff]/35 text-white border border-[#3347ff]/50'
+                      ? 'bg-[#3347ff] text-white border border-[#3347ff]'
                       : 'bg-white/10 text-gray-300 hover:bg-white/15 hover:text-white'
                   }`}
                   title={tf.label}

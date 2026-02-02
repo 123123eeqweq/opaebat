@@ -346,4 +346,69 @@ export class TradeService {
 
     return result;
   }
+
+  /**
+   * Get trade analytics by date range: distribution by instrument and direction
+   */
+  async getTradeAnalytics(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{
+    byInstrument: Array<{ instrument: string; count: number; volume: number; winCount: number }>;
+    byDirection: { call: { count: number; winCount: number }; put: { count: number; winCount: number } };
+  }> {
+    const realAccount = await this.accountRepository.findByUserIdAndType(userId, AccountType.REAL);
+    if (!realAccount) {
+      return {
+        byInstrument: [],
+        byDirection: { call: { count: 0, winCount: 0 }, put: { count: 0, winCount: 0 } },
+      };
+    }
+
+    const trades = await this.tradeRepository.findByAccountId(realAccount.id);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const closedTrades = trades.filter(
+      (t) => t.closedAt !== null && t.closedAt >= start && t.closedAt <= end
+    );
+
+    const byInstrumentMap = new Map<string, { count: number; volume: number; winCount: number }>();
+    let callCount = 0;
+    let callWinCount = 0;
+    let putCount = 0;
+    let putWinCount = 0;
+
+    for (const t of closedTrades) {
+      const inst = t.instrument || 'Unknown';
+      const existing = byInstrumentMap.get(inst) || { count: 0, volume: 0, winCount: 0 };
+      existing.count += 1;
+      existing.volume += Number(t.amount);
+      if (t.status === TradeStatus.WIN) existing.winCount += 1;
+      byInstrumentMap.set(inst, existing);
+
+      if (t.direction === 'CALL') {
+        callCount += 1;
+        if (t.status === TradeStatus.WIN) callWinCount += 1;
+      } else {
+        putCount += 1;
+        if (t.status === TradeStatus.WIN) putWinCount += 1;
+      }
+    }
+
+    const byInstrument = Array.from(byInstrumentMap.entries())
+      .map(([instrument, data]) => ({ instrument, ...data }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      byInstrument,
+      byDirection: {
+        call: { count: callCount, winCount: callWinCount },
+        put: { count: putCount, winCount: putWinCount },
+      },
+    };
+  }
 }

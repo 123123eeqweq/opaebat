@@ -20,7 +20,6 @@ import type React from 'react';
 import type { Viewport } from '../viewport.types';
 import { InteractionState, type InteractionZone } from './interaction.types';
 import { panViewportTime, zoomViewportTime } from './math';
-import type { Viewport } from '../viewport.types';
 
 interface UseChartInteractionsParams {
   canvasRef: RefObject<HTMLCanvasElement>;

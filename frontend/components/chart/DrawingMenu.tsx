@@ -92,7 +92,7 @@ export function DrawingMenu({ drawingMode, onDrawingModeChange }: DrawingMenuPro
         onClick={() => handleSelect(opt.id)}
         className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors ${
           isActive
-            ? 'bg-[#3347ff]/35 text-white border border-[#3347ff]/50'
+            ? 'bg-[#3347ff] text-white border border-[#3347ff]'
             : 'text-gray-300 hover:bg-white/8 hover:text-white'
         }`}
         title={opt.label}

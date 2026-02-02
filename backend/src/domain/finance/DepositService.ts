@@ -25,11 +25,11 @@ export class DepositService {
   }: {
     userId: string;
     amount: number;
-    paymentMethod: 'CARD' | 'CRYPTO' | 'BANK';
+    paymentMethod: string;
   }) {
-    // Validation: minimum deposit
-    if (amount < 10) {
-      throw new Error('Minimum deposit is $10');
+    // Validation: 200–1000 UAH
+    if (amount < 200 || amount > 1000) {
+      throw new Error('Сумма пополнения: от 200 до 1000 ₴');
     }
 
     // Get or create REAL account
@@ -42,7 +42,7 @@ export class DepositService {
       type: TransactionType.DEPOSIT,
       status: TransactionStatus.PENDING,
       amount,
-      currency: 'USD',
+      currency: 'UAH',
       paymentMethod: paymentMethod as PaymentMethod,
       provider: 'manual', // 🔥 MOCK: пока без реальных платёжек
     });

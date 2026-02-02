@@ -78,4 +78,13 @@ export async function registerTradesRoutes(app: FastifyInstance) {
     },
     (request, reply) => tradesController.getBalanceHistory(request, reply),
   );
+
+  // GET /api/trades/analytics?startDate=&endDate=
+  app.get(
+    '/api/trades/analytics',
+    {
+      preHandler: requireAuth,
+    },
+    (request, reply) => tradesController.getAnalytics(request, reply),
+  );
 }

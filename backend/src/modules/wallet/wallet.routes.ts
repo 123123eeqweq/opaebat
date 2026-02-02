@@ -6,7 +6,7 @@
 import type { FastifyInstance } from 'fastify';
 import { WalletController } from './wallet.controller.js';
 import { requireAuth } from '../auth/auth.middleware.js';
-import { depositSchema, getBalanceSchema } from './wallet.schema.js';
+import { depositSchema, withdrawSchema, getBalanceSchema } from './wallet.schema.js';
 
 export async function registerWalletRoutes(app: FastifyInstance) {
   const walletController = new WalletController();
@@ -21,6 +21,13 @@ export async function registerWalletRoutes(app: FastifyInstance) {
     (request, reply) => walletController.deposit(request, reply),
   );
 
+  // POST /api/wallet/withdraw
+  app.post(
+    '/api/wallet/withdraw',
+    { schema: withdrawSchema, preHandler: [requireAuth] },
+    (request, reply) => walletController.withdraw(request, reply),
+  );
+
   // GET /api/wallet/balance
   app.get(
     '/api/wallet/balance',
@@ -29,5 +36,12 @@ export async function registerWalletRoutes(app: FastifyInstance) {
       preHandler: [requireAuth],
     },
     (request, reply) => walletController.getBalance(request, reply),
+  );
+
+  // GET /api/wallet/transactions
+  app.get(
+    '/api/wallet/transactions',
+    { preHandler: [requireAuth] },
+    (request, reply) => walletController.getTransactions(request, reply),
   );
 }

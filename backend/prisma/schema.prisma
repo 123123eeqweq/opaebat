@@ -162,6 +162,16 @@ enum PaymentMethod {
   CARD
   CRYPTO
   BANK
+  APPLE_PAY
+  GOOGLE_PAY
+  PAYPAL
+  QIWI
+  YOOMONEY
+  WEBMONEY
+  SKRILL
+  NETELLER
+  ADVANCED_CASH
+  SBP
 }
 
 model Transaction {

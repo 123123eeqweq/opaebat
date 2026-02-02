@@ -9,6 +9,7 @@ import ReactCountryFlag from 'react-country-flag'
 import { useAuth } from '@/lib/hooks/useAuth'
 import Footer from '@/components/Footer'
 import { INSTRUMENTS } from '@/lib/instruments'
+import { LANGUAGES } from '@/lib/languages'
 
 function getCurrencyCountryCodes(pair: string): [string | null, string | null] {
   const parts = pair.split('/')
@@ -45,11 +46,7 @@ export default function Home() {
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
 
-  const languages = [
-    { code: 'UA', label: 'Українська', flag: '/images/flags/ua.svg' },
-    { code: 'RU', label: 'Русский', flag: '/images/flags/ru.svg' },
-    { code: 'EN', label: 'English', flag: '/images/flags/en.svg' },
-  ]
+  const languages = LANGUAGES
 
   useEffect(() => {
     const onScroll = () => {
@@ -181,7 +178,7 @@ export default function Home() {
               {showLanguageMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
-                  <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl py-2 min-w-[160px] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl py-2 min-w-[200px] max-h-[70vh] overflow-y-auto scrollbar-dropdown-light z-50 animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex flex-col p-1">
                       {languages.map((lang) => (
                         <button
@@ -254,7 +251,7 @@ export default function Home() {
         </header>
 
         {/* Hero Section */}
-        <section className="py-12 md:py-16 relative z-10">
+        <section className="py-24 md:py-32 relative z-10">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               {/* Left Column - Text Content */}
@@ -292,9 +289,9 @@ export default function Home() {
                 <Image
                   src="/images/hero.png"
                   alt="Торговая платформа ComforTrade"
-                  width={280}
-                  height={467}
-                  className="w-full h-auto max-w-[280px]"
+                  width={600}
+                  height={1000}
+                  className="w-full h-auto max-w-[500px] md:max-w-[560px] lg:max-w-[600px]"
                   priority
                 />
               </div>

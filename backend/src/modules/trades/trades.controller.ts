@@ -227,6 +227,54 @@ export class TradesController {
     }
   }
 
+  /**
+   * GET /api/trades/analytics?startDate=&endDate=
+   * Get trade analytics: distribution by instrument and direction
+   */
+  async getAnalytics(
+    request: FastifyRequest<{
+      Querystring: { startDate?: string; endDate?: string };
+    }>,
+    reply: FastifyReply,
+  ) {
+    try {
+      const userId = request.userId!;
+      let startDate: Date;
+      let endDate: Date = new Date();
+      endDate.setHours(23, 59, 59, 999);
+
+      if (request.query.startDate && request.query.endDate) {
+        startDate = new Date(request.query.startDate);
+        endDate = new Date(request.query.endDate);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return reply.status(400).send({
+            error: 'Invalid date format',
+            message: 'Dates must be in YYYY-MM-DD format',
+          });
+        }
+        if (startDate > endDate) {
+          return reply.status(400).send({
+            error: 'Invalid date range',
+            message: 'Start date must be before end date',
+          });
+        }
+      } else {
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+      }
+
+      const analytics = await this.tradeService.getTradeAnalytics(userId, startDate, endDate);
+
+      return reply.send({ analytics });
+    } catch (error) {
+      logger.error('Get trade analytics error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+      });
+    }
+  }
+
   private toDTO(trade: any) {
     return {
       id: trade.id,

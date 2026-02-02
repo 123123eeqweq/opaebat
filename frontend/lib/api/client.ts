@@ -42,7 +42,7 @@ export async function apiRequest<T>(
 
   // Добавляем таймаут для fetch, чтобы не зависать вечно
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 секунды таймаут
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 сек — 3 сек было слишком мало, запросы отменялись
 
   const config: RequestInit = {
     method,

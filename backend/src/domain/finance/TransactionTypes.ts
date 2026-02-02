@@ -20,6 +20,16 @@ export enum PaymentMethod {
   CARD = 'CARD',
   CRYPTO = 'CRYPTO',
   BANK = 'BANK',
+  APPLE_PAY = 'APPLE_PAY',
+  GOOGLE_PAY = 'GOOGLE_PAY',
+  PAYPAL = 'PAYPAL',
+  QIWI = 'QIWI',
+  YOOMONEY = 'YOOMONEY',
+  WEBMONEY = 'WEBMONEY',
+  SKRILL = 'SKRILL',
+  NETELLER = 'NETELLER',
+  ADVANCED_CASH = 'ADVANCED_CASH',
+  SBP = 'SBP',
 }
 
 export interface Transaction {

@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TrendingUp, Wallet, GraduationCap, UserCircle, Bell, PlusCircle, Plus, Minus, ChevronDown, X, ArrowUp, ArrowDown, RefreshCw, CheckCircle2, XCircle, Clock, History, Newspaper, Repeat, MessageCircle } from 'lucide-react';
-import { useAuth } from '@/lib/hooks/useAuth';
 import { useTerminalSnapshot } from '@/lib/hooks/useTerminalSnapshot';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { ChartContainer } from '@/components/chart/ChartContainer';
 import { SentimentBar } from '@/components/chart/SentimentBar';
 import { IndicatorMenu } from '@/components/chart/IndicatorMenu';
@@ -284,7 +284,7 @@ export default function TerminalPage() {
       attempts++;
       if (candleChartRef.current) {
         candleChartRef.current.clearDrawings();
-        layout.drawings?.forEach((layoutDrawing: TerminalLayout['drawings'][number]) => {
+        layout.drawings?.forEach((layoutDrawing) => {
           const drawing = layoutDrawingToDrawing(layoutDrawing);
           if (drawing) {
             candleChartRef.current?.addDrawing(drawing);
@@ -350,7 +350,7 @@ export default function TerminalPage() {
           attempts++;
           if (candleChartRef.current) {
             candleChartRef.current.clearDrawings();
-            savedLayout.drawings?.forEach((layoutDrawing: TerminalLayout['drawings'][number]) => {
+            savedLayout.drawings?.forEach((layoutDrawing) => {
               const drawing = layoutDrawingToDrawing(layoutDrawing);
               if (drawing) {
                 candleChartRef.current?.addDrawing(drawing);
@@ -405,13 +405,12 @@ export default function TerminalPage() {
     router.push('/');
   };
 
-
   // 🔥 FLOW A-ACCOUNT: Первичная инициализация snapshot через HTTP
   useEffect(() => {
     const initSnapshot = async () => {
       try {
-        const snapshot = await api<AccountSnapshot>('/api/account/snapshot');
-        useAccountStore.getState().setSnapshot(snapshot);
+        const snap = await api<AccountSnapshot>('/api/account/snapshot');
+        useAccountStore.getState().setSnapshot(snap);
       } catch (error) {
         console.error('Failed to load account snapshot:', error);
       }
@@ -482,99 +481,62 @@ export default function TerminalPage() {
       previousBalanceRef.current = null;
       return;
     }
-
     const currentBalance = snapshot.balance;
     const previousBalance = previousBalanceRef.current;
 
     if (previousBalance !== null && previousBalance !== currentBalance) {
-      // Определяем направление изменения
-      if (currentBalance > previousBalance) {
-        setBalanceAnimation('increase');
-      } else if (currentBalance < previousBalance) {
-        setBalanceAnimation('decrease');
-      }
+      if (currentBalance > previousBalance) setBalanceAnimation('increase');
+      else if (currentBalance < previousBalance) setBalanceAnimation('decrease');
 
-      // Плавно обновляем отображаемый баланс
       const startBalance = previousBalance;
       const endBalance = currentBalance;
-      const duration = 500; // 500ms для анимации
+      const duration = 500;
       const startTime = Date.now();
 
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function для плавности
         const easeOutCubic = 1 - Math.pow(1 - progress, 3);
         const current = startBalance + (endBalance - startBalance) * easeOutCubic;
-        
         setDisplayedBalance(current.toFixed(2));
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          setDisplayedBalance(endBalance.toFixed(2));
-        }
+        if (progress < 1) requestAnimationFrame(animate);
+        else setDisplayedBalance(endBalance.toFixed(2));
       };
-
       requestAnimationFrame(animate);
-
-      // Сбрасываем цвет через 1 секунду
-      setTimeout(() => {
-        setBalanceAnimation(null);
-      }, 1000);
+      setTimeout(() => setBalanceAnimation(null), 1000);
     } else {
-      // Первая загрузка или нет изменений
       setDisplayedBalance(currentBalance.toFixed(2));
     }
-
     previousBalanceRef.current = currentBalance;
-  }, [snapshot?.balance, snapshot?.accountId]); // accountId для сброса при смене аккаунта
+  }, [snapshot?.balance, snapshot?.accountId]);
 
   // 🔥 FLOW D-RESET-DEMO: Сброс демо-счета до $10,000
-  // Snapshot обновится автоматически через WebSocket
   const handleResetDemoAccount = async () => {
-    if (!snapshot || snapshot.type !== 'DEMO') {
-      alert('Доступно только для демо-счета');
-      return;
-    }
-
-    // Дополнительная проверка на фронтенде
-    if (snapshot.balance >= 1000) {
-      alert('Баланс демо-счета должен быть меньше $1,000 для сброса');
-      return;
-    }
-
+    if (!snapshot || snapshot.type !== 'DEMO') return;
+    if (snapshot.balance >= 1000) return;
     try {
       setResetDemoLoading(true);
-      await api('/api/accounts/demo/reset', {
-        method: 'POST',
-      });
-      // Snapshot обновится автоматически через WebSocket
-    } catch (e: any) {
-      const errorMessage = e?.response?.data?.message || e?.message || 'unknown error';
-      if (errorMessage.includes('high enough') || errorMessage.includes('not allowed')) {
+      await api('/api/accounts/demo/reset', { method: 'POST' });
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      const msg = err.response?.data?.message || err.message || '';
+      if (msg.includes('high enough') || msg.includes('not allowed')) {
         alert('Баланс демо-счета должен быть меньше $1,000 для сброса');
-      } else if (errorMessage.includes('not found')) {
+      } else if (msg.includes('not found')) {
         alert('Демо-счет не найден');
       } else {
-        alert(`Ошибка сброса демо-счета: ${errorMessage}`);
+        alert(`Ошибка сброса демо-счета: ${msg}`);
       }
     } finally {
       setResetDemoLoading(false);
     }
   };
 
-  // 🔥 FLOW A-ACCOUNT: Вспомогательные функции для получения балансов
   const getCurrentBalance = () => {
     if (!snapshot) return { balance: '0.00', currency: 'USD' };
-    return {
-      balance: snapshot.balance.toFixed(2),
-      currency: snapshot.currency,
-    };
+    return { balance: snapshot.balance.toFixed(2), currency: snapshot.currency };
   };
 
-  // Для модалки нужно загрузить оба типа аккаунтов
   const [modalBalances, setModalBalances] = useState<{
     demo: { balance: string; currency: string } | null;
     real: { balance: string; currency: string } | null;
@@ -582,36 +544,22 @@ export default function TerminalPage() {
 
   const loadAllBalances = async () => {
     try {
-      // Загружаем все аккаунты
       const accountsResponse = await api<{ accounts: Array<{ type: string; balance: string; currency: string; isActive: boolean }> }>('/api/accounts');
-      const demoAccount = accountsResponse.accounts.find(a => a.type === 'demo' && a.isActive) 
-        || accountsResponse.accounts.find(a => a.type === 'demo');
-      
+      const demoAccount = accountsResponse.accounts.find((a) => a.type === 'demo' && a.isActive) || accountsResponse.accounts.find((a) => a.type === 'demo');
       if (demoAccount) {
-        setModalBalances(prev => ({
+        setModalBalances((prev) => ({
           ...prev,
-          demo: {
-            balance: parseFloat(demoAccount.balance).toFixed(2),
-            currency: demoAccount.currency,
-          },
+          demo: { balance: parseFloat(demoAccount.balance).toFixed(2), currency: demoAccount.currency },
         }));
       }
-
-      // Загружаем реальный баланс
       try {
         const realResponse = await api<{ currency: string; balance: number }>('/api/wallet/balance');
-        setModalBalances(prev => ({
+        setModalBalances((prev) => ({
           ...prev,
-          real: {
-            balance: realResponse.balance.toFixed(2),
-            currency: realResponse.currency,
-          },
+          real: { balance: realResponse.balance.toFixed(2), currency: realResponse.currency },
         }));
-      } catch (error) {
-        setModalBalances(prev => ({
-          ...prev,
-          real: { balance: '0.00', currency: 'USD' },
-        }));
+      } catch {
+        setModalBalances((prev) => ({ ...prev, real: null }));
       }
     } catch (error) {
       console.error('Failed to load balances:', error);
@@ -635,15 +583,11 @@ export default function TerminalPage() {
         setShowAccountModal(false);
       }
     };
-
     if (showAccountModal) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showAccountModal]);
-
 
   // FLOW O7: синхрон indicatorConfigs ↔ Overlay Registry (включённые индикаторы → overlays)
   useEffect(() => {
@@ -762,176 +706,80 @@ export default function TerminalPage() {
       {/* Header */}
       <header className="bg-[#05122a] border-b border-white/10">
         <div className="px-6 py-3.5 flex items-center justify-between">
-          {/* Left: Logo and Name */}
           <div className="flex items-center gap-3">
-            <Image 
-              src="/images/logo.png" 
-              alt="ComforTrade" 
-              width={40} 
-              height={40} 
-              className="h-10 w-auto object-contain" 
-            />
+            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-10 w-auto object-contain" />
             <span className="text-xl font-semibold text-white uppercase">ComforTrade</span>
-            
-            {/* Иконка уведомлений */}
-            <button
-              type="button"
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-            >
+            <button type="button" className="w-10 h-10 rounded-lg flex items-center justify-center text-white hover:bg-white/10 transition-colors">
               <Bell className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Right: Profile */}
           <div className="flex items-center gap-4">
-            {/* Profile Icon */}
             <div className="relative">
-              <div 
-                onClick={() => setShowProfileModal(!showProfileModal)}
-                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center cursor-pointer hover:bg-white/30 transition-colors overflow-hidden border-2 border-[#166534]"
-              >
+              <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#3347ff]/50 via-[#5b6bff]/30 to-[#3347ff]/50 blur-sm opacity-60 pointer-events-none" />
+              <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#05122a] z-10 pointer-events-none ${accountType === 'demo' ? 'bg-sky-400' : 'bg-emerald-500'}`} title={accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'} />
+              <div onClick={() => setShowProfileModal(!showProfileModal)} className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg">
                 {avatarUrl ? (
-                  <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover rounded-full"
-                  />
+                  <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" />
                 ) : (
-                  <UserCircle className="w-7 h-7 text-white" />
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#3347ff] via-[#3d52ff] to-[#1f2a45] flex items-center justify-center text-sm font-bold text-white">
+                    {(user?.email || '?').charAt(0).toUpperCase()}
+                  </div>
                 )}
               </div>
 
-              {/* Profile Modal */}
               {showProfileModal && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowProfileModal(false)}
-                  />
+                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileModal(false)} />
                   <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden">
-                    {/* User Info */}
                     <div className="p-3 space-y-2.5">
-                      {/* User Email */}
                       <div className="flex items-center gap-2.5 p-2.5 rounded-lg">
-                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-[#166534]">
-                          {avatarUrl ? (
-                            <img 
-                              src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} 
-                              alt="Profile" 
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            <UserCircle className="w-6 h-6 text-white" />
-                          )}
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-white/20 ring-offset-2 ring-offset-[#1a2438] bg-gradient-to-br from-[#3347ff]/30 to-[#1f2a45]">
+                          {avatarUrl ? <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" /> : <span className="text-sm font-bold text-white">{(user?.email || '?').charAt(0).toUpperCase()}</span>}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-white font-medium text-sm truncate">
-                            {user?.email || 'Пользователь'}
-                          </div>
-                          <div className="text-white/60 text-xs">
-                            {accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'}
-                          </div>
+                          <div className="text-white font-medium text-sm truncate">{user?.email || 'Пользователь'}</div>
+                          <div className="text-white/60 text-xs">{accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'}</div>
                         </div>
                       </div>
-
-                      {/* Current Balance */}
                       <div className="p-2.5 rounded-lg bg-white/5">
                         <div className="text-white/60 text-xs mb-1">Баланс</div>
-                        <div className={`text-white font-semibold text-base ${
-                          hideBalance ? '' : balanceAnimation === 'increase'
-                            ? 'text-green-400'
-                            : balanceAnimation === 'decrease'
-                              ? 'text-red-400'
-                              : ''
-                        }`}>
-                          {hideBalance 
-                            ? '••••••' 
-                            : snapshot 
-                              ? `${displayedBalance} ${snapshot.currency === 'USD' ? 'USD' : snapshot.currency === 'RUB' ? '₽' : snapshot.currency === 'UAH' ? '₴' : snapshot.currency}` 
-                              : '...'}
+                        <div className={`text-white font-semibold text-base ${hideBalance ? '' : balanceAnimation === 'increase' ? 'text-green-400' : balanceAnimation === 'decrease' ? 'text-red-400' : ''}`}>
+                          {hideBalance ? '••••••' : snapshot ? `${displayedBalance} ${snapshot.currency === 'USD' ? 'USD' : snapshot.currency === 'RUB' ? '₽' : snapshot.currency === 'UAH' ? 'UAH' : snapshot.currency}` : '...'}
                         </div>
                       </div>
                     </div>
-
-                    {/* Actions */}
                     <div className="border-t border-white/10 p-3 space-y-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowProfileModal(false);
-                          setShowAccountModal(true);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm text-left"
-                      >
+                      <button type="button" onClick={() => { setShowProfileModal(false); setShowAccountModal(true); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm text-left">
                         <Repeat className="w-4 h-4" />
                         <span>Переключить счёт</span>
                       </button>
                       {accountType === 'real' && (
-                        <Link
-                          href="/profile?tab=wallet"
-                          onClick={() => setShowProfileModal(false)}
-                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-                        >
+                        <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
                           <PlusCircle className="w-4 h-4" />
                           <span>Пополнить счёт</span>
                         </Link>
                       )}
-                      <Link
-                        href="/profile"
-                        onClick={() => setShowProfileModal(false)}
-                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-                      >
+                      <Link href="/profile" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
                         <UserCircle className="w-4 h-4" />
                         <span>Профиль</span>
                       </Link>
-                      <Link
-                        href="/profile?tab=wallet"
-                        onClick={() => setShowProfileModal(false)}
-                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-                      >
+                      <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
                         <Wallet className="w-4 h-4" />
                         <span>Кошелёк</span>
                       </Link>
-                      <Link
-                        href="/profile?tab=education"
-                        onClick={() => setShowProfileModal(false)}
-                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-                      >
+                      <Link href="/profile?tab=education" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
                         <GraduationCap className="w-4 h-4" />
                         <span>Обучение</span>
                       </Link>
-                      <Link
-                        href="/profile?tab=support"
-                        onClick={() => setShowProfileModal(false)}
-                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-                      >
+                      <Link href="/profile?tab=support" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
                         <MessageCircle className="w-4 h-4" />
                         <span>Поддержка</span>
                       </Link>
                     </div>
-
-                    {/* Logout */}
                     <div className="border-t border-white/10 p-3">
-                      <button
-                        onClick={() => {
-                          setShowProfileModal(false);
-                          handleLogout();
-                        }}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-sm"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                          />
-                        </svg>
+                      <button onClick={() => { setShowProfileModal(false); handleLogout(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-sm">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                         <span>Выйти</span>
                       </button>
                     </div>
@@ -940,237 +788,57 @@ export default function TerminalPage() {
               )}
             </div>
 
-            {/* Блок с кнопкой refresh, типом счета и балансом */}
             <div className="flex items-center gap-2.5">
-              {/* Кнопка перезагрузки / Reset Demo - видна только когда можно делать reset (демо и баланс < 1000) */}
               {(snapshot?.type === 'DEMO' && snapshot && snapshot.balance < 1000) && (
-                <button
-                  type="button"
-                  className="w-9 h-9 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={async () => {
-                    // 🔥 FLOW D-RESET-DEMO: Сбрасываем баланс демо-счета до $10,000
-                    await handleResetDemoAccount();
-                  }}
-                  disabled={resetDemoLoading}
-                  title="Reset demo balance to $10,000"
-                >
-                <svg 
-                  className="w-4 h-4 text-white" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                  />
-                </svg>
-              </button>
+                <button type="button" className="w-9 h-9 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleResetDemoAccount} disabled={resetDemoLoading} title="Reset demo balance">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </button>
               )}
-
-              {/* Блок с типом счета и балансом */}
               <div className="flex flex-col relative pr-3" data-account-modal>
-                <div 
-                  className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
-                  data-account-modal
-                  onClick={async () => {
-                    await loadAllBalances();
-                    setShowAccountModal(true);
-                  }}
-                >
-                  <span className="text-xs text-white font-medium">
-                    {accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'}
-                  </span>
-                  <svg 
-                    className="w-2.5 h-2.5 text-white" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M19 9l-7 7-7-7" 
-                    />
-                  </svg>
+                <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity" data-account-modal onClick={async () => { await loadAllBalances(); setShowAccountModal(true); }}>
+                  <span className="text-xs text-white font-medium">{accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'}</span>
+                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </div>
-                <div 
-                  className={`text-base font-semibold transition-all duration-500 ${
-                    hideBalance 
-                      ? 'text-white' 
-                      : balanceAnimation === 'increase'
-                        ? 'text-green-400 scale-105'
-                        : balanceAnimation === 'decrease'
-                          ? 'text-red-400 scale-105'
-                          : 'text-white'
-                  }`}
-                  style={{
-                    transition: 'color 0.5s ease, transform 0.3s ease',
-                  }}
-                >
-                  {hideBalance 
-                    ? '••••••' 
-                    : snapshot 
-                      ? `${displayedBalance} ${snapshot.currency === 'USD' ? 'USD' : snapshot.currency === 'RUB' ? '₽' : snapshot.currency === 'UAH' ? '₴' : snapshot.currency}` 
-                      : '...'}
+                <div className={`text-base font-semibold transition-all duration-500 ${hideBalance ? 'text-white' : balanceAnimation === 'increase' ? 'text-green-400 scale-105' : balanceAnimation === 'decrease' ? 'text-red-400 scale-105' : 'text-white'}`} style={{ transition: 'color 0.5s ease, transform 0.3s ease' }}>
+                  {hideBalance ? '••••••' : snapshot ? `${displayedBalance} ${snapshot.currency === 'USD' ? 'USD' : snapshot.currency === 'RUB' ? '₽' : snapshot.currency === 'UAH' ? 'UAH' : snapshot.currency}` : '...'}
                 </div>
-
-                {/* Account Selection Modal - выпадает под блоком */}
                 {showAccountModal && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-[150]" data-account-modal>
-                    {/* Account Selection */}
-                    <div className="p-3 space-y-2.5">
-                      {/* Real Account */}
-                      <div
-                        className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${
-                          accountType === 'real' ? 'bg-white/10' : 'hover:bg-white/5'
-                        }`}
-                        onClick={async () => {
-                          try {
-                            // Загружаем список аккаунтов и находим реальный
-                            const accountsResponse = await api<{ accounts: Array<{ id: string; type: string; isActive: boolean }> }>('/api/accounts');
-                            const realAccount = accountsResponse.accounts.find(a => a.type === 'real');
-                            if (realAccount) {
-                              await api('/api/accounts/switch', {
-                                method: 'POST',
-                                body: JSON.stringify({ accountId: realAccount.id }),
-                              });
-                              // Snapshot обновится автоматически через WebSocket
-                            }
-                            setShowAccountModal(false);
-                          } catch (error) {
-                            console.error('Failed to switch account:', error);
-                            alert('Не удалось переключить аккаунт');
-                          }
-                        }}
-                      >
-                        <div className="mt-0.5">
-                          {accountType === 'real' ? (
-                            <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#061230]" />
-                            </div>
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-white font-medium mb-0.5 text-sm">Реальный счёт</div>
-                          <div className="text-white/60 text-xs">
-                            {hideBalance ? '••••••' : (modalBalances.real ? `${modalBalances.real.balance} ${modalBalances.real.currency === 'USD' ? 'USD' : modalBalances.real.currency === 'RUB' ? '₽' : modalBalances.real.currency === 'UAH' ? '₴' : modalBalances.real.currency}` : (snapshot?.type === 'REAL' ? `${getCurrentBalance().balance} ${getCurrentBalance().currency === 'USD' ? 'USD' : getCurrentBalance().currency === 'RUB' ? '₽' : getCurrentBalance().currency === 'UAH' ? '₴' : getCurrentBalance().currency}` : '...'))}
+                  <>
+                    <div className="fixed inset-0 z-[140]" onClick={() => setShowAccountModal(false)} />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-[150]" data-account-modal>
+                      <div className="p-3 space-y-2.5">
+                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'real' ? 'bg-white/10' : 'hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find(x => x.type === 'real'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
+                          <div className="mt-0.5">{accountType === 'real' ? <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-[#061230]" /></div> : <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />}</div>
+                          <div className="flex-1">
+                            <div className="text-white font-medium mb-0.5 text-sm">Реальный счёт</div>
+                            <div className="text-white/60 text-xs">{hideBalance ? '••••••' : (modalBalances.real ? `${modalBalances.real.balance} ${modalBalances.real.currency === 'USD' ? 'USD' : modalBalances.real.currency === 'RUB' ? '₽' : modalBalances.real.currency === 'UAH' ? 'UAH' : modalBalances.real.currency}` : (snapshot?.type === 'REAL' ? `${getCurrentBalance().balance} ${getCurrentBalance().currency === 'USD' ? 'USD' : getCurrentBalance().currency === 'RUB' ? '₽' : getCurrentBalance().currency === 'UAH' ? 'UAH' : getCurrentBalance().currency}` : '...'))}</div>
+                            <Link href="/profile?tab=wallet" onClick={(e) => e.stopPropagation()} className="mt-2 inline-block px-2.5 py-1 rounded-lg bg-[#3347ff] text-white text-xs font-medium hover:bg-[#3347ff]/90 transition-colors">Пополнить счёт</Link>
                           </div>
-                          <Link
-                            href="/profile?tab=wallet"
-                            onClick={(e) => e.stopPropagation()}
-                            className="mt-2 inline-block px-2.5 py-1 rounded-lg bg-[#3347ff] text-white text-xs font-medium hover:bg-[#3347ff]/90 transition-colors"
-                          >
-                            Пополнить счёт
-                          </Link>
                         </div>
-                      </div>
-
-                      {/* Demo Account */}
-                      <div
-                        className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${
-                          accountType === 'demo' ? 'bg-white/10' : 'hover:bg-white/5'
-                        }`}
-                        onClick={async () => {
-                          try {
-                            // Загружаем список аккаунтов и находим демо
-                            const accountsResponse = await api<{ accounts: Array<{ id: string; type: string; isActive: boolean }> }>('/api/accounts');
-                            const demoAccount = accountsResponse.accounts.find(a => a.type === 'demo');
-                            if (demoAccount) {
-                              await api('/api/accounts/switch', {
-                                method: 'POST',
-                                body: JSON.stringify({ accountId: demoAccount.id }),
-                              });
-                              // Snapshot обновится автоматически через WebSocket
-                            }
-                            setShowAccountModal(false);
-                          } catch (error) {
-                            console.error('Failed to switch account:', error);
-                            alert('Не удалось переключить аккаунт');
-                          }
-                        }}
-                      >
-                        <div className="mt-0.5">
-                          {accountType === 'demo' ? (
-                            <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#061230]" />
-                            </div>
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-white font-medium mb-0.5 text-sm">Демо-счёт</div>
-                          <div className="text-white/60 text-xs">
-                            {hideBalance ? '••••••' : (modalBalances.demo ? `${modalBalances.demo.balance} ${modalBalances.demo.currency === 'USD' ? 'USD' : modalBalances.demo.currency === 'RUB' ? '₽' : modalBalances.demo.currency === 'UAH' ? '₴' : modalBalances.demo.currency}` : (snapshot?.type === 'DEMO' ? `${getCurrentBalance().balance} ${getCurrentBalance().currency === 'USD' ? 'USD' : getCurrentBalance().currency === 'RUB' ? '₽' : getCurrentBalance().currency === 'UAH' ? '₴' : getCurrentBalance().currency}` : '...'))}
+                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'demo' ? 'bg-white/10' : 'hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find(x => x.type === 'demo'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
+                          <div className="mt-0.5">{accountType === 'demo' ? <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-[#061230]" /></div> : <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />}</div>
+                          <div className="flex-1">
+                            <div className="text-white font-medium mb-0.5 text-sm">Демо-счёт</div>
+                            <div className="text-white/60 text-xs">{hideBalance ? '••••••' : (modalBalances.demo ? `${modalBalances.demo.balance} ${modalBalances.demo.currency === 'USD' ? 'USD' : modalBalances.demo.currency === 'RUB' ? '₽' : modalBalances.demo.currency === 'UAH' ? 'UAH' : modalBalances.demo.currency}` : (snapshot?.type === 'DEMO' ? `${getCurrentBalance().balance} ${getCurrentBalance().currency === 'USD' ? 'USD' : getCurrentBalance().currency === 'RUB' ? '₽' : getCurrentBalance().currency === 'UAH' ? 'UAH' : getCurrentBalance().currency}` : '...'))}</div>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Hide Balance Toggle */}
-                    <div className="border-t border-white/10 p-3">
-                      <div
-                        className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setHideBalance(!hideBalance)}
-                      >
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          {hideBalance ? (
-                            <>
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                              />
-                            </>
-                          ) : (
-                            <>
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                              />
-                            </>
-                          )}
-                        </svg>
-                        <span className="text-white text-xs">Скрыть баланс</span>
+                      <div className="border-t border-white/10 p-3">
+                        <div className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setHideBalance(!hideBalance)}>
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">{hideBalance ? <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></> : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}</svg>
+                          <span className="text-white text-xs">Скрыть баланс</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </div>
 
-            {/* Кнопка Пополнить */}
-            <button
-              type="button"
-              className="px-5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white hover:from-[#3347ff]/90 hover:to-[#1e2fcc]/90 transition-all flex items-center gap-2 uppercase"
-              onClick={() => {
-                // TODO: Добавить обработку пополнения
-                alert('Функция пополнения будет добавлена');
-              }}
-            >
+            <Link href="/profile?tab=wallet" className="px-5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white hover:from-[#3347ff]/90 hover:to-[#1e2fcc]/90 transition-all flex items-center gap-2 uppercase">
               <Wallet className="w-4 h-4" />
-              <span>Пополнить счет</span>
-            </button>
+              <span>Пополнить счёт</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -1602,7 +1270,7 @@ export default function TerminalPage() {
               +{payoutPercent}%
             </div>
             <div className="text-base text-gray-400">
-              +{((Number.parseFloat(amount || '100') * payoutPercent) / 100).toFixed(2)} USD
+              +{((Number.parseFloat(amount || '100') * payoutPercent) / 100).toFixed(2)} UAH
             </div>
           </div>
 
@@ -2278,7 +1946,7 @@ function TradeCard({
       {/* Итоговая строка: Сумма и направление */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-white">
-          ₴{isOpen ? '0.00' : (isWin ? payoutAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }) : '0.00')}
+          {isOpen ? '0.00' : (isWin ? payoutAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }) : '0.00')} UAH
         </span>
         <div className="flex items-center gap-1">
           {trade.direction === 'CALL' ? (

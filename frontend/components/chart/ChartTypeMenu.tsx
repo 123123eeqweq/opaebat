@@ -90,7 +90,7 @@ export function ChartTypeMenu({
                   }}
                   className={`flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg transition-colors flex-1 min-w-0 ${
                     isActive
-                      ? 'bg-[#3347ff]/35 text-white border border-[#3347ff]/50'
+                      ? 'bg-[#3347ff] text-white border border-[#3347ff]'
                       : 'bg-white/10 text-gray-300 hover:bg-white/15 hover:text-white'
                   }`}
                 >
