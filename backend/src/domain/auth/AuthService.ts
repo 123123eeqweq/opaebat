@@ -4,6 +4,8 @@
 
 import type { UserRepository } from '../../ports/repositories/UserRepository.js';
 import type { SessionRepository } from '../../ports/repositories/SessionRepository.js';
+import type { AccountService } from '../accounts/AccountService.js';
+import { AccountType } from '../accounts/AccountTypes.js';
 import type { RegisterInput, LoginInput, AuthResult, AuthResult2FA } from './AuthTypes.js';
 import {
   UserNotFoundError,
@@ -22,6 +24,7 @@ export class AuthService {
   constructor(
     private userRepository: UserRepository,
     private sessionRepository: SessionRepository,
+    private accountService?: AccountService,
   ) {
     this.twoFactorService = new TwoFactorService();
   }
@@ -50,6 +53,12 @@ export class AuthService {
       email: input.email,
       password: passwordHash,
     });
+
+    // 🔥 FLOW REGISTER-ACCOUNTS: Сразу создаём demo и real счета
+    if (this.accountService) {
+      await this.accountService.createAccount({ userId: user.id, type: AccountType.DEMO });
+      await this.accountService.createAccount({ userId: user.id, type: AccountType.REAL });
+    }
 
     // Create session
     const sessionToken = generateSessionToken();

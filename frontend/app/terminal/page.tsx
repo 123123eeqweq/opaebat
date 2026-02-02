@@ -1034,7 +1034,7 @@ export default function TerminalPage() {
           )}
 
           {/* Обёртка графика с явными размерами под ресайз — заполняет main по inset-0 */}
-          <div ref={chartContainerRef} className="absolute inset-0 min-w-0 min-h-0 overflow-hidden flex flex-col">
+          <div ref={chartContainerRef} className="absolute inset-0 min-w-0 min-h-0 overflow-hidden flex flex-col md:flex-row">
             {/* График */}
             <div className="flex-1 min-w-0 min-h-0 relative">
               {/* 🔥 FLOW: Hard Chart Reinitialization on Timeframe/ChartType Change
@@ -1079,23 +1079,47 @@ export default function TerminalPage() {
               />
             </div>
             
-            {/* SentimentBar — горизонтально под графиком */}
-            <div className="shrink-0 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#05122a]/80 border-t border-white/5">
-              <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                {buyPercentage}%
-              </span>
-              <div className="flex-1 min-w-0 h-2 md:h-3">
-                <SentimentBar
-                  orientation="horizontal"
-                  onPercentagesChange={(buy, sell) => {
-                    setBuyPercentage(buy);
-                    setSellPercentage(sell);
-                  }}
-                />
+            {/* SentimentBar — на мобилке горизонтально под графиком, на десктопе вертикально справа */}
+            <div className="shrink-0 flex flex-row md:flex-col items-center md:items-stretch gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-2 py-1.5 sm:py-2 md:py-3 bg-[#05122a]/80 border-t md:border-t-0 md:border-l border-white/5 md:w-12">
+              {/* На мобилке: горизонтальная компоновка */}
+              <div className="md:hidden flex items-center gap-1.5 sm:gap-2 w-full">
+                <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                  {buyPercentage}%
+                </span>
+                <div className="flex-1 min-w-0 h-2 md:h-3">
+                  <SentimentBar
+                    orientation="horizontal"
+                    onPercentagesChange={(buy, sell) => {
+                      setBuyPercentage(buy);
+                      setSellPercentage(sell);
+                    }}
+                  />
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                  {sellPercentage}%
+                </span>
               </div>
-              <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                {sellPercentage}%
-              </span>
+              
+              {/* На десктопе: вертикальная компоновка */}
+              <div className="hidden md:flex flex-col items-center justify-center gap-2 h-full py-3">
+                <span className="text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                  {buyPercentage}%
+                </span>
+                <div className="flex-1 min-w-0 w-full flex items-center justify-center min-h-0" style={{ height: '100%' }}>
+                  <SentimentBar
+                    orientation="vertical"
+                    height={400}
+                    width={12}
+                    onPercentagesChange={(buy, sell) => {
+                      setBuyPercentage(buy);
+                      setSellPercentage(sell);
+                    }}
+                  />
+                </div>
+                <span className="text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                  {sellPercentage}%
+                </span>
+              </div>
             </div>
           </div>
         </main>

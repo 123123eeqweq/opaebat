@@ -139,6 +139,10 @@ export function useChartInteractions({
   });
   // 🔥 FLOW Y1: Y-scale drag state
   const yDragStateRef = useRef<boolean>(false);
+  // 🔥 FLOW TOUCH-CHART: Touch gesture refs (1 finger = pan, 2 fingers = pinch zoom)
+  const touchModeRef = useRef<'none' | 'pan' | 'pinch'>('none');
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pinchStartRef = useRef<{ distance: number; centerX: number } | null>(null);
   // 🔥 FLOW C-INERTIA: Pan inertia state (используем переданные refs или создаем свои)
   const internalPanVelocityRef = useRef<number>(0);
   const internalInertiaActiveRef = useRef<boolean>(false);
@@ -446,6 +450,101 @@ export function useChartInteractions({
     }
   };
 
+  // 🔥 FLOW TOUCH-CHART: Touch helpers
+  const getTouchDistance = (t1: Touch, t2: Touch) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+  const getTouchCenterX = (t1: Touch, t2: Touch) => (t1.clientX + t2.clientX) / 2;
+
+  const handleTouchStart = (e: TouchEvent) => {
+    e.preventDefault();
+    if (getMarketStatus && getMarketStatus() !== 'OPEN') return;
+    if (getIsEditingDrawing?.()) return;
+
+    if (e.touches.length === 1) {
+      touchModeRef.current = 'pan';
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      inertiaActiveRef.current = false;
+      panVelocityPxPerMsRef.current = 0;
+    } else if (e.touches.length === 2) {
+      const [t1, t2] = [e.touches[0], e.touches[1]];
+      touchModeRef.current = 'pinch';
+      pinchStartRef.current = {
+        distance: getTouchDistance(t1, t2),
+        centerX: getTouchCenterX(t1, t2),
+      };
+      inertiaActiveRef.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const viewport = viewportRef.current;
+    if (!canvas || !viewport) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const timeRange = viewport.timeEnd - viewport.timeStart;
+    const pixelsPerMs = canvas.clientWidth / timeRange;
+
+    if (touchModeRef.current === 'pan' && e.touches.length === 1) {
+      const t = e.touches[0];
+      const start = touchStartRef.current;
+      if (!start) return;
+
+      const deltaX = t.clientX - start.x;
+
+      const newViewport = panViewportTime({
+        viewport,
+        deltaX,
+        pixelsPerMs,
+      });
+
+      setFollowMode?.(false);
+      updateViewport(newViewport);
+      onViewportChange?.(newViewport);
+
+      touchStartRef.current = { x: t.clientX, y: t.clientY };
+    } else if (touchModeRef.current === 'pinch' && e.touches.length === 2) {
+      const [t1, t2] = [e.touches[0], e.touches[1]];
+      const pinch = pinchStartRef.current;
+      if (!pinch) return;
+
+      const newDistance = getTouchDistance(t1, t2);
+      const zoomFactor = newDistance / pinch.distance;
+      const anchorTime = mouseXToTime(pinch.centerX, canvas, viewport);
+
+      const newViewport = zoomViewportTime({
+        viewport,
+        zoomFactor,
+        anchorTime,
+        minVisibleCandles: MIN_VISIBLE_CANDLES,
+        maxVisibleCandles: MAX_VISIBLE_CANDLES,
+        timeframeMs,
+      });
+
+      setFollowMode?.(false);
+      updateViewport(newViewport);
+      onViewportChange?.(newViewport);
+
+      pinchStartRef.current = {
+        distance: newDistance,
+        centerX: getTouchCenterX(t1, t2),
+      };
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchModeRef.current === 'pan') {
+      scheduleReturnToFollow?.();
+    }
+    touchModeRef.current = 'none';
+    touchStartRef.current = null;
+    pinchStartRef.current = null;
+  };
+
   // Подписка на события
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -458,6 +557,12 @@ export function useChartInteractions({
     window.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('wheel', handleWheel, { passive: false });
 
+    // 🔥 FLOW TOUCH-CHART: Touch events
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
@@ -465,6 +570,10 @@ export function useChartInteractions({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('wheel', handleWheel);
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchcancel', handleTouchEnd);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetYScale]);
@@ -479,6 +588,11 @@ export function useChartInteractions({
       isDragging: false,
       lastX: null,
     };
+
+    // 🔥 FLOW TOUCH-CHART: Сбрасываем touch состояние
+    touchModeRef.current = 'none';
+    touchStartRef.current = null;
+    pinchStartRef.current = null;
     
     // Сбрасываем состояние Y-scale drag (прерываем активный drag если есть)
     yDragStateRef.current = false;

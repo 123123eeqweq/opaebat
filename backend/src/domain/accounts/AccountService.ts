@@ -60,16 +60,17 @@ export class AccountService {
     const isFirstAccount = allAccounts.length === 0;
 
     // Стартовый баланс:
-    // - demo: 10 000 (игровые деньги)
+    // - demo: 10 000 USD (игровые деньги, демо всегда в USD)
     // - real: 0 (пополняется отдельно)
     const initialBalance = input.type === AccountType.DEMO ? 10_000 : 0;
+    const currency = input.type === AccountType.DEMO ? 'USD' : 'UAH';
 
     // Create account
     const account = await this.accountRepository.create({
       userId: input.userId,
       type: input.type,
       balance: initialBalance,
-      currency: 'UAH',
+      currency,
       isActive: isFirstAccount,
     });
 

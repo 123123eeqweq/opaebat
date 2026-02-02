@@ -146,9 +146,15 @@ export function useCrosshair({
   };
 
   // Подписка на события мыши
+  // 🔥 FLOW TOUCH-CHART: На мобильных кроссхейр не нужен (нет hover)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    const isTouchDevice =
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
+    if (isTouchDevice) return; // Не подписываемся — getCrosshair всегда вернёт null
 
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);

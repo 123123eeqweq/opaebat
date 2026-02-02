@@ -4,8 +4,11 @@
 
 import type { FastifyInstance } from 'fastify';
 import { AuthService } from '../../domain/auth/AuthService.js';
+import { AccountService } from '../../domain/accounts/AccountService.js';
 import { PrismaUserRepository } from '../../infrastructure/prisma/PrismaUserRepository.js';
 import { PrismaSessionRepository } from '../../infrastructure/prisma/PrismaSessionRepository.js';
+import { PrismaAccountRepository } from '../../infrastructure/prisma/PrismaAccountRepository.js';
+import { PrismaTransactionRepository } from '../../infrastructure/prisma/PrismaTransactionRepository.js';
 import { AuthController } from './auth.controller.js';
 import { registerSchema, loginSchema, logoutSchema, meSchema } from './auth.schema.js';
 
@@ -13,7 +16,10 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // Initialize dependencies
   const userRepository = new PrismaUserRepository();
   const sessionRepository = new PrismaSessionRepository();
-  const authService = new AuthService(userRepository, sessionRepository);
+  const accountRepository = new PrismaAccountRepository();
+  const transactionRepository = new PrismaTransactionRepository();
+  const accountService = new AccountService(accountRepository, transactionRepository);
+  const authService = new AuthService(userRepository, sessionRepository, accountService);
   const authController = new AuthController(authService);
 
   // Register routes

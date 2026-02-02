@@ -102,7 +102,7 @@ export const CandleChart = forwardRef<CandleChartRef, CandleChartProps>(
       <canvas
         ref={canvasRef}
         className={className}
-        style={style}
+        style={{ ...style, touchAction: 'none' }}
         onContextMenu={(e) => e.preventDefault()}
       />
     );

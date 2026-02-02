@@ -240,6 +240,18 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
     // 🔥 FLOW C-INERTIA: Pan inertia state для линейного графика (используем refs из panInertiaRefs)
     const lastMoveTimeRef = useRef<number | null>(null);
 
+    // 🔥 FLOW TOUCH-CHART: Touch gesture refs (1 finger = pan, 2 fingers = pinch zoom)
+    const touchModeRef = useRef<'none' | 'pan' | 'pinch'>('none');
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const pinchStartRef = useRef<{ distance: number; centerX: number } | null>(null);
+
+    const getTouchDistance = (t1: Touch, t2: Touch) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+    const getTouchCenterX = (t1: Touch, t2: Touch) => (t1.clientX + t2.clientX) / 2;
+
     useEffect(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -332,17 +344,94 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
         lastPanXRef.current = null;
       };
 
+      // 🔥 FLOW TOUCH-CHART: Touch handlers (1 finger = pan, 2 fingers = pinch zoom)
+      const handleTouchStart = (e: TouchEvent) => {
+        if (lineChart.getIsEditingDrawing()) return;
+        e.preventDefault();
+
+        if (e.touches.length === 1) {
+          touchModeRef.current = 'pan';
+          touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          panInertiaRefs.activeRef.current = false;
+          panInertiaRefs.velocityRef.current = 0;
+        } else if (e.touches.length === 2) {
+          const [t1, t2] = [e.touches[0], e.touches[1]];
+          touchModeRef.current = 'pinch';
+          pinchStartRef.current = {
+            distance: getTouchDistance(t1, t2),
+            centerX: getTouchCenterX(t1, t2),
+          };
+          panInertiaRefs.activeRef.current = false;
+        }
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        e.preventDefault();
+        const canvasEl = canvasRef.current;
+        if (!canvasEl) return;
+
+        const rect = canvasEl.getBoundingClientRect();
+        const width = rect.width;
+        const viewport = lineChart.getViewport();
+        const timeRange = viewport.timeEnd - viewport.timeStart;
+        const pxPerMs = width / timeRange;
+
+        if (touchModeRef.current === 'pan' && e.touches.length === 1) {
+          const t = e.touches[0];
+          const start = touchStartRef.current;
+          if (!start) return;
+
+          const dx = t.clientX - start.x;
+          const deltaMs = -dx / pxPerMs;
+          lineChart.pan(deltaMs);
+
+          touchStartRef.current = { x: t.clientX, y: t.clientY };
+        } else if (touchModeRef.current === 'pinch' && e.touches.length === 2) {
+          const [t1, t2] = [e.touches[0], e.touches[1]];
+          const pinch = pinchStartRef.current;
+          if (!pinch) return;
+
+          const newDistance = getTouchDistance(t1, t2);
+          const zoomFactor = newDistance / pinch.distance;
+          lineChart.zoom(zoomFactor);
+
+          pinchStartRef.current = {
+            distance: newDistance,
+            centerX: getTouchCenterX(t1, t2),
+          };
+        }
+      };
+
+      const handleTouchEnd = () => {
+        if (touchModeRef.current === 'pan') {
+          lineChart.scheduleReturnToFollow();
+        }
+        touchModeRef.current = 'none';
+        touchStartRef.current = null;
+        pinchStartRef.current = null;
+      };
+
       // Подписываемся на нативные события (как в свечном графике)
       canvas.addEventListener('mousedown', handleMouseDown);
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
       canvas.addEventListener('mouseleave', handleMouseLeave);
 
+      // 🔥 FLOW TOUCH-CHART: Touch events
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd);
+      canvas.addEventListener('touchcancel', handleTouchEnd);
+
       return () => {
         canvas.removeEventListener('mousedown', handleMouseDown);
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
         canvas.removeEventListener('mouseleave', handleMouseLeave);
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchend', handleTouchEnd);
+        canvas.removeEventListener('touchcancel', handleTouchEnd);
       };
     }, [lineChart, panInertiaRefs]);
 
@@ -355,6 +444,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
           width: '100%',
           height: '100%',
           display: 'block',
+          touchAction: 'none', // 🔥 FLOW TOUCH-CHART: блокируем page scroll при жестах
         }}
         onWheel={handleWheel}
         onDoubleClick={handleDoubleClick}
