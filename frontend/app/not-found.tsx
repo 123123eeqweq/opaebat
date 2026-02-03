@@ -1,8 +1,8 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export default function NotFound() {
   const [showRegisterPanel, setShowRegisterPanel] = useState(false)
@@ -10,25 +10,13 @@ export default function NotFound() {
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
-      <header className="bg-[#061230]">
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-10 w-auto object-contain" />
-            <span className="text-xl font-semibold text-white uppercase">ComforTrade</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/start" className="text-gray-300 hover:text-white transition-colors">Как начать?</Link>
-            <Link href="/assets" className="text-gray-300 hover:text-white transition-colors">Активы</Link>
-            <Link href="/about" className="text-gray-300 hover:text-white transition-colors">О компании</Link>
-            <Link href="/reviews" className="text-gray-300 hover:text-white transition-colors">Отзывы</Link>
-            <Link href="/education" className="text-gray-300 hover:text-white transition-colors">Обучение</Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader
+        onOpenLogin={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
+        onOpenRegister={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
+      />
 
       {/* 404 Content */}
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-[#f7f7fc] to-white">
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-[#f7f7fc] to-white pt-24">
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-2xl mx-auto text-center">
             <div className="mb-8">

@@ -8,8 +8,8 @@ import ReactCountryFlag from 'react-country-flag'
 // ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ТЕСТА
 import { useAuth } from '@/lib/hooks/useAuth'
 import Footer from '@/components/Footer'
+import { SiteHeader } from '@/components/SiteHeader'
 import { INSTRUMENTS } from '@/lib/instruments'
-import { LANGUAGES } from '@/lib/languages'
 
 function getCurrencyCountryCodes(pair: string): [string | null, string | null] {
   const parts = pair.split('/')
@@ -26,16 +26,12 @@ const NON_OTC_INSTRUMENTS = INSTRUMENTS.filter((i) => !i.label.includes('OTC'))
 export default function Home() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, isAuthenticated, isLoading, login, register, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, login, register } = useAuth()
   
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [isHeaderScrolled, setIsHeaderScrolled] = useState(false)
   const [showRegisterPanel, setShowRegisterPanel] = useState(false)
   const [panelMode, setPanelMode] = useState<'login' | 'register'>('register')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [currentLanguage, setCurrentLanguage] = useState('RU')
   
   // Form state
   const [email, setEmail] = useState('')
@@ -47,14 +43,8 @@ export default function Home() {
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
 
-  const languages = LANGUAGES
-
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      setShowScrollTop(y > 400)
-      setIsHeaderScrolled(y > 20)
-    }
+    const onScroll = () => setShowScrollTop(window.scrollY > 400)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -124,11 +114,6 @@ export default function Home() {
     }
   }
 
-  const handleLogout = async () => {
-    await logout()
-    setShowRegisterPanel(false)
-  }
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header and Hero Section with shared background */}
@@ -136,193 +121,10 @@ export default function Home() {
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/back1.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}></div>
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/back2.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}></div>
         
-        {/* Header */}
-        <header
-          className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-            isHeaderScrolled ? 'bg-[#061230]/95 backdrop-blur-sm' : 'bg-transparent'
-          }`}
-        >
-          <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 flex items-center justify-between">
-          {/* Mobile: burger | logo | войти */}
-          {/* Desktop: logo | nav | language + auth */}
-          <div className="flex-1 flex justify-start md:hidden min-w-0">
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Меню"
-            >
-              {showMobileMenu ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          <div className="flex-1 flex justify-center md:flex-initial md:justify-start min-w-0">
-            <Link href="/" className="flex items-center">
-              <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
-            </Link>
-          </div>
-          
-          <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
-            <Link href="/start" className="text-gray-300 hover:text-white">Как начать?</Link>
-            <Link href="/assets" className="text-gray-300 hover:text-white">Активы</Link>
-            <Link href="/about" className="text-gray-300 hover:text-white">О компании</Link>
-            <Link href="/reviews" className="text-gray-300 hover:text-white">Отзывы</Link>
-            <Link href="/education" className="text-gray-300 hover:text-white">Обучение</Link>
-          </nav>
-          
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end md:flex-initial min-w-0">
-            <div className="relative hidden sm:block">
-              <button
-                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 px-2 py-1"
-              >
-                <div className="w-5 h-5 rounded-full overflow-hidden relative">
-                  <Image 
-                    src={languages.find(l => l.code === currentLanguage)?.flag || '/images/flags/ru.svg'} 
-                    alt={currentLanguage}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <span className="uppercase font-medium">{currentLanguage}</span>
-                <svg className={`w-4 h-4 transition-transform duration-200 ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {showLanguageMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
-                  <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl py-2 min-w-[200px] max-h-[70vh] overflow-y-auto scrollbar-dropdown-light z-50 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex flex-col p-1">
-                      {languages.map((lang) => (
-                        <button
-                          key={lang.code}
-                          onClick={() => {
-                            setCurrentLanguage(lang.code)
-                            setShowLanguageMenu(false)
-                          }}
-                          className={`text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
-                            currentLanguage === lang.code
-                              ? 'bg-[#3347ff]/10 text-[#3347ff]'
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
-                            <Image 
-                              src={lang.flag} 
-                              alt={lang.code}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          {lang.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {!isLoading && (
-              <>
-                {isAuthenticated && user ? (
-                  <>
-                    <span className="hidden md:inline text-white text-sm truncate max-w-[100px] lg:max-w-[140px]">{user.email}</span>
-                    <button
-                      onClick={handleLogout}
-                      className="bg-transparent text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base border border-white/50 hover:bg-white/10 transition-colors"
-                    >
-                      Выйти
-                    </button>
-                    <Link
-                      href="/terminal"
-                      className="bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors flex items-center justify-center"
-                    >
-                      Терминал
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
-                      className="bg-transparent text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base border border-white/50 hover:bg-white/10 transition-colors"
-                    >
-                      Войти
-                    </button>
-                    <button
-                      onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
-                      className="hidden md:inline-flex bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors items-center justify-center"
-                    >
-                      Регистрация
-                    </button>
-                  </>
-                )}
-              </>
-            )}
-
-          </div>
-          </div>
-
-          {/* Мобильное меню */}
-          {showMobileMenu && (
-            <>
-              <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} aria-hidden />
-              <div className="absolute top-full left-0 right-0 z-50 md:hidden bg-[#061230]/98 backdrop-blur-sm border-t border-white/10 shadow-xl">
-                <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
-                  <Link href="/start" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Как начать?</Link>
-                  <Link href="/assets" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Активы</Link>
-                  <Link href="/about" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">О компании</Link>
-                  <Link href="/reviews" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Отзывы</Link>
-                  <Link href="/education" onClick={() => { setShowMobileMenu(false); setShowLanguageMenu(false); }} className="py-3 text-gray-300 hover:text-white border-b border-white/5">Обучение</Link>
-                  <div className="pt-3 mt-2 border-t border-white/10">
-                    <button
-                      onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                      className="flex items-center gap-2 py-2 text-gray-300 hover:text-white w-full"
-                    >
-                      <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
-                        <Image src={languages.find(l => l.code === currentLanguage)?.flag || '/images/flags/ru.svg'} alt="" fill className="object-cover" />
-                      </div>
-                      <span>Язык: {languages.find(l => l.code === currentLanguage)?.label || currentLanguage}</span>
-                      <svg className={`w-4 h-4 ml-auto transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    {showLanguageMenu && (
-                      <div className="flex flex-col py-2 pl-7">
-                        {languages.map((lang) => (
-                          <button
-                            key={lang.code}
-                            onClick={() => {
-                              setCurrentLanguage(lang.code);
-                              setShowLanguageMenu(false);
-                            }}
-                            className={`text-left py-2 rounded-lg text-sm flex items-center gap-3 ${
-                              currentLanguage === lang.code ? 'text-[#7b8fff]' : 'text-gray-400 hover:text-white'
-                            }`}
-                          >
-                            <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
-                              <Image src={lang.flag} alt="" fill className="object-cover" />
-                            </div>
-                            {lang.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </nav>
-              </div>
-            </>
-          )}
-        </header>
+        <SiteHeader
+          onOpenLogin={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
+          onOpenRegister={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
+        />
 
         {/* Hero + Marquee wrapper: 100vh on mobile (header + hero + marquee all visible) */}
         <div className="min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] md:min-h-0 flex flex-col md:block">
@@ -854,7 +656,7 @@ export default function Home() {
                 Последние материалы
               </h2>
               <p className="text-lg text-gray-600 max-w-md">
-                Статьи, руководства и новости о Forex, крипте и торговле. Будьте в курсе трендов и обновлений платформы.
+                Статьи, руководства и новости о валютном рынке, крипте и торговле. Будьте в курсе трендов и обновлений платформы.
               </p>
             </div>
           </div>
@@ -866,7 +668,7 @@ export default function Home() {
               <div className="relative h-48 overflow-hidden">
                 <Image
                   src="/images/111.jpeg"
-                  alt="Торговля на Forex"
+                  alt="Торговля на валютном рынке"
                   width={400}
                   height={300}
                   className="w-full h-full object-cover"
@@ -876,10 +678,10 @@ export default function Home() {
                 <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
                   <span>Приложения</span>
                   <span>•</span>
-                  <span>9 ноя 2021</span>
+                  <span>1 фев 2026</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  Как начать торговать на Forex: пошаговое руководство
+                  Как начать торговать на валютном рынке: пошаговое руководство
                 </h3>
                 <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
                   Читать далее
@@ -905,7 +707,7 @@ export default function Home() {
                 <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
                   <span>Продукты</span>
                   <span>•</span>
-                  <span>9 ноя 2021</span>
+                  <span>1 фев 2026</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
                   Торговля криптовалютами: BTC, ETH и другие активы
@@ -934,10 +736,10 @@ export default function Home() {
                 <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
                   <span>Приложения</span>
                   <span>•</span>
-                  <span>9 ноя 2021</span>
+                  <span>1 фев 2026</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  5 советов для успешной торговли на бинарных опционах
+                  5 советов для успешной торговли на валютном рынке
                 </h3>
                 <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
                   Читать далее
@@ -1232,7 +1034,7 @@ export default function Home() {
                 <div>
                   <p className="text-xs text-center text-gray-500 mb-3 font-medium">Подпишитесь на наши соц сети</p>
                   <div className="flex justify-center gap-4">
-                    <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label="Instagram">
+                    <a href="https://www.instagram.com/comfortrade/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" aria-label="Instagram">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                       </svg>

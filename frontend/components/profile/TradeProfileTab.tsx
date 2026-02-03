@@ -12,9 +12,6 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import { api } from '@/lib/api/api';
 import { getInstrument } from '@/lib/instruments';
@@ -328,9 +325,8 @@ export function TradeProfileTab() {
             </div>
           </div>
 
-          {/* Аналитика: распределение по активам и направлению */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
-            {/* Распределение по активам */}
+          {/* Аналитика: распределение по активам */}
+          <div className="mt-4 sm:mt-6">
             <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-4 sm:p-6">
               <h3 className="text-base font-semibold text-white mb-4">Распределение по активам</h3>
               {analyticsLoading ? (
@@ -373,90 +369,6 @@ export function TradeProfileTab() {
                       <Bar dataKey="count" fill="#3347ff" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
-              )}
-            </div>
-
-            {/* Направление сделок: вверх / вниз */}
-            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-4 sm:p-6">
-              <h3 className="text-base font-semibold text-white mb-4">Направление сделок</h3>
-              {analyticsLoading ? (
-                <div className="h-[220px] flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-white/20 border-t-[#3347ff] rounded-full animate-spin" />
-                </div>
-              ) : !analytics?.byDirection ? (
-                <div className="h-[220px] flex items-center justify-center text-white/40 text-sm">
-                  Нет данных
-                </div>
-              ) : analytics.byDirection.call.count === 0 && analytics.byDirection.put.count === 0 ? (
-                <div className="h-[220px] flex items-center justify-center text-white/40 text-sm">
-                  Нет сделок за период
-                </div>
-              ) : (
-                <div className="h-[220px] min-h-[280px] sm:min-h-[220px] flex flex-col gap-4">
-                  <div className="flex-1 flex flex-col sm:flex-row items-center gap-4">
-                    <div className="w-full sm:w-1/2 h-[140px] sm:h-full flex-shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={[
-                            { name: 'Вверх (CALL)', value: analytics.byDirection.call.count || 0, color: '#22c55e' },
-                            { name: 'Вниз (PUT)', value: analytics.byDirection.put.count || 0, color: '#ef4444' },
-                          ].filter((d) => d.value > 0)}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={2}
-                          dataKey="value"
-                          label={({ name, percent }) => ((percent ?? 0) > 0.02 ? `${name} ${((percent ?? 0) * 100).toFixed(0)}%` : '')}
-                          labelLine={false}
-                        >
-                          {[
-                            { name: 'Вверх (CALL)', value: analytics.byDirection.call.count, color: '#22c55e' },
-                            { name: 'Вниз (PUT)', value: analytics.byDirection.put.count, color: '#ef4444' },
-                          ]
-                            .filter((d) => d.value > 0)
-                            .map((entry, i) => (
-                              <Cell key={i} fill={entry.color} />
-                            ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#0f1a2e',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '12px',
-                          }}
-                          formatter={(value: number | undefined, name?: string) => [value != null ? `${value} сделок` : '', name ?? '']}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    </div>
-                    <div className="flex-1 space-y-3 w-full sm:w-auto">
-                      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                        <span className="text-sm text-white/80">Вверх (CALL)</span>
-                        <span className="text-sm font-semibold text-emerald-400 tabular-nums">
-                          {analytics.byDirection.call.count} сделок
-                        </span>
-                      </div>
-                      <div className="text-xs text-white/50">
-                        Win rate: {analytics.byDirection.call.count > 0
-                          ? Math.round((analytics.byDirection.call.winCount / analytics.byDirection.call.count) * 100)
-                          : 0}%
-                      </div>
-                      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                        <span className="text-sm text-white/80">Вниз (PUT)</span>
-                        <span className="text-sm font-semibold text-red-400 tabular-nums">
-                          {analytics.byDirection.put.count} сделок
-                        </span>
-                      </div>
-                      <div className="text-xs text-white/50">
-                        Win rate: {analytics.byDirection.put.count > 0
-                          ? Math.round((analytics.byDirection.put.winCount / analytics.byDirection.put.count) * 100)
-                          : 0}%
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>

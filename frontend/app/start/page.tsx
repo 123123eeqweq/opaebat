@@ -3,29 +3,18 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { UserPlus, Wallet, TrendingUp } from 'lucide-react'
 import Footer from '@/components/Footer'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export default function StartPage() {
-  const [isHeaderScrolled, setIsHeaderScrolled] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const [currentLanguage, setCurrentLanguage] = useState('RU')
   const [showRegisterPanel, setShowRegisterPanel] = useState(false)
   const [panelMode, setPanelMode] = useState<'login' | 'register'>('register')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
 
-  const languages = [
-    { code: 'UA', label: 'Українська', flag: '/images/flags/ua.svg' },
-    { code: 'RU', label: 'Русский', flag: '/images/flags/ru.svg' },
-    { code: 'EN', label: 'English', flag: '/images/flags/en.svg' },
-  ]
-
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      setIsHeaderScrolled(y > 20)
-      setShowScrollTop(y > 400)
-    }
+    const onScroll = () => setShowScrollTop(window.scrollY > 400)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -36,92 +25,11 @@ export default function StartPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-          isHeaderScrolled ? 'bg-[#061230]/95 backdrop-blur-sm' : 'bg-transparent'
-        }`}
-      >
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-10 w-auto object-contain" />
-            <span className="text-xl font-semibold text-white uppercase">ComforTrade</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/start" className="text-white font-medium">Как начать?</Link>
-            <Link href="/assets" className="text-gray-300 hover:text-white transition-colors">Активы</Link>
-            <Link href="/about" className="text-gray-300 hover:text-white transition-colors">О компании</Link>
-            <Link href="/reviews" className="text-gray-300 hover:text-white transition-colors">Отзывы</Link>
-            <Link href="/education" className="text-gray-300 hover:text-white transition-colors">Обучение</Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <button
-                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 px-2 py-1"
-              >
-                <div className="w-5 h-5 rounded-full overflow-hidden relative">
-                  <Image 
-                    src={languages.find(l => l.code === currentLanguage)?.flag || '/images/flags/ru.svg'} 
-                    alt={currentLanguage}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <span className="uppercase font-medium">{currentLanguage}</span>
-                <svg className={`w-4 h-4 transition-transform duration-200 ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {showLanguageMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
-                  <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl py-2 min-w-[160px] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex flex-col p-1">
-                      {languages.map((lang) => (
-                        <button
-                          key={lang.code}
-                          onClick={() => {
-                            setCurrentLanguage(lang.code)
-                            setShowLanguageMenu(false)
-                          }}
-                          className={`text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
-                            currentLanguage === lang.code
-                              ? 'bg-[#3347ff]/10 text-[#3347ff]'
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
-                            <Image 
-                              src={lang.flag} 
-                              alt={lang.code}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          {lang.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
-              className="bg-transparent text-white px-6 py-2 rounded-lg font-medium border border-white/50 hover:bg-white/10 transition-colors"
-            >
-              Войти
-            </button>
-            <button
-              onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
-              className="bg-[#3347ff] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors"
-            >
-              Регистрация
-            </button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        activeNav="start"
+        onOpenLogin={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
+        onOpenRegister={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
+      />
 
       <section className="pt-24 bg-[#061230] relative overflow-hidden">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/small.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
@@ -145,8 +53,8 @@ export default function StartPage() {
             <div className="flex items-center justify-center md:justify-start">
               <div className="relative w-full max-w-sm">
                 <Image
-                  src="/images/phone2howto.png"
-                  alt="Мобильное приложение с портфелем криптовалют"
+                  src="/images/third.png"
+                  alt="Торговый терминал ComforTrade"
                   width={400}
                   height={800}
                   className="w-full h-auto"
@@ -159,148 +67,124 @@ export default function StartPage() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
-                  Get started with Coin
+                  Начните с ComforTrade
                 </h2>
                 <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-                  in 3 easy steps
+                  за 3 простых шага
                 </h3>
               </div>
 
               {/* Step 1 */}
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-start">
                 <div className="flex-shrink-0">
-                  <div className="w-16 h-16 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <Image
-                      src="/images/12.svg"
-                      alt="Download app icon"
-                      width={32}
-                      height={32}
-                      className="w-8 h-8"
-                    />
-                  </div>
+                  <UserPlus className="w-8 h-8 text-[#3347ff]" strokeWidth={2} aria-hidden />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">1. Download the app</h4>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">1. Зарегистрируйтесь</h4>
                   <p className="text-gray-600 leading-relaxed">
-                    Tempus quam pellentesque nec nam aliqu sem leo a diam sollicitudin tempor.
+                    Email, пароль — и готово. Демо-счёт даём сразу, без пополнения. Потренируйтесь, пока не почувствуете себя уверенно.
                   </p>
                 </div>
               </div>
 
               {/* Step 2 */}
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-start">
                 <div className="flex-shrink-0">
-                  <div className="w-16 h-16 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <Image
-                      src="/images/13.svg"
-                      alt="Create wallet icon"
-                      width={32}
-                      height={32}
-                      className="w-8 h-8"
-                    />
-                  </div>
+                  <Wallet className="w-8 h-8 text-[#3347ff]" strokeWidth={2} aria-hidden />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">2. Create your wallet</h4>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">2. Пополните счёт</h4>
                   <p className="text-gray-600 leading-relaxed">
-                    Phasellus faucibus scelerisque eleifend conse donec pretium tempor id eu nisl nunc.
+                    Карта, электронные кошельки, крипта — как удобнее. Минимум небольшой, можно начать с малого.
                   </p>
                 </div>
               </div>
 
               {/* Step 3 */}
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-start">
                 <div className="flex-shrink-0">
-                  <div className="w-16 h-16 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <Image
-                      src="/images/14.svg"
-                      alt="Buy and trade crypto icon"
-                      width={32}
-                      height={32}
-                      className="w-8 h-8"
-                    />
-                  </div>
+                  <TrendingUp className="w-8 h-8 text-[#3347ff]" strokeWidth={2} aria-hidden />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">3. Buy and trade crypto</h4>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">3. Начните торговать</h4>
                   <p className="text-gray-600 leading-relaxed">
-                    In aliquam sem fringilla ut morbi tincidunt dolo consequat interdum varius sit amet.
+                    Выберите актив, поставьте на рост или падение — и ждите результат. Работает в браузере, даже с телефона.
                   </p>
                 </div>
               </div>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <button className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors">
-                  Download app
+                <button onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }} className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors text-center">
+                  Создать аккаунт
                 </button>
-                <button className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border border-[#3347ff] hover:bg-[#3347ff]/5 transition-colors">
-                  View pricing
-                </button>
+                <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border border-[#3347ff] hover:bg-[#3347ff]/5 transition-colors text-center flex items-center justify-center">
+                  Открыть Демо
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Timeline Section */}
-      <section className="py-16 md:py-24 bg-white">
+      {/* Подробная инструкция */}
+      <section className="py-16 md:py-24 bg-[#f7f7fc]">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
-            The story of Coin since the beginning
+            Что нужно для старта
           </h2>
           
           <div className="relative">
-            {/* Timeline Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              {/* Card 2024 */}
+              {/* Карточка 1 */}
               <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <div className="text-4xl md:text-5xl font-bold text-[#3347ff] mb-4">2024</div>
-                <h3 className="text-xl font-bold text-[#3347ff] mb-4">Milestone of 100M users</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-[#3347ff]">1</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Регистрация</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Нажмите «Создать аккаунт» на главной странице. Введите email и придумайте пароль. Подтвердите согласие с условиями — и аккаунт готов.
                 </p>
               </div>
 
-              {/* Card 2023 */}
+              {/* Карточка 2 */}
               <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <div className="text-4xl md:text-5xl font-bold text-[#3347ff] mb-4">2023</div>
-                <h3 className="text-xl font-bold text-[#3347ff] mb-4">Raised Series C</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-[#3347ff]">2</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Демо или реальный счёт</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Демо-счёт — бесплатно и без риска. Попробуйте платформу с виртуальным балансом. Для реальной торговли пополните счёт удобным способом.
                 </p>
               </div>
 
-              {/* Card 2022 - with navigation button */}
-              <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 relative">
-                <div className="text-4xl md:text-5xl font-bold text-[#3347ff] mb-4">2022</div>
-                <h3 className="text-xl font-bold text-[#3347ff] mb-4">Milestone of 10M users</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.
+              {/* Карточка 3 */}
+              <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-[#3347ff]">3</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Выбор актива</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Выберите валютную пару (EUR/USD, GBP/USD) или криптовалюту (BTC, ETH). Изучите график и определите направление движения цены.
                 </p>
-                {/* Navigation button */}
-                <button className="absolute -right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#3347ff] rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#2a3ae6] transition-colors z-10">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
               </div>
 
-              {/* Card 2021 */}
+              {/* Карточка 4 */}
               <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <div className="text-4xl md:text-5xl font-bold text-[#3347ff] mb-4">2021</div>
-                <h3 className="text-xl font-bold text-[#3347ff] mb-4">Raised Series B</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-[#3347ff]">4</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Первая сделка</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Укажите сумму сделки и время экспирации. Выберите Call (рост) или Put (падение). Откройте сделку — результат известен сразу после истечения времени.
                 </p>
               </div>
             </div>
 
-            {/* CTA Button */}
             <div className="flex justify-center">
-              <button className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors">
-                Join our team
-              </button>
+              <Link href="/terminal" className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors inline-block">
+                Начать торговать
+              </Link>
             </div>
           </div>
         </div>
@@ -314,15 +198,15 @@ export default function StartPage() {
               Обучение для новичков и лучшие стратегии от экспертов
             </h2>
             <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
-              Мы подготовили комплексную программу обучения для начинающих трейдеров, а также собрали проверенные стратегии от ведущих экспертов фондового рынка
+              Мы подготовили комплексную программу обучения для начинающих трейдеров, а также собрали проверенные стратегии от опытных специалистов
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {/* Card 1 - For Beginners */}
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#3347ff] to-[#2a3ae6] rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-6">
+                <svg className="w-8 h-8 text-[#3347ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
@@ -330,20 +214,20 @@ export default function StartPage() {
                 Обучение для новичков
               </h3>
               <p className="text-gray-600 leading-relaxed mb-6">
-                Пошаговые уроки, которые помогут вам освоить основы торговли на фондовом рынке. От базовых понятий до первых успешных сделок.
+                Пошаговые уроки, которые помогут освоить основы торговли. От базовых понятий до первых успешных сделок.
               </p>
               <ul className="space-y-3 mb-6">
                 <li className="flex items-start gap-3">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Основы фондового рынка</span>
+                  <span className="text-gray-700">Основы торговли и платформы</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Технический и фундаментальный анализ</span>
+                  <span className="text-gray-700">Технический анализ и графики</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,8 +252,8 @@ export default function StartPage() {
 
             {/* Card 2 - Expert Strategies */}
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-6">
+                <svg className="w-8 h-8 text-[#3347ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -377,35 +261,35 @@ export default function StartPage() {
                 Стратегии от экспертов
               </h3>
               <p className="text-gray-600 leading-relaxed mb-6">
-                Проверенные торговые стратегии от ведущих трейдеров и аналитиков фондового рынка. Узнайте, как профессионалы достигают стабильной прибыли.
+                Проверенные торговые стратегии от опытных трейдеров и аналитиков. Узнайте, как профессионалы достигают стабильной прибыли.
               </p>
               <ul className="space-y-3 mb-6">
                 <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Долгосрочные инвестиционные стратегии</span>
+                  <span className="text-gray-700">Стратегии Call/Put и таймфреймы</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-gray-700">Скальпинг и внутридневная торговля</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-gray-700">Анализ рынка от профессионалов</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-gray-700">Реальные примеры успешных сделок</span>
                 </li>
               </ul>
-              <Link href="/education" className="inline-flex items-center gap-2 text-purple-600 font-semibold hover:text-purple-700 transition-colors">
+              <Link href="/education" className="inline-flex items-center gap-2 text-[#3347ff] font-semibold hover:text-[#2a3ae6] transition-colors">
                 Изучить стратегии
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -416,17 +300,16 @@ export default function StartPage() {
         </div>
       </section>
 
-      {/* Video Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-br from-purple-50 via-purple-100 to-purple-50 relative overflow-hidden">
-        {/* Wave pattern background */}
+      {/* Видео-секция */}
+      <section className="py-16 md:py-24 bg-gradient-to-br from-[#3347ff]/5 via-[#3347ff]/10 to-[#3347ff]/5 relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
           <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
-            <path d="M0,100 Q300,50 600,100 T1200,100 L1200,200 L0,200 Z" fill="url(#waveGradient)" />
+            <path d="M0,100 Q300,50 600,100 T1200,100 L1200,200 L0,200 Z" fill="url(#waveGradientStart)" />
             <defs>
-              <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3" />
-                <stop offset="50%" stopColor="#c4b5fd" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.3" />
+              <linearGradient id="waveGradientStart" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#3347ff" stopOpacity="0.2" />
+                <stop offset="50%" stopColor="#4a5aff" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#3347ff" stopOpacity="0.2" />
               </linearGradient>
             </defs>
           </svg>
@@ -434,55 +317,16 @@ export default function StartPage() {
 
         <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
-            Watch how easy is to use Coin wallet
+            Посмотрите, как легко торговать с ComforTrade
           </h2>
 
           <div className="flex justify-center items-center">
-            <div className="relative max-w-2xl w-full">
-              {/* Video placeholder - Phone with play button */}
-              <div className="relative bg-white rounded-3xl shadow-2xl p-8 md:p-12 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
-                {/* Phone frame */}
-                <div className="relative bg-gray-100 rounded-[2.5rem] p-4 mx-auto max-w-xs">
-                  {/* Phone screen */}
-                  <div className="bg-white rounded-[2rem] overflow-hidden aspect-[9/19.5] relative">
-                    {/* Screen content placeholder */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                      <div className="space-y-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-gray-900 mb-1">$28,580.32</div>
-                          <div className="text-green-600 text-sm font-medium">+12.34%</div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">E</div>
-                            <span className="text-gray-700">Ethereum $5,218.48 ↑6.87%</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold">L</div>
-                            <span className="text-gray-700">Litecoin $3,258.10 ↑2.25%</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center text-white text-xs font-bold">D</div>
-                            <span className="text-gray-700">DAI $1,450.23 ↑0.01%</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Play button overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                        <button className="w-20 h-20 md:w-24 md:h-24 bg-[#3347ff] rounded-full flex items-center justify-center text-white shadow-2xl hover:bg-[#2a3ae6] transition-all hover:scale-110 group">
-                          <svg className="w-10 h-10 md:w-12 md:h-12 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Purple pedestal */}
-              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-64 h-12 bg-purple-200 rounded-2xl shadow-lg transform rotate-2"></div>
+            <div className="relative w-full max-w-3xl aspect-video bg-[#061230] rounded-2xl overflow-hidden flex items-center justify-center">
+              <button className="w-20 h-20 md:w-24 md:h-24 bg-[#3347ff] rounded-full flex items-center justify-center text-white shadow-2xl hover:bg-[#2a3ae6] transition-all hover:scale-110" aria-label="Смотреть видео">
+                <svg className="w-10 h-10 md:w-12 md:h-12 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

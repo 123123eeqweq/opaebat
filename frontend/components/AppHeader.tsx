@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Wallet, GraduationCap, UserCircle, Bell, PlusCircle, Repeat, MessageCircle, ArrowLeft } from 'lucide-react';
+import { Wallet, UserCircle, Bell, PlusCircle, Repeat, MessageCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { api } from '@/lib/api/api';
 import { useAccountStore } from '@/stores/account.store';
@@ -160,10 +160,6 @@ export function AppHeader() {
                     <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                       <Wallet className="w-4 h-4" />
                       <span>Кошелёк</span>
-                    </Link>
-                    <Link href="/profile?tab=education" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
-                      <GraduationCap className="w-4 h-4" />
-                      <span>Обучение</span>
                     </Link>
                     <Link href="/profile?tab=support" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                       <MessageCircle className="w-4 h-4" />

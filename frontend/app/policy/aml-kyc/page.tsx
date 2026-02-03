@@ -1,31 +1,18 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Footer from '@/components/Footer'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export default function AMLKYCPage() {
-  const [isHeaderScrolled, setIsHeaderScrolled] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const [currentLanguage, setCurrentLanguage] = useState('RU')
   const [showRegisterPanel, setShowRegisterPanel] = useState(false)
   const [panelMode, setPanelMode] = useState<'login' | 'register'>('register')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
 
-  const languages = [
-    { code: 'UA', label: 'Українська', flag: '/images/flags/ua.svg' },
-    { code: 'RU', label: 'Русский', flag: '/images/flags/ru.svg' },
-    { code: 'EN', label: 'English', flag: '/images/flags/en.svg' },
-  ]
-
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      setIsHeaderScrolled(y > 20)
-      setShowScrollTop(y > 400)
-    }
+    const onScroll = () => setShowScrollTop(window.scrollY > 400)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -36,92 +23,10 @@ export default function AMLKYCPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-          isHeaderScrolled ? 'bg-[#061230]/95 backdrop-blur-sm' : 'bg-transparent'
-        }`}
-      >
-        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-10 w-auto object-contain" />
-            <span className="text-xl font-semibold text-white uppercase">ComforTrade</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/start" className="text-gray-300 hover:text-white transition-colors">Как начать?</Link>
-            <Link href="/assets" className="text-gray-300 hover:text-white transition-colors">Активы</Link>
-            <Link href="/about" className="text-gray-300 hover:text-white transition-colors">О компании</Link>
-            <Link href="/reviews" className="text-gray-300 hover:text-white transition-colors">Отзывы</Link>
-            <Link href="/education" className="text-gray-300 hover:text-white transition-colors">Обучение</Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <button
-                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 px-2 py-1"
-              >
-                <div className="w-5 h-5 rounded-full overflow-hidden relative">
-                  <Image 
-                    src={languages.find(l => l.code === currentLanguage)?.flag || '/images/flags/ru.svg'} 
-                    alt={currentLanguage}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <span className="uppercase font-medium">{currentLanguage}</span>
-                <svg className={`w-4 h-4 transition-transform duration-200 ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {showLanguageMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
-                  <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl py-2 min-w-[160px] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex flex-col p-1">
-                      {languages.map((lang) => (
-                        <button
-                          key={lang.code}
-                          onClick={() => {
-                            setCurrentLanguage(lang.code)
-                            setShowLanguageMenu(false)
-                          }}
-                          className={`text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
-                            currentLanguage === lang.code
-                              ? 'bg-[#3347ff]/10 text-[#3347ff]'
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
-                            <Image 
-                              src={lang.flag} 
-                              alt={lang.code}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          {lang.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
-              className="bg-transparent text-white px-6 py-2 rounded-lg font-medium border border-white/50 hover:bg-white/10 transition-colors"
-            >
-              Войти
-            </button>
-            <button
-              onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
-              className="bg-[#3347ff] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors"
-            >
-              Регистрация
-            </button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        onOpenLogin={() => { setPanelMode('login'); setShowRegisterPanel(true); }}
+        onOpenRegister={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
+      />
 
       <section className="pt-24 bg-[#061230] relative overflow-hidden">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/small.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />

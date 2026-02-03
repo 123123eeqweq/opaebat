@@ -748,10 +748,6 @@ export default function TerminalPage() {
                         <Wallet className="w-4 h-4" />
                         <span>Кошелёк</span>
                       </Link>
-                      <Link href="/profile?tab=education" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
-                        <GraduationCap className="w-4 h-4" />
-                        <span>Обучение</span>
-                      </Link>
                       <Link href="/profile?tab=support" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                         <MessageCircle className="w-4 h-4" />
                         <span>Поддержка</span>
@@ -1655,7 +1651,7 @@ function TradesHistoryModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed left-0 md:left-[88px] top-[65px] z-50 h-[calc(100vh-65px)] w-full md:w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
+      className="fixed left-0 md:left-[88px] top-[65px] bottom-[max(4.5rem,calc(4.5rem+env(safe-area-inset-bottom)))] md:bottom-0 md:h-[calc(100vh-65px)] z-50 w-full md:w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
     >
         {/* Кнопка закрытия */}
         <div className="flex justify-end px-3 pt-2 shrink-0">
@@ -1848,7 +1844,7 @@ function NewsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed left-0 md:left-[88px] top-[65px] z-50 h-[calc(100vh-65px)] w-full md:w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
+      className="fixed left-0 md:left-[88px] top-[65px] bottom-[max(4.5rem,calc(4.5rem+env(safe-area-inset-bottom)))] md:bottom-0 md:h-[calc(100vh-65px)] z-50 w-full md:w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
     >
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between shrink-0">
