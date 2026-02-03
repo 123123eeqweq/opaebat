@@ -477,6 +477,7 @@ export function useChartInteractions({
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       inertiaActiveRef.current = false;
       panVelocityPxPerMsRef.current = 0;
+      lastMoveTimeRef.current = null;
     } else if (e.touches.length === 2) {
       const [t1, t2] = [e.touches[0], e.touches[1]];
       touchModeRef.current = 'pinch';
@@ -504,6 +505,17 @@ export function useChartInteractions({
       if (!start) return;
 
       const deltaX = t.clientX - start.x;
+
+      // 🔥 FLOW C-INERTIA: Собираем скорость для touch pan (как в handleMouseMove)
+      const now = performance.now();
+      const lastTime = lastMoveTimeRef.current;
+      if (lastTime !== null) {
+        const dt = now - lastTime;
+        if (dt > 0) {
+          panVelocityPxPerMsRef.current = deltaX / dt;
+        }
+      }
+      lastMoveTimeRef.current = now;
 
       const newViewport = panViewportTime({
         viewport,
@@ -548,6 +560,15 @@ export function useChartInteractions({
 
   const handleTouchEnd = () => {
     if (touchModeRef.current === 'pan') {
+      // 🔥 FLOW C-INERTIA: Запускаем инерцию для touch, если скорость выше порога (как в handleMouseUp)
+      const velocity = panVelocityPxPerMsRef.current;
+      if (Math.abs(velocity) > 0.05) {
+        inertiaActiveRef.current = true;
+        setFollowMode?.(false);
+      } else {
+        inertiaActiveRef.current = false;
+        panVelocityPxPerMsRef.current = 0;
+      }
       scheduleReturnToFollow?.();
     }
     touchModeRef.current = 'none';

@@ -684,7 +684,7 @@ export default function TerminalPage() {
     <AuthGuard requireAuth>
       <div ref={fullscreenContainerRef} className="terminal-page min-h-screen bg-[#061230] flex flex-col">
       {/* Header */}
-      <header className="bg-[#05122a] border-b border-white/10 shrink-0">
+      <header className="bg-[#040d1f] border-b border-white/10 shrink-0">
         <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
@@ -711,7 +711,7 @@ export default function TerminalPage() {
               {showProfileModal && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowProfileModal(false)} />
-                  <div className="absolute left-full right-auto top-full mt-2 -ml-16 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden md:left-1/2 md:ml-0 md:-translate-x-1/2">
+                  <div className="absolute left-full right-auto top-full mt-2 -ml-32 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden md:left-1/2 md:ml-0 md:-translate-x-1/2">
                     <div className="p-3 space-y-2.5">
                       <div className="flex items-center gap-2.5 p-2.5 rounded-lg">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-white/20 ring-offset-2 ring-offset-[#1a2438] bg-gradient-to-br from-[#3347ff]/30 to-[#1f2a45]">
@@ -785,7 +785,7 @@ export default function TerminalPage() {
                 {showAccountModal && (
                   <>
                     <div className="fixed inset-0 z-[140]" onClick={() => setShowAccountModal(false)} />
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-[150]" data-account-modal>
+                    <div className="absolute top-full right-0 left-auto mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-[150] md:left-1/2 md:right-auto md:-translate-x-1/2" data-account-modal>
                       <div className="p-3 space-y-2.5">
                         <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'real' ? 'bg-white/10' : 'md:hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find(x => x.type === 'real'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
                           <div className="mt-0.5">{accountType === 'real' ? <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-[#061230]" /></div> : <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />}</div>
@@ -815,10 +815,8 @@ export default function TerminalPage() {
               </div>
             </div>
 
-            <Link href="/profile?tab=wallet" className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all flex items-center gap-1.5 sm:gap-2 uppercase">
-              <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="sm:hidden">Пополнить</span>
-              <span className="hidden sm:inline">Пополнить счёт</span>
+            <Link href="/profile?tab=wallet" className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all flex items-center justify-center shrink-0" title="Пополнить счёт">
+              <Wallet className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
             </Link>
           </div>
         </div>
@@ -1126,8 +1124,8 @@ export default function TerminalPage() {
           </div>
         </main>
 
-        {/* Right Sidebar — на мобилке внизу под графиком, на десктопе справа; pb-safe для iPhone */}
-        <aside className="w-full md:w-48 shrink-0 bg-[#06122c] border-t md:border-t-0 md:border-l border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-3 flex flex-col gap-3 order-2">
+        {/* Right Sidebar — на мобилке внизу под графиком с градиентом, на десктопе справа; pb-safe для iPhone */}
+        <aside className="w-full md:w-48 shrink-0 bg-gradient-to-b from-[#0a1635] to-[#06122c] md:bg-[#06122c] border-t md:border-t-0 md:border-l border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-3 flex flex-col gap-3 order-2">
           {/* Time + Amount — на мобилке в ряд */}
           <div className="flex flex-row md:flex-col gap-3">
           {/* Time Input */}
@@ -1181,7 +1179,7 @@ export default function TerminalPage() {
                   onClick={() => setShowTimeModal(false)}
                 />
                 <div 
-                  className="absolute right-full mr-2 top-0 z-50 w-48 bg-[#1a2438] rounded-lg shadow-xl p-3 border border-white/5"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-48 bg-[#1a2438] rounded-lg shadow-xl p-3 border border-white/5 md:bottom-auto md:left-auto md:translate-x-0 md:mb-0 md:right-full md:mr-2 md:top-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <TimeSelectionModal
@@ -1245,7 +1243,7 @@ export default function TerminalPage() {
                   onClick={() => setShowAmountModal(false)}
                 />
                 <div 
-                  className="absolute right-full mr-2 top-0 z-50 w-48 bg-[#1a2438] rounded-lg shadow-xl overflow-hidden p-3 border border-white/5"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-48 bg-[#1a2438] rounded-lg shadow-xl overflow-hidden p-3 border border-white/5 md:bottom-auto md:left-auto md:translate-x-0 md:mb-0 md:right-full md:mr-2 md:top-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <AmountCalculatorModal
