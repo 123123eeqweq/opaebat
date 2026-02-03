@@ -481,7 +481,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               <div className="flex items-center gap-3">
                 {COUNTRIES.find((c) => c.code === country)?.flag ? (
                   <img
-                    src={COUNTRIES.find((c) => c.code === country)?.flag}
+                    src={COUNTRIES.find((c) => c.code === country)?.flag ?? ''}
                     alt=""
                     className="w-5 h-4 object-cover rounded-sm shrink-0"
                   />
