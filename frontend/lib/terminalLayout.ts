@@ -1,3 +1,5 @@
+import type { IndicatorConfig } from '@/components/chart/internal/indicators/indicator.types';
+
 /**
  * Terminal Layout Persistence
  * 
@@ -117,7 +119,7 @@ export function indicatorConfigToLayout(config: any): NonNullable<TerminalLayout
 export function layoutIndicatorToConfig(
   layoutIndicator: NonNullable<TerminalLayout['indicators']>[number],
   indicatorType: string
-): any {
+): Partial<IndicatorConfig> {
   const config: Partial<IndicatorConfig> = {
     id: layoutIndicator.id,
     enabled: layoutIndicator.visible,
