@@ -85,7 +85,7 @@ export function loadLayoutFromLocalStorage(): TerminalLayout | null {
  * Конвертировать IndicatorConfig в формат для сохранения
  * График удален - функция оставлена для совместимости, но не используется
  */
-export function indicatorConfigToLayout(config: any): TerminalLayout['indicators'][0] {
+export function indicatorConfigToLayout(config: any): NonNullable<TerminalLayout['indicators']>[number] {
   const params: Record<string, any> = {
     period: config.period,
   };
@@ -115,7 +115,7 @@ export function indicatorConfigToLayout(config: any): TerminalLayout['indicators
  * Конвертировать layout indicator в IndicatorConfig
  */
 export function layoutIndicatorToConfig(
-  layoutIndicator: TerminalLayout['indicators'][0],
+  layoutIndicator: NonNullable<TerminalLayout['indicators']>[number],
   indicatorType: string
 ): any {
   const config: Partial<IndicatorConfig> = {
