@@ -170,7 +170,7 @@ export function WalletTab() {
       document.dispatchEvent(new CustomEvent('wallet-updated'));
       setTimeout(() => setSuccess(false), 4000);
     } catch (e: unknown) {
-      const err = e as { message?: string; response?: { data?: { message?: string } } };
+      const err = e as { message?: string; response?: { data?: { message?: string; error?: string } } };
       setError(err.response?.data?.message || err.message || 'Ошибка пополнения');
     } finally {
       setSubmitting(false);
@@ -212,7 +212,7 @@ export function WalletTab() {
       document.dispatchEvent(new CustomEvent('wallet-updated'));
       setTimeout(() => setSuccess(false), 4000);
     } catch (e: unknown) {
-      const err = e as { message?: string; response?: { data?: { message?: string } } };
+      const err = e as { message?: string; response?: { data?: { message?: string; error?: string } } };
       setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Ошибка вывода');
     } finally {
       setSubmitting(false);
