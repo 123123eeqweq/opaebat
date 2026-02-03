@@ -3,6 +3,16 @@ const backendUrl = process.env.API_BACKEND_URL || process.env.NEXT_PUBLIC_API_UR
 
 const nextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [
+      {
+        source: '/images/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, max-age=0, must-revalidate' },
+        ],
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'flagcdn.com', pathname: '/**' },
