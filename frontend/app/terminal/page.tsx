@@ -1125,7 +1125,7 @@ export default function TerminalPage() {
         </main>
 
         {/* Right Sidebar — на мобилке внизу под графиком с градиентом, на десктопе справа; pb-safe для iPhone */}
-        <aside className="w-full md:w-48 shrink-0 bg-gradient-to-b from-[#0a1635] to-[#06122c] md:bg-[#06122c] border-t md:border-t-0 md:border-l border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-3 flex flex-col gap-3 order-2">
+        <aside className="w-full md:w-48 shrink-0 bg-gradient-to-b from-[#081428] to-[#050f20] md:bg-[#06122c] border-t md:border-t-0 md:border-l border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-3 flex flex-col gap-3 order-2">
           {/* Time + Amount — на мобилке в ряд */}
           <div className="flex flex-row md:flex-col gap-3">
           {/* Time Input */}
@@ -1470,46 +1470,50 @@ export default function TerminalPage() {
         </aside>
 
         {/* Нижняя навигация — на мобилке в потоке после секции кнопок (не fixed), pb-safe для iOS */}
-        <nav className="md:hidden shrink-0 order-3 flex items-center justify-around gap-2 py-2 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-[#05122a] border-t border-white/10">
+        <nav className="md:hidden shrink-0 order-3 flex items-center justify-around py-2 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-gradient-to-t from-[#05122a] via-[#06122c] to-[#0a1635]">
         <button
           onClick={() => setShowTradesHistory((prev) => !prev)}
-          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] border transition-colors ${
-            showTradesHistory ? 'text-[#7b8fff] bg-[#3347ff]/15 border-[#3347ff]/30' : 'text-white/50 border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5'
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[52px] transition-colors ${
+            showTradesHistory ? 'text-[#7b8fff]' : 'text-white/50 md:hover:text-white/80'
           }`}
         >
           <History className="w-5 h-5 stroke-[3]" />
           <span className="text-[9px] font-semibold leading-tight">История</span>
         </button>
+        <div className="w-px h-6 bg-white/15 shrink-0" aria-hidden />
         <button
           onClick={() => setShowNews(true)}
-          className="flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] text-white/50 border border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[52px] text-white/50 md:hover:text-white/80 transition-colors"
         >
           <Newspaper className="w-5 h-5 stroke-[3]" />
           <span className="text-[9px] font-semibold leading-tight">Новости</span>
         </button>
+        <div className="w-px h-6 bg-white/15 shrink-0" aria-hidden />
         <Link
           href="/profile?tab=wallet"
-          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] border transition-colors ${
-            activeMenu === 'кошелек' ? 'text-[#7b8fff] bg-[#3347ff]/15 border-[#3347ff]/30' : 'text-white/50 border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5'
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[52px] transition-colors ${
+            activeMenu === 'кошелек' ? 'text-[#7b8fff]' : 'text-white/50 md:hover:text-white/80'
           }`}
         >
           <Wallet className="w-5 h-5 stroke-[3]" />
           <span className="text-[9px] font-semibold leading-tight">Кошелёк</span>
         </Link>
+        <div className="w-px h-6 bg-white/15 shrink-0" aria-hidden />
         <Link
           href="/profile"
-          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] border transition-colors ${
-            activeMenu === 'личный-профиль' ? 'text-[#7b8fff] bg-[#3347ff]/15 border-[#3347ff]/30' : 'text-white/50 border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5'
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[52px] transition-colors ${
+            activeMenu === 'личный-профиль' ? 'text-[#7b8fff]' : 'text-white/50 md:hover:text-white/80'
           }`}
         >
           <UserCircle className="w-5 h-5 stroke-[3]" />
           <span className="text-[9px] font-semibold leading-tight">Профиль</span>
         </Link>
+        <div className="w-px h-6 bg-white/15 shrink-0" aria-hidden />
         <a
           href="https://t.me/your_support_channel"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] text-white/50 border border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[52px] text-white/50 md:hover:text-white/80 transition-colors"
         >
           <Image src="/images/support.png" alt="Поддержка" width={20} height={20} className="w-5 h-5 object-contain" />
           <span className="text-[9px] font-semibold leading-tight">Поддержка</span>
