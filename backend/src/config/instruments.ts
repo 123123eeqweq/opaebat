@@ -89,6 +89,7 @@ export const INSTRUMENTS: Record<string, InstrumentConfig> = {
     base: 'BTC',
     quote: 'USD',
     digits: 2,
+    source: 'otc',
     engine: {
       asset: 'BTC/USD',
       initialPrice: 50000,
@@ -103,6 +104,7 @@ export const INSTRUMENTS: Record<string, InstrumentConfig> = {
     base: 'ETH',
     quote: 'USD',
     digits: 2,
+    source: 'otc',
     engine: {
       asset: 'ETH/USD',
       initialPrice: 3000,
@@ -117,6 +119,7 @@ export const INSTRUMENTS: Record<string, InstrumentConfig> = {
     base: 'SOL',
     quote: 'USD',
     digits: 2,
+    source: 'otc',
     engine: {
       asset: 'SOL/USD',
       initialPrice: 150,

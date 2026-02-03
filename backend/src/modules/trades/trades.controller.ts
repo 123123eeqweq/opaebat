@@ -115,7 +115,9 @@ export class TradesController {
         });
       }
 
-      logger.error('Open trade error:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const errStack = error instanceof Error ? error.stack : undefined;
+      logger.error({ err: error, message: errMsg, stack: errStack }, 'Open trade error');
       return reply.status(500).send({
         error: 'Internal server error',
       });
