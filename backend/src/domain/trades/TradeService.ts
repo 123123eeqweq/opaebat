@@ -64,7 +64,16 @@ export class TradeService {
     }
 
     // Check balance
-    if (Number(account.balance) < input.amount) {
+    // 🔥 REAL account: balance from transactions (deposits/withdrawals), not Account.balance
+    let availableBalance: number;
+    if (account.type === AccountType.REAL && this.transactionRepository) {
+      availableBalance = await this.transactionRepository.getBalance(account.id);
+      // Sync Account.balance so updateBalance(-amount) works correctly
+      await this.accountRepository.setBalance(account.id, availableBalance);
+    } else {
+      availableBalance = typeof account.balance === 'number' ? account.balance : Number(account.balance);
+    }
+    if (availableBalance < input.amount) {
       throw new InsufficientBalanceError();
     }
 

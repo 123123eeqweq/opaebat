@@ -1,0 +1,241 @@
+'use client';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Wallet, GraduationCap, UserCircle, Bell, PlusCircle, Repeat, MessageCircle, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { api } from '@/lib/api/api';
+import { useAccountStore } from '@/stores/account.store';
+import type { AccountSnapshot } from '@/types/account';
+
+export function AppHeader() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isProfilePage = pathname?.startsWith('/profile');
+  const { logout, user } = useAuth();
+  const snapshot = useAccountStore((s) => s.snapshot);
+  const [accountType, setAccountType] = useState<'demo' | 'real'>('demo');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [hideBalance, setHideBalance] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayedBalance, setDisplayedBalance] = useState('0.00');
+  const [modalBalances, setModalBalances] = useState<{
+    demo: { balance: string; currency: string } | null;
+    real: { balance: string; currency: string } | null;
+  }>({ demo: null, real: null });
+
+  useEffect(() => {
+    const initSnapshot = async () => {
+      try {
+        const snap = await api<AccountSnapshot>('/api/account/snapshot');
+        useAccountStore.getState().setSnapshot(snap);
+      } catch {
+        // ignore
+      }
+    };
+    initSnapshot();
+  }, []);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await api<{ user: { avatarUrl?: string | null } }>('/api/user/profile');
+        setAvatarUrl(res.user.avatarUrl || null);
+      } catch {
+        // ignore
+      }
+    };
+    loadProfile();
+  }, []);
+
+  useEffect(() => {
+    if (snapshot) {
+      const newType = snapshot.type === 'DEMO' ? 'demo' : 'real';
+      if (accountType !== newType) setAccountType(newType);
+    }
+  }, [snapshot, accountType]);
+
+  useEffect(() => {
+    if (!snapshot) {
+      setDisplayedBalance('0.00');
+      return;
+    }
+    setDisplayedBalance(snapshot.balance.toFixed(2));
+  }, [snapshot?.balance, snapshot?.accountId]);
+
+  const loadAllBalances = async () => {
+    try {
+      const res = await api<{ accounts: Array<{ type: string; balance: string; currency: string; isActive: boolean }> }>('/api/accounts');
+      const demo = res.accounts.find((a) => a.type === 'demo' && a.isActive) || res.accounts.find((a) => a.type === 'demo');
+      if (demo) {
+        setModalBalances((p) => ({ ...p, demo: { balance: parseFloat(demo.balance).toFixed(2), currency: demo.currency } }));
+      }
+      try {
+        const real = await api<{ currency: string; balance: number }>('/api/wallet/balance');
+        setModalBalances((p) => ({ ...p, real: { balance: real.balance.toFixed(2), currency: real.currency } }));
+      } catch {
+        setModalBalances((p) => ({ ...p, real: null }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const getCurrentBalance = () => {
+    if (!snapshot) return { balance: '0.00', currency: 'UAH' };
+    return { balance: snapshot.balance.toFixed(2), currency: snapshot.currency };
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
+
+  const formatCur = (c: string) => (c === 'USD' ? 'USD' : c === 'RUB' ? '₽' : c === 'UAH' ? 'UAH' : c);
+
+  return (
+    <header className="bg-[#05122a] border-b border-white/10 shrink-0">
+      <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+          <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComforTrade</span>
+          <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white md:hover:bg-white/10 transition-colors shrink-0">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="relative">
+            <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#3347ff]/50 via-[#5b6bff]/30 to-[#3347ff]/50 blur-sm opacity-60 pointer-events-none" />
+            <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#05122a] z-10 pointer-events-none ${accountType === 'demo' ? 'bg-sky-400' : 'bg-emerald-500'}`} title={accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'} />
+            <div onClick={() => setShowProfileModal(!showProfileModal)} className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer md:hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg">
+              {avatarUrl ? (
+                <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-[#3347ff] via-[#3d52ff] to-[#1f2a45] flex items-center justify-center text-sm font-bold text-white">
+                  {(user?.email || '?').charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            {showProfileModal && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowProfileModal(false)} />
+                <div className="absolute left-full right-auto top-full mt-2 -ml-32 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden md:left-1/2 md:ml-0 md:-translate-x-1/2">
+                  <div className="p-3 space-y-2.5">
+                    <div className="flex items-center gap-2.5 p-2.5 rounded-lg">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-white/20 ring-offset-2 ring-offset-[#1a2438] bg-gradient-to-br from-[#3347ff]/30 to-[#1f2a45]">
+                        {avatarUrl ? <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" /> : <span className="text-sm font-bold text-white">{(user?.email || '?').charAt(0).toUpperCase()}</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-medium text-sm truncate">{user?.email || 'Пользователь'}</div>
+                        <div className="text-white/60 text-xs">{accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'}</div>
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/5">
+                      <div className="text-white/60 text-xs mb-1">Баланс</div>
+                      <div className="text-white font-semibold text-base">
+                        {hideBalance ? '••••••' : snapshot ? `${displayedBalance} ${formatCur(snapshot.currency)}` : '...'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-white/10 p-3 space-y-1">
+                    <button type="button" onClick={() => { setShowProfileModal(false); setShowAccountModal(true); loadAllBalances(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm text-left">
+                      <Repeat className="w-4 h-4" />
+                      <span>Переключить счёт</span>
+                    </button>
+                    {accountType === 'real' && (
+                      <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
+                        <PlusCircle className="w-4 h-4" />
+                        <span>Пополнить счёт</span>
+                      </Link>
+                    )}
+                    <Link href="/profile" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
+                      <UserCircle className="w-4 h-4" />
+                      <span>Профиль</span>
+                    </Link>
+                    <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
+                      <Wallet className="w-4 h-4" />
+                      <span>Кошелёк</span>
+                    </Link>
+                    <Link href="/profile?tab=education" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
+                      <GraduationCap className="w-4 h-4" />
+                      <span>Обучение</span>
+                    </Link>
+                    <Link href="/profile?tab=support" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Поддержка</span>
+                    </Link>
+                  </div>
+                  <div className="border-t border-white/10 p-3">
+                    <button onClick={() => { setShowProfileModal(false); handleLogout(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-red-400 md:hover:bg-red-500/10 transition-colors text-sm">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                      <span>Выйти</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <div className="flex flex-col relative pr-3" data-account-modal>
+              <div className="flex items-center gap-1.5 cursor-pointer md:hover:opacity-80 transition-colors" data-account-modal onClick={async () => { await loadAllBalances(); setShowAccountModal(true); }}>
+                <span className="text-xs text-white font-medium">{accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'}</span>
+                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+              <div className="text-base font-semibold text-white">
+                {hideBalance ? '••••••' : snapshot ? `${displayedBalance} ${formatCur(snapshot.currency)}` : '...'}
+              </div>
+              {showAccountModal && (
+                <>
+                  <div className="fixed inset-0 z-[140]" onClick={() => setShowAccountModal(false)} />
+                  <div className="absolute top-full right-0 left-auto mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-[150] md:left-1/2 md:right-auto md:-translate-x-1/2" data-account-modal>
+                    <div className="p-3 space-y-2.5">
+                      <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'real' ? 'bg-white/10' : 'md:hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find((x) => x.type === 'real'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
+                        <div className="mt-0.5">{accountType === 'real' ? <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-[#061230]" /></div> : <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />}</div>
+                        <div className="flex-1">
+                          <div className="text-white font-medium mb-0.5 text-sm">Реальный счёт</div>
+                          <div className="text-white/60 text-xs">{hideBalance ? '••••••' : (modalBalances.real ? `${modalBalances.real.balance} ${formatCur(modalBalances.real.currency)}` : (snapshot?.type === 'REAL' ? `${getCurrentBalance().balance} ${formatCur(getCurrentBalance().currency)}` : '...'))}</div>
+                          <Link href="/profile?tab=wallet" onClick={(e) => e.stopPropagation()} className="mt-2 inline-block px-2.5 py-1 rounded-lg bg-[#3347ff] text-white text-xs font-medium md:hover:bg-[#3347ff]/90 transition-colors">Пополнить счёт</Link>
+                        </div>
+                      </div>
+                      <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'demo' ? 'bg-white/10' : 'md:hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find((x) => x.type === 'demo'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
+                        <div className="mt-0.5">{accountType === 'demo' ? <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-[#061230]" /></div> : <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />}</div>
+                        <div className="flex-1">
+                          <div className="text-white font-medium mb-0.5 text-sm">Демо-счёт</div>
+                          <div className="text-white/60 text-xs">{hideBalance ? '••••••' : (modalBalances.demo ? `${modalBalances.demo.balance} ${formatCur(modalBalances.demo.currency)}` : (snapshot?.type === 'DEMO' ? `${getCurrentBalance().balance} ${formatCur(getCurrentBalance().currency)}` : '...'))}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10 p-3">
+                      <div className="flex items-center gap-2.5 cursor-pointer md:hover:opacity-80 transition-colors" onClick={() => setHideBalance(!hideBalance)}>
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">{hideBalance ? <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></> : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}</svg>
+                        <span className="text-white text-xs">Скрыть баланс</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {isProfilePage ? (
+              <Link href="/terminal" className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-medium transition-all shrink-0" title="Вернуться на терминал">
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span>Терминал</span>
+              </Link>
+            ) : (
+              <Link href="/profile?tab=wallet" className="flex items-center gap-1.5 sm:gap-2 h-9 sm:h-11 px-2.5 sm:px-3 rounded-lg bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all shrink-0" title="Пополнить счёт">
+                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+                <span className="hidden sm:inline text-xs sm:text-sm font-semibold uppercase tracking-wider">Пополнить счёт</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

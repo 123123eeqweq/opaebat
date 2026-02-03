@@ -815,8 +815,9 @@ export default function TerminalPage() {
               </div>
             </div>
 
-            <Link href="/profile?tab=wallet" className="h-9 w-9 sm:h-11 sm:w-11 rounded-lg bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all flex items-center justify-center shrink-0" title="Пополнить счёт">
+            <Link href="/profile?tab=wallet" className="flex items-center gap-1.5 sm:gap-2 h-9 sm:h-11 px-2.5 sm:px-3 rounded-lg bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all shrink-0" title="Пополнить счёт">
               <Wallet className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+              <span className="hidden sm:inline text-xs sm:text-sm font-semibold uppercase tracking-wider">Пополнить счёт</span>
             </Link>
           </div>
         </div>

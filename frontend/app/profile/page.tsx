@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ReactCountryFlag from 'react-country-flag';
-import { Mail, Hash, Wallet, Calendar, Award, User, TrendingUp, MessageCircle, Upload, Trash2, LogOut } from 'lucide-react';
-import Image from 'next/image';
+import { Mail, Hash, Wallet, Calendar, Award, User, TrendingUp, MessageCircle, Upload, Trash2, LogOut, Globe } from 'lucide-react';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { AppHeader } from '@/components/AppHeader';
 import { WalletTab } from '@/components/profile/WalletTab';
 import { TradeProfileTab } from '@/components/profile/TradeProfileTab';
 import { SupportTab } from '@/components/profile/SupportTab';
@@ -43,16 +43,16 @@ const TIMEZONES = [
 ] as const;
 
 const COUNTRIES = [
-  { code: 'UA', name: 'Украина' },
-  { code: 'RU', name: 'Россия' },
-  { code: 'BY', name: 'Беларусь' },
-  { code: 'KZ', name: 'Казахстан' },
-  { code: 'US', name: 'США' },
-  { code: 'DE', name: 'Германия' },
-  { code: 'PL', name: 'Польша' },
-  { code: 'GB', name: 'Великобритания' },
-  { code: 'FR', name: 'Франция' },
-  { code: 'OTHER', name: 'Другое' },
+  { code: 'UA', name: 'Украина', flag: 'https://flagcdn.com/w40/ua.png' },
+  { code: 'RU', name: 'Россия', flag: 'https://flagcdn.com/w40/ru.png' },
+  { code: 'BY', name: 'Беларусь', flag: 'https://flagcdn.com/w40/by.png' },
+  { code: 'KZ', name: 'Казахстан', flag: 'https://flagcdn.com/w40/kz.png' },
+  { code: 'US', name: 'США', flag: 'https://flagcdn.com/w40/us.png' },
+  { code: 'DE', name: 'Германия', flag: 'https://flagcdn.com/w40/de.png' },
+  { code: 'PL', name: 'Польша', flag: 'https://flagcdn.com/w40/pl.png' },
+  { code: 'GB', name: 'Великобритания', flag: 'https://flagcdn.com/w40/gb.png' },
+  { code: 'FR', name: 'Франция', flag: 'https://flagcdn.com/w40/fr.png' },
+  { code: 'OTHER', name: 'Другое', flag: null },
 ];
 
 interface UserProfile {
@@ -76,13 +76,6 @@ const SIDEBAR_ITEMS = [
   { id: 'trade', label: 'Торговый профиль', shortLabel: 'Торги', href: '/profile?tab=trade', icon: TrendingUp },
   { id: 'support', label: 'Поддержка', shortLabel: 'Поддержка', href: '/profile?tab=support', icon: MessageCircle },
 ] as const;
-
-const TAB_LABELS: Record<string, string> = {
-  profile: 'Личный профиль',
-  wallet: 'Кошелёк',
-  trade: 'Торговый профиль',
-  support: 'Поддержка',
-};
 
 function formatPhoneValue(raw: string): string {
   const digits = raw.replace(/\D/g, '');
@@ -148,6 +141,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [timezone, setTimezone] = useState('Europe/Kiev');
   const [showTimezoneMenu, setShowTimezoneMenu] = useState(false);
+  const [showCountryMenu, setShowCountryMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
   const [deletePassword, setDeletePassword] = useState('');
@@ -369,7 +363,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
     <div className="w-full min-h-full flex flex-col">
       <div className="flex flex-1 min-h-[calc(100vh-3rem)] sm:min-h-[calc(100vh-3.5rem)]">
         {/* Левая колонка — форма */}
-        <div className="flex-1 min-w-0 p-3 sm:p-6 md:p-8 overflow-auto">
+        <div className="flex-1 min-w-0 px-5 py-3 sm:p-6 md:p-8 overflow-auto">
         <h1 className="text-lg sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Личные данные</h1>
 
         {error && (
@@ -477,19 +471,59 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
             />
           </div>
-          <div>
+          <div className="relative">
             <label className="block text-xs sm:text-sm font-medium text-white/70 mb-1.5 sm:mb-2">Страна</label>
-            <select
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 [&>option]:bg-[#0a1635]"
+            <button
+              type="button"
+              onClick={() => setShowCountryMenu(!showCountryMenu)}
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 flex items-center justify-between gap-2 hover:bg-white/[0.07] transition-colors"
             >
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              <div className="flex items-center gap-3">
+                {COUNTRIES.find((c) => c.code === country)?.flag ? (
+                  <img
+                    src={COUNTRIES.find((c) => c.code === country)?.flag}
+                    alt=""
+                    className="w-5 h-4 object-cover rounded-sm shrink-0"
+                  />
+                ) : (
+                  <Globe className="w-5 h-4 shrink-0 text-white/50" />
+                )}
+                <span className="text-left">{COUNTRIES.find((c) => c.code === country)?.name || 'Выберите страну'}</span>
+              </div>
+              <svg className={`w-4 h-4 shrink-0 text-white/50 transition-transform duration-200 ${showCountryMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showCountryMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowCountryMenu(false)} aria-hidden="true" />
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[#0f1a2e] border border-white/[0.08] rounded-xl shadow-xl py-2 max-h-[280px] overflow-y-auto scrollbar-dropdown z-50">
+                  {COUNTRIES.map((c) => (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => {
+                        setCountry(c.code);
+                        setShowCountryMenu(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium uppercase tracking-wider transition-colors flex items-center gap-3 ${
+                        country === c.code
+                          ? 'bg-[#3347ff]/25 text-white'
+                          : 'text-white/80 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {c.flag ? (
+                        <img src={c.flag} alt="" className="w-5 h-4 object-cover rounded-sm shrink-0" />
+                      ) : (
+                        <Globe className="w-5 h-4 shrink-0 text-white/50" />
+                      )}
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           <div>
             <LabelWithHint label="Дата рождения" hint="Только для пользователей 18+" />
@@ -642,7 +676,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
         </div>
 
         {/* Правая колонка — виджеты (скрыта на мобилке) */}
-        <div className="hidden md:flex w-72 shrink-0 p-6 border-l border-white/10 flex-col gap-6">
+        <div className="hidden md:flex w-72 shrink-0 p-6 border-l border-white/10 flex-col gap-6 bg-gradient-to-br from-[#0a1638] via-[#07152f] to-[#040d1f]">
           <div className="rounded-xl bg-[#0a1635] border border-white/10 p-6">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Заполненность профиля</h3>
             <div className="mb-2">
@@ -736,36 +770,6 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
       )}
 
     </div>
-  );
-}
-
-function ProfileHeader() {
-  const searchParams = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'profile';
-  const pageTitle = TAB_LABELS[activeTab] || 'Профиль';
-
-  return (
-    <header className="shrink-0 h-12 sm:h-14 bg-[#05122a] border-b border-white/10 flex items-center px-3 sm:px-4 md:px-6">
-      <div className="flex items-center gap-2 md:gap-4 w-full min-w-0">
-        <Link href="/terminal" className="hidden sm:flex items-center gap-2 text-white/70 hover:text-white transition-colors shrink-0">
-          <span className="text-sm font-medium">Терминал</span>
-        </Link>
-        <div className="hidden sm:block h-4 w-px bg-white/20 shrink-0" />
-        <div className="flex items-center gap-1.5 md:gap-3 flex-1 min-w-0">
-          <Image src="/images/logo.png" alt="" width={28} height={28} className="object-contain shrink-0 h-6 w-6 sm:h-7 sm:w-7" />
-          <span className="text-sm md:text-lg font-semibold text-white truncate">ComforTrade</span>
-          <span className="text-white/40 shrink-0">/</span>
-          <span className="text-white/90 font-medium truncate">{pageTitle}</span>
-        </div>
-        <Link
-          href="/terminal"
-          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors text-xs sm:text-sm shrink-0"
-        >
-          <span className="hidden sm:inline">К торговле</span>
-          <span className="sm:hidden">Терминал</span>
-        </Link>
-      </div>
-    </header>
   );
 }
 
@@ -960,20 +964,22 @@ function ProfileBottomNav() {
   const activeTab = searchParams.get('tab') || 'profile';
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-1.5 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] bg-[#051228] border-t border-white/[0.08]">
-      {SIDEBAR_ITEMS.map(({ id, shortLabel, href, icon: Icon }) => {
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-2 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-gradient-to-t from-[#05122a] via-[#06122c] to-[#0a1635]">
+      {SIDEBAR_ITEMS.map(({ id, shortLabel, href, icon: Icon }, index) => {
         const isActive = activeTab === id;
         return (
-          <Link
-            key={id}
-            href={href}
-            className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
-              isActive ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
-            }`}
-          >
-            <Icon className="w-4 h-4" strokeWidth={2.5} />
-            <span className="text-[8px] font-medium uppercase tracking-wider">{shortLabel}</span>
-          </Link>
+          <Fragment key={id}>
+            {index > 0 && <div className="w-px h-6 bg-white/15 shrink-0" aria-hidden />}
+            <Link
+              href={href}
+              className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[52px] transition-colors ${
+                isActive ? 'text-[#7b8fff]' : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              <Icon className="w-5 h-5" strokeWidth={2.5} />
+              <span className="text-[9px] font-semibold leading-tight">{shortLabel}</span>
+            </Link>
+          </Fragment>
         );
       })}
     </nav>
@@ -987,7 +993,7 @@ export default function ProfilePage() {
   return (
     <AuthGuard>
       <div className="h-screen flex flex-col overflow-hidden bg-[#061230]">
-        <ProfileHeader />
+        <AppHeader />
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <ProfileSidebar />
           <main className="flex-1 min-w-0 overflow-auto pb-[calc(3.25rem+env(safe-area-inset-bottom,0px))] md:pb-0">

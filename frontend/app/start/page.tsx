@@ -488,50 +488,6 @@ export default function StartPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Готовы начать свой путь в трейдинге?
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed">
-              Присоединяйтесь к тысячам успешных трейдеров. Создайте аккаунт и получите доступ к лучшим инструментам для торговли на фондовом рынке.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
-                className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors text-lg"
-              >
-                Создать аккаунт
-              </button>
-              <Link
-                href="/education"
-                className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border-2 border-[#3347ff] hover:bg-[#3347ff]/5 transition-colors text-lg"
-              >
-                Узнать больше
-              </Link>
-            </div>
-            <div className="mt-12 pt-12 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">500K+</div>
-                  <div className="text-gray-600">Активных пользователей</div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">$2.5B+</div>
-                  <div className="text-gray-600">Объём торговли</div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">24/7</div>
-                  <div className="text-gray-600">Поддержка клиентов</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Registration slide-out panel */}
       <>
         <div

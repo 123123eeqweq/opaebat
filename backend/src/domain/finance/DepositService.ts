@@ -51,6 +51,9 @@ export class DepositService {
     // В будущем здесь будет интеграция с Stripe/Crypto/Bank
     await this.transactionRepository.confirm(transaction.id);
 
+    // Sync Account.balance so trades can use it (REAL account balance = sum of transactions)
+    await this.accountRepository.updateBalance(account.id, amount);
+
     logger.info(`Deposit created: userId=${userId}, amount=${amount}, transactionId=${transaction.id}`);
 
     // Return confirmed transaction

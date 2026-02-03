@@ -47,6 +47,9 @@ export class WithdrawService {
 
     await this.transactionRepository.confirm(transaction.id);
 
+    // Sync Account.balance so it matches transaction-based balance
+    await this.accountRepository.updateBalance(account.id, -amount);
+
     logger.info(`Withdraw created: userId=${userId}, amount=${amount}, transactionId=${transaction.id}`);
 
     const confirmed = await this.transactionRepository.findById(transaction.id);

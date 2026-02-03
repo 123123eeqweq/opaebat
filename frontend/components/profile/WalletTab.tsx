@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Tag, Check, ExternalLink, History, ChevronDown, ChevronUp, ChevronRight, Shield } from 'lucide-react';
+import { Tag, ExternalLink, History, ChevronDown, ChevronUp, ChevronRight, Shield } from 'lucide-react';
 import { api } from '@/lib/api/api';
 
 type PaymentMethodId =
@@ -223,27 +223,29 @@ export function WalletTab() {
   const selectedWithdrawMethod = WITHDRAW_PAYMENT_METHODS.find((m) => m.id === withdrawPaymentMethod);
 
   return (
-    <div className="flex flex-col w-full min-h-full">
-      {/* Табы */}
-      <div className="shrink-0 flex border-b border-white/[0.08] px-3 sm:px-6 md:px-8 pt-3 sm:pt-4 md:pt-6 overflow-x-auto">
-        {WALLET_TABS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setWalletTab(id)}
-            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 text-[10px] sm:text-xs font-medium uppercase tracking-wider border-b-2 transition-colors -mb-px ${
-              walletTab === id
-                ? 'border-[#3347ff] text-white'
-                : 'border-transparent text-white/50 hover:text-white/80'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-row w-full min-h-full">
+      {/* Левая часть: табы + контент */}
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        {/* Табы */}
+        <div className="shrink-0 flex border-b border-white/[0.08] px-3 sm:px-6 md:px-8 pt-3 sm:pt-4 md:pt-6 overflow-x-auto overflow-y-hidden">
+          {WALLET_TABS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setWalletTab(id)}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 text-[10px] sm:text-xs font-medium uppercase tracking-wider border-b-2 transition-colors -mb-px ${
+                walletTab === id
+                  ? 'border-[#3347ff] text-white'
+                  : 'border-transparent text-white/50 hover:text-white/80'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-      {/* Контент */}
-      <div className="flex flex-1 min-h-[calc(100vh-3.5rem)]">
+        {/* Контент */}
+        <div className="flex flex-1 min-h-0 overflow-auto">
         {walletTab === 'deposit' && (
           <>
             {/* Левая колонка — форма */}
@@ -283,7 +285,6 @@ export function WalletTab() {
                 {PAYMENT_METHODS.map((m) => {
                 const isSelected = paymentMethod === m.id;
                 const isInstant = m.speed === 'Мгновенно';
-                const isPopular = m.id === 'CARD';
                 return (
                   <button
                     key={m.id}
@@ -293,18 +294,8 @@ export function WalletTab() {
                       isSelected
                         ? 'bg-white/[0.04] border-l-[#3347ff] border-white/20'
                         : 'bg-white/[0.02] border-l-transparent'
-                    } ${isPopular ? 'border-t border-t-emerald-500/20' : ''}`}
+                    }`}
                   >
-                    {isPopular && (
-                      <span className="absolute -top-px left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-b text-[9px] font-medium bg-emerald-600 text-white whitespace-nowrap">
-                        Выбор 90%
-                      </span>
-                    )}
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                      </div>
-                    )}
                     <div className={`w-12 h-12 rounded-md flex items-center justify-center shrink-0 overflow-hidden ${
                       isSelected ? 'bg-white/8' : 'bg-white/[0.04]'
                     }`}>
@@ -532,89 +523,6 @@ export function WalletTab() {
         </div>
       </div>
 
-      {/* Правая часть — Summary (скрыта на мобилке) */}
-      <div className="hidden lg:flex w-[360px] shrink-0 p-6 flex-col gap-6 self-stretch sticky top-0 min-h-[calc(100vh-3.5rem)] bg-[#051228]">
-        <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white">Итого</h3>
-              <p className="text-xs text-white/50 mt-0.5">От {MIN_AMOUNT_UAH} до {MAX_AMOUNT_UAH} UAH</p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-white/60 text-sm">Способ</span>
-                <div className="text-right">
-                  <span className="text-white font-medium block">
-                    {selectedMethod?.mask || selectedMethod?.label || paymentMethod}
-                  </span>
-                  {selectedMethod?.speed && (
-                    <span className="text-xs text-white/50">{selectedMethod.speed}</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-white/60 text-sm">Сумма</span>
-                <span className="text-white font-medium tabular-nums">
-                  {displayAmount.toFixed(0)} UAH
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-white/60 text-sm">Комиссия</span>
-                <span className="text-emerald-400 font-medium">Бесплатно</span>
-              </div>
-              <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                <span className="text-white font-semibold">К оплате</span>
-                <span className="text-xl font-bold text-[#3347ff] tabular-nums">
-                  {totalPay.toFixed(0)} UAH
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleDeposit}
-              disabled={submitting || !isValidAmount}
-              className="group relative w-full mt-6 flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-            >
-              <span className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500 pointer-events-none" />
-              <span className="relative z-10 flex items-center justify-center gap-2">
-              {submitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Обработка...
-                </>
-              ) : (
-                <>
-                  Перейти к оплате
-                  <ChevronRight className="w-4 h-4" />
-                </>
-              )}
-              </span>
-            </button>
-            <p className="mt-4 text-[11px] text-white/40 text-center">
-              Нажимая «Подтвердить», вы соглашаетесь с{' '}
-              <Link href="#" className="text-[#7b8fff] hover:underline">
-                Условиями использования
-              </Link>
-              .
-            </p>
-        </div>
-
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 flex gap-3">
-          <div className="shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-white" strokeWidth={2} />
-          </div>
-          <div>
-            <p className="font-medium text-white/90 text-sm">Безопасный платёж</p>
-            <p className="text-xs text-white/50 mt-0.5">
-              256-bit SSL шифрование. Ваши данные защищены.
-            </p>
-          </div>
-        </div>
-
-        <a href="#" className="block rounded-xl overflow-hidden border border-white/[0.08] hover:border-white/20 transition-colors">
-          <img src="/images/banner1.PNG" alt="" className="w-full h-auto object-cover rounded-xl" />
-        </a>
-      </div>
-
           </>
         )}
 
@@ -659,11 +567,6 @@ export function WalletTab() {
                               : 'bg-white/[0.02] border-l-transparent'
                           }`}
                         >
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center">
-                              <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                            </div>
-                          )}
                           <div className={`w-12 h-12 rounded-md flex items-center justify-center shrink-0 overflow-hidden ${
                             isSelected ? 'bg-white/8' : 'bg-white/[0.04]'
                           }`}>
@@ -769,76 +672,6 @@ export function WalletTab() {
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Правая часть — Summary для вывода (скрыта на мобилке) */}
-            <div className="hidden lg:flex w-[360px] shrink-0 p-6 flex-col gap-6 self-stretch sticky top-0 min-h-[calc(100vh-3.5rem)] bg-[#051228]">
-              <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-6">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white">Итого</h3>
-                    <p className="text-xs text-white/50 mt-0.5">От {MIN_AMOUNT_UAH} до {MAX_AMOUNT_UAH} UAH</p>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/60 text-sm">Способ</span>
-                      <div className="text-right">
-                        <span className="text-white font-medium block">
-                          {selectedWithdrawMethod?.mask || selectedWithdrawMethod?.label || withdrawPaymentMethod}
-                        </span>
-                        {selectedWithdrawMethod?.speed && (
-                          <span className="text-xs text-white/50">{selectedWithdrawMethod.speed}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/60 text-sm">Сумма</span>
-                      <span className="text-white font-medium tabular-nums">
-                        {(withdrawNumAmount >= MIN_AMOUNT_UAH && withdrawNumAmount <= MAX_AMOUNT_UAH ? withdrawNumAmount : 0).toFixed(0)} UAH
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/60 text-sm">Комиссия</span>
-                      <span className="text-emerald-400 font-medium">Бесплатно</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                      <span className="text-white font-semibold">К получению</span>
-                      <span className="text-xl font-bold text-[#3347ff] tabular-nums">
-                        {(withdrawNumAmount >= MIN_AMOUNT_UAH && withdrawNumAmount <= MAX_AMOUNT_UAH ? withdrawNumAmount : 0).toFixed(0)} UAH
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleWithdraw}
-                    disabled={submitting || !isValidWithdraw}
-                    className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Обработка...
-                      </>
-                    ) : (
-                      'Подтвердить вывод'
-                    )}
-                  </button>
-                  <p className="mt-4 text-[11px] text-white/40 text-center">
-                    Нажимая «Подтвердить», вы соглашаетесь с{' '}
-                    <Link href="#" className="text-[#7b8fff] hover:underline">Условиями использования</Link>.
-                  </p>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 flex gap-3">
-                <div className="shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="font-medium text-white/90 text-sm">Безопасный вывод</p>
-                  <p className="text-xs text-white/50 mt-0.5">256-bit SSL шифрование. Ваши данные защищены.</p>
-                </div>
-              </div>
-              <a href="#" className="block rounded-xl overflow-hidden border border-white/[0.08] hover:border-white/20 transition-colors">
-                <img src="/images/banner1.PNG" alt="" className="w-full h-auto object-cover rounded-xl" />
-              </a>
             </div>
           </>
         )}
@@ -946,7 +779,160 @@ export function WalletTab() {
             </div>
           </div>
         )}
+        </div>
       </div>
+
+      {/* Правая часть — Summary (от хедера до низа, только для Пополнение и Вывод) */}
+      {(walletTab === 'deposit' || walletTab === 'withdraw') && (
+        <div className="hidden lg:flex w-[360px] shrink-0 p-6 flex-col gap-6 self-stretch min-h-[calc(100vh-3.5rem)] bg-gradient-to-br from-[#0a1638] via-[#07152f] to-[#040d1f] border-l border-white/10 sticky top-0">
+          {walletTab === 'deposit' && (
+            <>
+              <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-white">Итого</h3>
+                  <p className="text-xs text-white/50 mt-0.5">От {MIN_AMOUNT_UAH} до {MAX_AMOUNT_UAH} UAH</p>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-sm">Способ</span>
+                    <div className="text-right">
+                      <span className="text-white font-medium block">
+                        {selectedMethod?.mask || selectedMethod?.label || paymentMethod}
+                      </span>
+                      {selectedMethod?.speed && (
+                        <span className="text-xs text-white/50">{selectedMethod.speed}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-sm">Сумма</span>
+                    <span className="text-white font-medium tabular-nums">
+                      {displayAmount.toFixed(0)} UAH
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-sm">Комиссия</span>
+                    <span className="text-emerald-400 font-medium">Бесплатно</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                    <span className="text-white font-semibold">К оплате</span>
+                    <span className="text-xl font-bold text-[#3347ff] tabular-nums">
+                      {totalPay.toFixed(0)} UAH
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDeposit}
+                  disabled={submitting || !isValidAmount}
+                  className="group relative w-full mt-6 flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+                >
+                  <span className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500 pointer-events-none" />
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {submitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Обработка...
+                      </>
+                    ) : (
+                      <>
+                        Перейти к оплате
+                        <ChevronRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </span>
+                </button>
+                <p className="mt-4 text-[11px] text-white/40 text-center">
+                  Нажимая «Подтвердить», вы соглашаетесь с{' '}
+                  <Link href="#" className="text-[#7b8fff] hover:underline">Условиями использования</Link>.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 flex gap-3">
+                <div className="shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="font-medium text-white/90 text-sm">Безопасный платёж</p>
+                  <p className="text-xs text-white/50 mt-0.5">256-bit SSL шифрование. Ваши данные защищены.</p>
+                </div>
+              </div>
+              <a href="#" className="block rounded-xl overflow-hidden border border-white/[0.08] hover:border-white/20 transition-colors">
+                <img src="/images/banner1.PNG" alt="" className="w-full h-auto object-cover rounded-xl" />
+              </a>
+            </>
+          )}
+          {walletTab === 'withdraw' && (
+            <>
+              <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-white">Итого</h3>
+                  <p className="text-xs text-white/50 mt-0.5">От {MIN_AMOUNT_UAH} до {MAX_AMOUNT_UAH} UAH</p>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-sm">Способ</span>
+                    <div className="text-right">
+                      <span className="text-white font-medium block">
+                        {selectedWithdrawMethod?.mask || selectedWithdrawMethod?.label || withdrawPaymentMethod}
+                      </span>
+                      {selectedWithdrawMethod?.speed && (
+                        <span className="text-xs text-white/50">{selectedWithdrawMethod.speed}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-sm">Сумма</span>
+                    <span className="text-white font-medium tabular-nums">
+                      {(withdrawNumAmount >= MIN_AMOUNT_UAH && withdrawNumAmount <= MAX_AMOUNT_UAH ? withdrawNumAmount : 0).toFixed(0)} UAH
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-sm">Комиссия</span>
+                    <span className="text-emerald-400 font-medium">Бесплатно</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                    <span className="text-white font-semibold">К получению</span>
+                    <span className="text-xl font-bold text-[#3347ff] tabular-nums">
+                      {(withdrawNumAmount >= MIN_AMOUNT_UAH && withdrawNumAmount <= MAX_AMOUNT_UAH ? withdrawNumAmount : 0).toFixed(0)} UAH
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleWithdraw}
+                  disabled={submitting || !isValidWithdraw}
+                  className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Обработка...
+                    </>
+                  ) : (
+                    'Подтвердить вывод'
+                  )}
+                </button>
+                <p className="mt-4 text-[11px] text-white/40 text-center">
+                  Нажимая «Подтвердить», вы соглашаетесь с{' '}
+                  <Link href="#" className="text-[#7b8fff] hover:underline">Условиями использования</Link>.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 flex gap-3">
+                <div className="shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="font-medium text-white/90 text-sm">Безопасный вывод</p>
+                  <p className="text-xs text-white/50 mt-0.5">256-bit SSL шифрование. Ваши данные защищены.</p>
+                </div>
+              </div>
+              <a href="#" className="block rounded-xl overflow-hidden border border-white/[0.08] hover:border-white/20 transition-colors">
+                <img src="/images/banner1.PNG" alt="" className="w-full h-auto object-cover rounded-xl" />
+              </a>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -179,10 +179,22 @@ export class AccountService {
       return null;
     }
 
-    // 🔥 REAL account: balance from transactions (deposits/withdrawals), not Account.balance
+    // Balance: Account.balance (synced on deposit, withdraw, trade open/close)
+    // For REAL: sync from transactions only when Account.balance is 0 but we have deposits (legacy users)
     let balance: number;
     if (account.type === AccountType.REAL && this.transactionRepository) {
-      balance = await this.transactionRepository.getBalance(account.id);
+      const accBalance = typeof account.balance === 'number' ? account.balance : Number(account.balance);
+      if (accBalance === 0) {
+        const txBalance = await this.transactionRepository.getBalance(account.id);
+        if (txBalance > 0) {
+          await this.accountRepository.setBalance(account.id, txBalance);
+          balance = txBalance;
+        } else {
+          balance = 0;
+        }
+      } else {
+        balance = accBalance;
+      }
     } else {
       balance = typeof account.balance === 'number' ? account.balance : Number(account.balance);
     }
