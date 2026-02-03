@@ -609,8 +609,9 @@ export function useRenderLoop({
         ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        // Позиция: сверху слева, но ниже селектора (примерно 70px от верха, 20px от левого края)
-        ctx.fillText(timeText, 18, 60);
+        // На мобилке — выше (как на ПК), т.к. pt-10 сдвигает контент вниз
+        const timeY = width < 768 ? 20 : 60;
+        ctx.fillText(timeText, 18, timeY);
         ctx.restore();
       }
 

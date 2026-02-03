@@ -39,18 +39,21 @@ export function ChartTypeMenu({
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (target && menuRef.current && !menuRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside, true);
+      document.addEventListener('touchstart', handleClickOutside, true);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
     };
   }, [isOpen]);
 
@@ -58,7 +61,7 @@ export function ChartTypeMenu({
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center text-white hover:bg-white/10"
+        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center text-white md:hover:bg-white/10"
         title="Тип графика"
         style={{ width: '44px', height: '36px', minWidth: '44px', maxWidth: '44px' }}
       >
@@ -91,7 +94,7 @@ export function ChartTypeMenu({
                   className={`flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg transition-colors flex-1 min-w-0 ${
                     isActive
                       ? 'bg-[#3347ff] text-white border border-[#3347ff]'
-                      : 'bg-white/10 text-gray-300 hover:bg-white/15 hover:text-white'
+                      : 'bg-white/10 text-gray-300 md:hover:bg-white/15 md:hover:text-white'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

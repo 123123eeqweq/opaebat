@@ -50,18 +50,21 @@ export function IndicatorMenu({ indicatorConfigs, onConfigChange }: IndicatorMen
 
   // Закрываем меню при клике вне его
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (target && menuRef.current && !menuRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside, true);
+      document.addEventListener('touchstart', handleClickOutside, true);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
     };
   }, [isOpen]);
 
@@ -101,7 +104,7 @@ export function IndicatorMenu({ indicatorConfigs, onConfigChange }: IndicatorMen
         className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors ${
           isActive
             ? 'bg-[#3347ff] text-white border border-[#3347ff]'
-            : 'text-gray-300 hover:bg-white/8 hover:text-white'
+            : 'text-gray-300 md:hover:bg-white/8 md:hover:text-white'
         }`}
       >
         <button
@@ -110,14 +113,14 @@ export function IndicatorMenu({ indicatorConfigs, onConfigChange }: IndicatorMen
             e.stopPropagation();
             toggleFavorite(config.id);
           }}
-          className="flex-shrink-0 p-0.5 hover:bg-white/10 rounded transition-colors"
+          className="flex-shrink-0 p-0.5 md:hover:bg-white/10 rounded transition-colors"
           title={favorites.has(config.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
         >
           <Star
             className={`w-3.5 h-3.5 transition-colors ${
               favorites.has(config.id)
                 ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-400 hover:text-yellow-400'
+                : 'text-gray-400 md:hover:text-yellow-400'
             }`}
           />
         </button>
@@ -131,7 +134,7 @@ export function IndicatorMenu({ indicatorConfigs, onConfigChange }: IndicatorMen
       {/* Кнопка открытия меню */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center text-white hover:bg-white/10"
+        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center text-white md:hover:bg-white/10"
         title="Индикаторы"
         style={{ width: '44px', height: '36px', minWidth: '44px', maxWidth: '44px' }}
       >
@@ -140,7 +143,7 @@ export function IndicatorMenu({ indicatorConfigs, onConfigChange }: IndicatorMen
 
       {/* Выпадающее меню */}
       {isOpen && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-lg shadow-xl min-w-[200px] z-50 overflow-hidden bg-[#1a2438] border border-white/5">
+        <div className="absolute top-full left-1/2 -translate-x-[calc(50%+36px)] md:-translate-x-1/2 mt-2 rounded-lg shadow-xl min-w-[200px] z-50 overflow-hidden bg-[#1a2438] border border-white/5">
           <div className="p-2">
             {favoriteConfigs.length > 0 && (
               <>

@@ -405,7 +405,6 @@ export function useChartInteractions({
     // Получаем время в точке курсора
     const anchorTime = mouseXToTime(e.clientX, canvas, viewport);
 
-    // Zoom viewport
     const newViewport = zoomViewportTime({
       viewport,
       zoomFactor,

@@ -60,18 +60,21 @@ export function DrawingMenu({ drawingMode, onDrawingModeChange }: DrawingMenuPro
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (target && menuRef.current && !menuRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside, true);
+      document.addEventListener('touchstart', handleClickOutside, true);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
     };
   }, [isOpen]);
 
@@ -93,7 +96,7 @@ export function DrawingMenu({ drawingMode, onDrawingModeChange }: DrawingMenuPro
         className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors ${
           isActive
             ? 'bg-[#3347ff] text-white border border-[#3347ff]'
-            : 'text-gray-300 hover:bg-white/8 hover:text-white'
+            : 'text-gray-300 md:hover:bg-white/8 md:hover:text-white'
         }`}
         title={opt.label}
       >
@@ -103,14 +106,14 @@ export function DrawingMenu({ drawingMode, onDrawingModeChange }: DrawingMenuPro
             e.stopPropagation();
             toggleFavorite(opt.id);
           }}
-          className="flex-shrink-0 p-0.5 hover:bg-white/10 rounded transition-colors"
+          className="flex-shrink-0 p-0.5 md:hover:bg-white/10 rounded transition-colors"
           title={favorites.has(opt.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
         >
           <Star
             className={`w-3.5 h-3.5 transition-colors ${
               favorites.has(opt.id)
                 ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-400 hover:text-yellow-400'
+                : 'text-gray-400 md:hover:text-yellow-400'
             }`}
           />
         </button>
@@ -123,7 +126,7 @@ export function DrawingMenu({ drawingMode, onDrawingModeChange }: DrawingMenuPro
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center text-white hover:bg-white/10"
+        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center text-white md:hover:bg-white/10"
         title="Рисование"
         style={{ width: '44px', height: '36px', minWidth: '44px', maxWidth: '44px' }}
       >
@@ -131,7 +134,7 @@ export function DrawingMenu({ drawingMode, onDrawingModeChange }: DrawingMenuPro
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-lg shadow-xl min-w-[220px] z-50 overflow-hidden bg-[#1a2438] border border-white/5">
+        <div className="absolute top-full left-1/2 -translate-x-[calc(50%+90px)] md:-translate-x-1/2 mt-2 rounded-lg shadow-xl min-w-[220px] z-50 overflow-hidden bg-[#1a2438] border border-white/5">
           <div className="p-2">
             {favoriteOptions.length > 0 && (
               <>

@@ -216,7 +216,7 @@ export function SentimentBar({ height = 600, width = 12, orientation = 'vertical
       className="relative w-full"
       style={{
         width: isHorizontal ? '100%' : `${width}px`,
-        height: isHorizontal ? '12px' : '100%',
+        height: isHorizontal ? '6px' : '100%',
         pointerEvents: 'none',
       }}
     >

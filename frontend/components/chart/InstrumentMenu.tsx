@@ -101,15 +101,17 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (target && menuRef.current && !menuRef.current.contains(target)) {
         setIsOpen(false);
         setSearchQuery('');
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside, true);
+      document.addEventListener('touchstart', handleClickOutside, true);
       // Фокусируем поле поиска при открытии
       setTimeout(() => {
         searchInputRef.current?.focus();
@@ -123,7 +125,8 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
     };
   }, [isOpen]);
 
@@ -205,7 +208,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center gap-2 text-white hover:bg-white/10"
+        className="px-3.5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center gap-2 text-white md:hover:bg-white/10"
         style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
       >
         {/* Флаги валют */}
@@ -265,7 +268,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
               className={`p-1.5 rounded-md text-sm font-medium transition-colors flex items-center ${
                 selectedCategory === 'favorites'
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
               title="Избранные"
             >
@@ -277,7 +280,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 selectedCategory === 'all'
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               Все
@@ -288,7 +291,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 selectedCategory === 'forex'
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               Форекс
@@ -299,7 +302,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 selectedCategory === 'crypto'
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               Крипто
@@ -310,7 +313,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 selectedCategory === 'otc'
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               OTC
@@ -326,7 +329,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Поиск..."
-                className="w-full pl-10 pr-4 py-1.5 text-sm bg-white/10 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-white/10 hover:border-white/15 transition-colors"
+                className="w-full pl-10 pr-4 py-1.5 text-sm bg-white/10 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-white/10 md:hover:border-white/15 transition-colors"
               />
             </div>
           </div>
@@ -344,7 +347,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
                   setSortOrder(null);
                 }
               }}
-              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1 md:hover:opacity-80 transition-opacity"
             >
               <span className="text-gray-300 font-semibold text-sm">Выплата</span>
               {sortOrder === 'desc' ? (
@@ -385,7 +388,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
                   className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
                     isActive
                       ? 'bg-[#3347ff]/25 text-white'
-                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                      : 'text-gray-300 md:hover:bg-white/10 md:hover:text-white'
                   }`}
                   title={inst.label}
                 >
@@ -405,14 +408,14 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
                           return next;
                         })());
                       }}
-                      className="flex-shrink-0 p-0.5 hover:bg-white/10 rounded transition-colors"
+                      className="flex-shrink-0 p-0.5 md:hover:bg-white/10 rounded transition-colors"
                       title={favorites.has(inst.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
                     >
                       <Star
                         className={`w-3.5 h-3.5 transition-colors ${
                           favorites.has(inst.id)
                             ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-400 hover:text-yellow-400'
+                            : 'text-gray-400 md:hover:text-yellow-400'
                         }`}
                       />
                     </button>

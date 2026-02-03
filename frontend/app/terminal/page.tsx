@@ -682,14 +682,14 @@ export default function TerminalPage() {
 
   return (
     <AuthGuard requireAuth>
-      <div ref={fullscreenContainerRef} className="min-h-screen bg-[#061230] flex flex-col">
+      <div ref={fullscreenContainerRef} className="terminal-page min-h-screen bg-[#061230] flex flex-col">
       {/* Header */}
       <header className="bg-[#05122a] border-b border-white/10 shrink-0">
         <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
             <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComforTrade</span>
-            <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white hover:bg-white/10 transition-colors shrink-0">
+            <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white md:hover:bg-white/10 transition-colors shrink-0">
               <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
@@ -698,7 +698,7 @@ export default function TerminalPage() {
             <div className="relative">
               <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#3347ff]/50 via-[#5b6bff]/30 to-[#3347ff]/50 blur-sm opacity-60 pointer-events-none" />
               <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#05122a] z-10 pointer-events-none ${accountType === 'demo' ? 'bg-sky-400' : 'bg-emerald-500'}`} title={accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'} />
-              <div onClick={() => setShowProfileModal(!showProfileModal)} className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg">
+              <div onClick={() => setShowProfileModal(!showProfileModal)} className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer md:hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg">
                 {avatarUrl ? (
                   <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" />
                 ) : (
@@ -711,7 +711,7 @@ export default function TerminalPage() {
               {showProfileModal && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowProfileModal(false)} />
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden">
+                  <div className="absolute left-full right-auto top-full mt-2 -ml-16 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden md:left-1/2 md:ml-0 md:-translate-x-1/2">
                     <div className="p-3 space-y-2.5">
                       <div className="flex items-center gap-2.5 p-2.5 rounded-lg">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-white/20 ring-offset-2 ring-offset-[#1a2438] bg-gradient-to-br from-[#3347ff]/30 to-[#1f2a45]">
@@ -730,35 +730,35 @@ export default function TerminalPage() {
                       </div>
                     </div>
                     <div className="border-t border-white/10 p-3 space-y-1">
-                      <button type="button" onClick={() => { setShowProfileModal(false); setShowAccountModal(true); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm text-left">
+                      <button type="button" onClick={() => { setShowProfileModal(false); setShowAccountModal(true); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm text-left">
                         <Repeat className="w-4 h-4" />
                         <span>Переключить счёт</span>
                       </button>
                       {accountType === 'real' && (
-                        <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
+                        <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                           <PlusCircle className="w-4 h-4" />
                           <span>Пополнить счёт</span>
                         </Link>
                       )}
-                      <Link href="/profile" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
+                      <Link href="/profile" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                         <UserCircle className="w-4 h-4" />
                         <span>Профиль</span>
                       </Link>
-                      <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
+                      <Link href="/profile?tab=wallet" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                         <Wallet className="w-4 h-4" />
                         <span>Кошелёк</span>
                       </Link>
-                      <Link href="/profile?tab=education" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
+                      <Link href="/profile?tab=education" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                         <GraduationCap className="w-4 h-4" />
                         <span>Обучение</span>
                       </Link>
-                      <Link href="/profile?tab=support" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white hover:bg-white/10 transition-colors text-sm">
+                      <Link href="/profile?tab=support" onClick={() => setShowProfileModal(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm">
                         <MessageCircle className="w-4 h-4" />
                         <span>Поддержка</span>
                       </Link>
                     </div>
                     <div className="border-t border-white/10 p-3">
-                      <button onClick={() => { setShowProfileModal(false); handleLogout(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-sm">
+                      <button onClick={() => { setShowProfileModal(false); handleLogout(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-red-400 md:hover:bg-red-500/10 transition-colors text-sm">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                         <span>Выйти</span>
                       </button>
@@ -770,12 +770,12 @@ export default function TerminalPage() {
 
             <div className="flex items-center gap-2.5">
               {(snapshot?.type === 'DEMO' && snapshot && snapshot.balance < 1000) && (
-                <button type="button" className="w-9 h-9 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleResetDemoAccount} disabled={resetDemoLoading} title="Reset demo balance">
+                <button type="button" className="w-9 h-9 rounded-xl border border-white/20 flex items-center justify-center md:hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleResetDemoAccount} disabled={resetDemoLoading} title="Reset demo balance">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </button>
               )}
               <div className="flex flex-col relative pr-3" data-account-modal>
-                <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity" data-account-modal onClick={async () => { await loadAllBalances(); setShowAccountModal(true); }}>
+                <div className="flex items-center gap-1.5 cursor-pointer md:hover:opacity-80 transition-opacity" data-account-modal onClick={async () => { await loadAllBalances(); setShowAccountModal(true); }}>
                   <span className="text-xs text-white font-medium">{accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'}</span>
                   <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </div>
@@ -787,15 +787,15 @@ export default function TerminalPage() {
                     <div className="fixed inset-0 z-[140]" onClick={() => setShowAccountModal(false)} />
                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-[150]" data-account-modal>
                       <div className="p-3 space-y-2.5">
-                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'real' ? 'bg-white/10' : 'hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find(x => x.type === 'real'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
+                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'real' ? 'bg-white/10' : 'md:hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find(x => x.type === 'real'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
                           <div className="mt-0.5">{accountType === 'real' ? <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-[#061230]" /></div> : <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />}</div>
                           <div className="flex-1">
                             <div className="text-white font-medium mb-0.5 text-sm">Реальный счёт</div>
                             <div className="text-white/60 text-xs">{hideBalance ? '••••••' : (modalBalances.real ? `${modalBalances.real.balance} ${modalBalances.real.currency === 'USD' ? 'USD' : modalBalances.real.currency === 'RUB' ? '₽' : modalBalances.real.currency === 'UAH' ? 'UAH' : modalBalances.real.currency}` : (snapshot?.type === 'REAL' ? `${getCurrentBalance().balance} ${getCurrentBalance().currency === 'USD' ? 'USD' : getCurrentBalance().currency === 'RUB' ? '₽' : getCurrentBalance().currency === 'UAH' ? 'UAH' : getCurrentBalance().currency}` : '...'))}</div>
-                            <Link href="/profile?tab=wallet" onClick={(e) => e.stopPropagation()} className="mt-2 inline-block px-2.5 py-1 rounded-lg bg-[#3347ff] text-white text-xs font-medium hover:bg-[#3347ff]/90 transition-colors">Пополнить счёт</Link>
+                            <Link href="/profile?tab=wallet" onClick={(e) => e.stopPropagation()} className="mt-2 inline-block px-2.5 py-1 rounded-lg bg-[#3347ff] text-white text-xs font-medium md:hover:bg-[#3347ff]/90 transition-colors">Пополнить счёт</Link>
                           </div>
                         </div>
-                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'demo' ? 'bg-white/10' : 'hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find(x => x.type === 'demo'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
+                        <div className={`flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors ${accountType === 'demo' ? 'bg-white/10' : 'md:hover:bg-white/5'}`} onClick={async () => { try { const r = await api<{ accounts: Array<{ id: string; type: string }> }>('/api/accounts'); const a = r.accounts.find(x => x.type === 'demo'); if (a) { await api('/api/accounts/switch', { method: 'POST', body: JSON.stringify({ accountId: a.id }) }); } setShowAccountModal(false); } catch (e) { console.error(e); alert('Не удалось переключить аккаунт'); } }}>
                           <div className="mt-0.5">{accountType === 'demo' ? <div className="w-4 h-4 rounded-full bg-[#3347ff] flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-[#061230]" /></div> : <div className="w-4 h-4 rounded-full border-2 border-[#3347ff]" />}</div>
                           <div className="flex-1">
                             <div className="text-white font-medium mb-0.5 text-sm">Демо-счёт</div>
@@ -804,7 +804,7 @@ export default function TerminalPage() {
                         </div>
                       </div>
                       <div className="border-t border-white/10 p-3">
-                        <div className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setHideBalance(!hideBalance)}>
+                        <div className="flex items-center gap-2.5 cursor-pointer md:hover:opacity-80 transition-opacity" onClick={() => setHideBalance(!hideBalance)}>
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">{hideBalance ? <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></> : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}</svg>
                           <span className="text-white text-xs">Скрыть баланс</span>
                         </div>
@@ -815,7 +815,7 @@ export default function TerminalPage() {
               </div>
             </div>
 
-            <Link href="/profile?tab=wallet" className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white hover:from-[#3347ff]/90 hover:to-[#1e2fcc]/90 transition-all flex items-center gap-1.5 sm:gap-2 uppercase">
+            <Link href="/profile?tab=wallet" className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all flex items-center gap-1.5 sm:gap-2 uppercase">
               <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="sm:hidden">Пополнить</span>
               <span className="hidden sm:inline">Пополнить счёт</span>
@@ -824,8 +824,8 @@ export default function TerminalPage() {
         </div>
       </header>
 
-      {/* Main Content Area — pb под нижнюю навигацию (компактная) + safe-area (iOS Safari) */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden pb-[calc(3.25rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+      {/* Main Content Area — pb под нижнюю навигацию + safe-area (iOS Safari, iPhone с вырезом) */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
         {/* Left Sidebar — скрыт на мобилке, на десктопе слева */}
         <aside className="hidden md:flex w-[88px] shrink-0 bg-[#05122a] border-r border-white/10 flex-col items-center py-2.5 gap-2">
           <div className="flex-1 flex flex-col items-center gap-2 w-full min-h-0">
@@ -835,7 +835,7 @@ export default function TerminalPage() {
               className={`flex flex-col items-center justify-center gap-1 w-full h-14 px-1.5 rounded-lg transition-colors ${
                 showTradesHistory
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               <History className="w-5 h-5 stroke-[3]" />
@@ -848,7 +848,7 @@ export default function TerminalPage() {
               className={`flex flex-col items-center justify-center gap-1 w-full h-14 px-1.5 rounded-lg transition-colors ${
                 showNews
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               <Newspaper className="w-5 h-5 stroke-[3]" />
@@ -864,7 +864,7 @@ export default function TerminalPage() {
               className={`flex flex-col items-center justify-center gap-1 w-full h-14 px-1.5 rounded-lg transition-colors ${
                 activeMenu === 'обучение'
                   ? 'bg-[#3347ff]/20 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               <GraduationCap className="w-5 h-5 stroke-[3]" />
@@ -877,7 +877,7 @@ export default function TerminalPage() {
               className={`flex flex-col items-center justify-center gap-1 w-full h-14 px-1.5 rounded-lg transition-colors ${
                 activeMenu === 'торговый-профиль'
                   ? 'text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               <TrendingUp className="w-5 h-5 stroke-[3]" />
@@ -890,7 +890,7 @@ export default function TerminalPage() {
               className={`flex flex-col items-center justify-center gap-1 w-full h-14 px-1.5 rounded-lg transition-colors ${
                 activeMenu === 'кошелек'
                   ? 'text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               <Wallet className="w-5 h-5 stroke-[3]" />
@@ -903,7 +903,7 @@ export default function TerminalPage() {
               className={`flex flex-col items-center justify-center gap-1 w-full h-14 px-1.5 rounded-lg transition-colors ${
                 activeMenu === 'личный-профиль'
                   ? 'text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
               }`}
             >
               <UserCircle className="w-5 h-5 stroke-[3]" />
@@ -930,7 +930,7 @@ export default function TerminalPage() {
                   className={`flex flex-col items-center justify-center gap-1 w-full h-14 px-1.5 rounded-lg transition-colors ${
                     isActive
                       ? 'bg-[#3347ff]/20 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      : 'text-gray-400 md:hover:text-white md:hover:bg-white/5'
                   }`}
                 >
                   <Icon className="w-5 h-5 stroke-[3]" />
@@ -943,7 +943,7 @@ export default function TerminalPage() {
             href="https://t.me/your_support_channel"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center gap-1 w-[72px] h-12 px-1.5 rounded-lg bg-white/10 transition-colors text-gray-400 hover:text-white hover:bg-white/15 mt-1 mx-auto"
+            className="flex flex-col items-center justify-center gap-1 w-[72px] h-12 px-1.5 rounded-lg bg-white/10 transition-colors text-gray-400 md:hover:text-white md:hover:bg-white/15 mt-1 mx-auto"
           >
             <Image src="/images/support.png" alt="Поддержка" width={20} height={20} className="w-5 h-5 object-contain" />
             <span className="text-[9px] font-semibold leading-tight text-center">Поддержка</span>
@@ -1035,8 +1035,8 @@ export default function TerminalPage() {
             </div>
           )}
 
-          {/* Обёртка графика с явными размерами под ресайз — заполняет main по inset-0 */}
-          <div ref={chartContainerRef} className="absolute inset-0 min-w-0 min-h-0 overflow-hidden flex flex-col md:flex-row">
+          {/* Обёртка графика с явными размерами под ресайз — pt на мобилке чтобы свечи не перекрывали меню */}
+          <div ref={chartContainerRef} className="absolute inset-0 min-w-0 min-h-0 overflow-hidden flex flex-col md:flex-row pt-10 md:pt-0">
             {/* График */}
             <div className="flex-1 min-w-0 min-h-0 relative">
               {/* 🔥 FLOW: Hard Chart Reinitialization on Timeframe/ChartType Change
@@ -1085,10 +1085,10 @@ export default function TerminalPage() {
             <div className="shrink-0 flex flex-row md:flex-col items-center md:items-stretch gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-2 py-1.5 sm:py-2 md:py-3 bg-[#05122a]/80 border-t md:border-t-0 md:border-l border-white/5 md:w-12">
               {/* На мобилке: горизонтальная компоновка */}
               <div className="md:hidden flex items-center gap-1.5 sm:gap-2 w-full">
-                <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0 tabular-nums min-w-[2rem] text-right" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
                   {buyPercentage}%
                 </span>
-                <div className="flex-1 min-w-0 h-2 md:h-3">
+                <div className="flex-1 min-w-0 h-1.5">
                   <SentimentBar
                     orientation="horizontal"
                     onPercentagesChange={(buy, sell) => {
@@ -1097,14 +1097,14 @@ export default function TerminalPage() {
                     }}
                   />
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                <span className="text-[9px] sm:text-[10px] font-medium text-white/50 shrink-0 tabular-nums min-w-[2rem] text-left" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
                   {sellPercentage}%
                 </span>
               </div>
               
               {/* На десктопе: вертикальная компоновка */}
               <div className="hidden md:flex flex-col items-center justify-center gap-2 h-full py-3">
-                <span className="text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                <span className="text-[10px] font-medium text-white/50 shrink-0 tabular-nums min-w-[2rem] text-center" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
                   {buyPercentage}%
                 </span>
                 <div className="flex-1 min-w-0 w-full flex items-center justify-center min-h-0" style={{ height: '100%' }}>
@@ -1118,7 +1118,7 @@ export default function TerminalPage() {
                     }}
                   />
                 </div>
-                <span className="text-[10px] font-medium text-white/50 shrink-0" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                <span className="text-[10px] font-medium text-white/50 shrink-0 tabular-nums min-w-[2rem] text-center" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
                   {sellPercentage}%
                 </span>
               </div>
@@ -1126,8 +1126,8 @@ export default function TerminalPage() {
           </div>
         </main>
 
-        {/* Right Sidebar — на мобилке внизу под графиком, на десктопе справа */}
-        <aside className="w-full md:w-48 shrink-0 bg-[#06122c] border-t md:border-t-0 md:border-l border-white/10 p-3 flex flex-col gap-3 order-2">
+        {/* Right Sidebar — на мобилке внизу под графиком, на десктопе справа; pb-safe для iPhone */}
+        <aside className="w-full md:w-48 shrink-0 bg-[#06122c] border-t md:border-t-0 md:border-l border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-3 flex flex-col gap-3 order-2">
           {/* Time + Amount — на мобилке в ряд */}
           <div className="flex flex-row md:flex-col gap-3">
           {/* Time Input */}
@@ -1151,7 +1151,7 @@ export default function TerminalPage() {
               <div className="w-px h-4 bg-white/25 rounded-full self-center shrink-0" />
               {/* Time Display - кликабельное поле */}
               <div 
-                className="flex-1 px-2 py-2 text-white text-center text-sm font-medium cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-center min-w-0"
+                className="flex-1 px-2 py-2 text-white text-center text-sm font-medium cursor-pointer md:hover:bg-white/5 transition-colors flex items-center justify-center min-w-0"
                 onClick={() => setShowTimeModal(true)}
               >
                 <span>{formatTimeDisplay(Number.parseInt(time || '60', 10))}</span>
@@ -1217,7 +1217,7 @@ export default function TerminalPage() {
               <div className="w-px h-4 bg-white/25 rounded-full self-center shrink-0" />
               {/* Amount Display - кликабельное поле */}
               <div 
-                className="flex-1 px-2 py-2 text-white text-center text-sm font-medium cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-center min-w-0"
+                className="flex-1 px-2 py-2 text-white text-center text-sm font-medium cursor-pointer md:hover:bg-white/5 transition-colors flex items-center justify-center min-w-0"
                 onClick={() => setShowAmountModal(true)}
               >
                 <span>{Number.parseFloat(amount || '100').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -1436,7 +1436,7 @@ export default function TerminalPage() {
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
-              className="flex-1 h-8 flex items-center justify-center rounded-lg bg-gradient-to-b from-[#24304d] to-[#1f2a45] text-gray-300 hover:text-white hover:opacity-90 transition-colors relative"
+              className="flex-1 h-8 flex items-center justify-center rounded-lg bg-gradient-to-b from-[#24304d] to-[#1f2a45] text-gray-300 md:hover:text-white md:hover:opacity-90 transition-colors relative"
               title={soundEnabled ? 'Выключить звук' : 'Включить звук'}
             >
               <span className="relative inline-block">
@@ -1454,7 +1454,7 @@ export default function TerminalPage() {
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="flex-1 h-8 flex items-center justify-center rounded-lg bg-gradient-to-b from-[#24304d] to-[#1f2a45] text-gray-300 hover:text-white hover:opacity-90 transition-colors"
+              className="flex-1 h-8 flex items-center justify-center rounded-lg bg-gradient-to-b from-[#24304d] to-[#1f2a45] text-gray-300 md:hover:text-white md:hover:opacity-90 transition-colors"
               title={isFullscreen ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим'}
             >
               <Image src="/images/fullscreen.png" alt="Fullscreen" width={20} height={20} className="w-4 h-4 object-contain" />
@@ -1462,7 +1462,7 @@ export default function TerminalPage() {
             <button
               type="button"
               onClick={() => setShowChartSettingsModal(true)}
-              className="flex-1 h-8 flex items-center justify-center rounded-lg bg-gradient-to-b from-[#24304d] to-[#1f2a45] text-gray-300 hover:text-white hover:opacity-90 transition-colors"
+              className="flex-1 h-8 flex items-center justify-center rounded-lg bg-gradient-to-b from-[#24304d] to-[#1f2a45] text-gray-300 md:hover:text-white md:hover:opacity-90 transition-colors"
               title="Настройки графика"
             >
               <Image src="/images/settings.png" alt="Настройки" width={20} height={20} className="w-4 h-4 object-contain" />
@@ -1478,7 +1478,7 @@ export default function TerminalPage() {
         <button
           onClick={() => setShowTradesHistory((prev) => !prev)}
           className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
-            showTradesHistory ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+            showTradesHistory ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 md:hover:text-white/80 md:hover:bg-white/5'
           }`}
         >
           <History className="w-4 h-4 stroke-[3]" />
@@ -1486,7 +1486,7 @@ export default function TerminalPage() {
         </button>
         <button
           onClick={() => setShowNews(true)}
-          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
         >
           <Newspaper className="w-4 h-4 stroke-[3]" />
           <span className="text-[8px] font-semibold leading-tight">Новости</span>
@@ -1494,7 +1494,7 @@ export default function TerminalPage() {
         <Link
           href="/profile?tab=wallet"
           className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
-            activeMenu === 'кошелек' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+            activeMenu === 'кошелек' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 md:hover:text-white/80 md:hover:bg-white/5'
           }`}
         >
           <Wallet className="w-4 h-4 stroke-[3]" />
@@ -1503,7 +1503,7 @@ export default function TerminalPage() {
         <Link
           href="/profile"
           className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
-            activeMenu === 'личный-профиль' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+            activeMenu === 'личный-профиль' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 md:hover:text-white/80 md:hover:bg-white/5'
           }`}
         >
           <UserCircle className="w-4 h-4 stroke-[3]" />
@@ -1513,7 +1513,7 @@ export default function TerminalPage() {
           href="https://t.me/your_support_channel"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
         >
           <Image src="/images/support.png" alt="Поддержка" width={16} height={16} className="w-4 h-4 object-contain" />
           <span className="text-[8px] font-semibold leading-tight">Поддержка</span>
@@ -1655,8 +1655,19 @@ function TradesHistoryModal({ onClose }: { onClose: () => void }) {
     <div
       className="fixed left-0 md:left-[88px] top-[65px] z-50 h-[calc(100vh-65px)] w-full md:w-[340px] bg-[#0a1635] border-r border-white/10 shadow-2xl flex flex-col"
     >
+        {/* Кнопка закрытия */}
+        <div className="flex justify-end px-3 pt-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 -m-2 rounded-lg text-white/50 md:hover:text-white md:hover:bg-white/10 transition-colors touch-manipulation"
+            aria-label="Закрыть"
+          >
+            <X className="w-5 h-5 stroke-[2.5]" />
+          </button>
+        </div>
         {/* Filter Tabs */}
-        <div className="px-5 pt-3 shrink-0 border-b border-white/10">
+        <div className="px-5 pt-0 shrink-0 border-b border-white/10">
           <div className="flex">
             <button
               type="button"
@@ -1664,7 +1675,7 @@ function TradesHistoryModal({ onClose }: { onClose: () => void }) {
               className={`flex-1 pb-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
                 filter === 'active'
                   ? 'text-white border-[#3347ff]'
-                  : 'text-gray-400 border-transparent hover:text-white'
+                  : 'text-gray-400 border-transparent md:hover:text-white'
               }`}
             >
               Активные
@@ -1675,7 +1686,7 @@ function TradesHistoryModal({ onClose }: { onClose: () => void }) {
               className={`flex-1 pb-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
                 filter === 'closed'
                   ? 'text-white border-[#3347ff]'
-                  : 'text-gray-400 border-transparent hover:text-white'
+                  : 'text-gray-400 border-transparent md:hover:text-white'
               }`}
             >
               Закрытые
@@ -1846,7 +1857,7 @@ function NewsModal({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="p-2 rounded-lg text-gray-400 md:hover:text-white md:hover:bg-white/10 transition-colors"
           title="Закрыть"
         >
           <X className="w-5 h-5" />
@@ -1871,7 +1882,7 @@ function NewsModal({ onClose }: { onClose: () => void }) {
 // Компонент карточки новости
 function NewsCard({ news, formatDate }: { news: any; formatDate: (date: string) => string }) {
   return (
-    <div className="bg-[#1A253A] rounded-lg p-4 flex flex-col gap-3 hover:bg-[#1f2d47] transition-colors cursor-pointer">
+    <div className="bg-[#1A253A] rounded-lg p-4 flex flex-col gap-3 md:hover:bg-[#1f2d47] transition-colors cursor-pointer">
       {/* Категория и дата */}
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[#3347ff]">{news.category}</span>
@@ -1942,7 +1953,7 @@ function TradeCard({
       tabIndex={0}
       onClick={onToggle}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onToggle?.()}
-      className="bg-[#1f2a45] rounded-lg p-4 flex flex-col gap-3 cursor-pointer transition-all hover:bg-[#1f2a45]/90"
+      className="bg-[#1f2a45] rounded-lg p-4 flex flex-col gap-3 cursor-pointer transition-all md:hover:bg-[#1f2a45]/90"
     >
       {/* Первая строка: Инструмент и время */}
       <div className="flex items-center justify-between">
@@ -2195,7 +2206,7 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 md:hover:text-white md:hover:bg-white/10 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -2252,7 +2263,7 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
                   onChange={handleBackgroundImageChange}
                   className="hidden"
                 />
-                <span className="block px-4 py-2.5 rounded-lg bg-white/10 text-xs text-gray-300 hover:bg-white/15 cursor-pointer text-center border border-white/5 transition-colors">
+                <span className="block px-4 py-2.5 rounded-lg bg-white/10 text-xs text-gray-300 md:hover:bg-white/15 cursor-pointer text-center border border-white/5 transition-colors">
                   {backgroundImagePreview ? 'Сменить изображение' : 'Загрузить изображение'}
                 </span>
               </label>
@@ -2260,7 +2271,7 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
                 <button
                   type="button"
                   onClick={handleRemoveBackgroundImage}
-                  className="px-3 py-2.5 rounded-lg bg-red-500/20 text-red-400 text-xs hover:bg-red-500/30 transition-colors"
+                  className="px-3 py-2.5 rounded-lg bg-red-500/20 text-red-400 text-xs md:hover:bg-red-500/30 transition-colors"
                 >
                   Удалить
                 </button>
@@ -2289,7 +2300,7 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
           <div>
             <h3 className="text-xs font-medium text-gray-300 mb-3">Отображение</h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/5 hover:bg-white/8 transition-colors">
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/5 md:hover:bg-white/8 transition-colors">
                 <span className="text-xs text-gray-300">Таймер и отсчёт до закрытия свечи</span>
                 <button
                   type="button"
@@ -2307,7 +2318,7 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
                   />
                 </button>
               </div>
-              <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/5 hover:bg-white/8 transition-colors">
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/5 md:hover:bg-white/8 transition-colors">
                 <span className="text-xs text-gray-300">Сетка на графике</span>
                 <button
                   type="button"
@@ -2353,7 +2364,7 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={handleReset}
-            className="px-4 py-2 rounded-lg bg-white/10 text-xs text-gray-400 hover:text-white hover:bg-white/15 transition-colors"
+            className="px-4 py-2 rounded-lg bg-white/10 text-xs text-gray-400 md:hover:text-white md:hover:bg-white/15 transition-colors"
           >
             Сбросить
           </button>
@@ -2361,14 +2372,14 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-white/10 text-xs text-gray-400 hover:text-white hover:bg-white/15 transition-colors"
+              className="px-4 py-2 rounded-lg bg-white/10 text-xs text-gray-400 md:hover:text-white md:hover:bg-white/15 transition-colors"
             >
               Отмена
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-4 py-2 rounded-lg bg-[#3347ff] text-xs text-white font-medium hover:bg-[#3347ff]/90 transition-colors"
+              className="px-4 py-2 rounded-lg bg-[#3347ff] text-xs text-white font-medium md:hover:bg-[#3347ff]/90 transition-colors"
             >
               Сохранить
             </button>
@@ -2441,7 +2452,7 @@ function TimeSelectionModal({
             <button
               type="button"
               onClick={() => adjustTime('hours', 1)}
-              className="w-10 h-5 flex items-center justify-center text-white hover:bg-white/20 rounded transition-colors bg-white/10"
+              className="w-10 h-5 flex items-center justify-center text-white md:hover:bg-white/20 rounded transition-colors bg-white/10"
             >
               <Plus className="w-2.5 h-2.5" />
             </button>
@@ -2451,7 +2462,7 @@ function TimeSelectionModal({
             <button
               type="button"
               onClick={() => adjustTime('hours', -1)}
-              className="w-10 h-5 flex items-center justify-center text-white hover:bg-white/20 rounded transition-colors bg-white/10"
+              className="w-10 h-5 flex items-center justify-center text-white md:hover:bg-white/20 rounded transition-colors bg-white/10"
             >
               <Minus className="w-2.5 h-2.5" />
             </button>
@@ -2464,7 +2475,7 @@ function TimeSelectionModal({
             <button
               type="button"
               onClick={() => adjustTime('minutes', 1)}
-              className="w-10 h-5 flex items-center justify-center text-white hover:bg-white/20 rounded transition-colors bg-white/10"
+              className="w-10 h-5 flex items-center justify-center text-white md:hover:bg-white/20 rounded transition-colors bg-white/10"
             >
               <Plus className="w-2.5 h-2.5" />
             </button>
@@ -2474,7 +2485,7 @@ function TimeSelectionModal({
             <button
               type="button"
               onClick={() => adjustTime('minutes', -1)}
-              className="w-10 h-5 flex items-center justify-center text-white hover:bg-white/20 rounded transition-colors bg-white/10"
+              className="w-10 h-5 flex items-center justify-center text-white md:hover:bg-white/20 rounded transition-colors bg-white/10"
             >
               <Minus className="w-2.5 h-2.5" />
             </button>
@@ -2487,7 +2498,7 @@ function TimeSelectionModal({
             <button
               type="button"
               onClick={() => adjustTime('seconds', 1)}
-              className="w-10 h-5 flex items-center justify-center text-white hover:bg-white/20 rounded transition-colors bg-white/10"
+              className="w-10 h-5 flex items-center justify-center text-white md:hover:bg-white/20 rounded transition-colors bg-white/10"
             >
               <Plus className="w-2.5 h-2.5" />
             </button>
@@ -2497,7 +2508,7 @@ function TimeSelectionModal({
             <button
               type="button"
               onClick={() => adjustTime('seconds', -1)}
-              className="w-10 h-5 flex items-center justify-center text-white hover:bg-white/20 rounded transition-colors bg-white/10"
+              className="w-10 h-5 flex items-center justify-center text-white md:hover:bg-white/20 rounded transition-colors bg-white/10"
             >
               <Minus className="w-2.5 h-2.5" />
             </button>
@@ -2525,7 +2536,7 @@ function TimeSelectionModal({
                 className={`px-2 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${
                   isSelected
                     ? 'bg-[#3347ff] text-white border border-[#3347ff]'
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
+                    : 'bg-white/10 text-gray-300 md:hover:bg-white/20 md:hover:text-white'
                 }`}
               >
                 {preset.label}
@@ -2622,84 +2633,84 @@ function AmountCalculatorModal({
         <button
           type="button"
           onClick={() => handleNumber('7')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           7
         </button>
         <button
           type="button"
           onClick={() => handleNumber('8')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           8
         </button>
         <button
           type="button"
           onClick={() => handleNumber('9')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           9
         </button>
         <button
           type="button"
           onClick={() => handleNumber('4')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           4
         </button>
         <button
           type="button"
           onClick={() => handleNumber('5')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           5
         </button>
         <button
           type="button"
           onClick={() => handleNumber('6')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           6
         </button>
         <button
           type="button"
           onClick={() => handleNumber('1')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           1
         </button>
         <button
           type="button"
           onClick={() => handleNumber('2')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           2
         </button>
         <button
           type="button"
           onClick={() => handleNumber('3')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           3
         </button>
         <button
           type="button"
           onClick={handleDecimal}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           .
         </button>
         <button
           type="button"
           onClick={() => handleNumber('0')}
-          className="h-7 bg-white/10 hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
+          className="h-7 bg-white/10 md:hover:bg-white/20 rounded text-white text-xs font-medium transition-colors"
         >
           0
         </button>
         <button
           type="button"
           onClick={handleBackspace}
-          className="h-7 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 hover:text-red-300 flex items-center justify-center text-lg font-medium transition-colors"
+          className="h-7 bg-red-500/20 md:hover:bg-red-500/30 rounded text-red-400 md:hover:text-red-300 flex items-center justify-center text-lg font-medium transition-colors"
         >
           ⌫
         </button>
@@ -2709,7 +2720,7 @@ function AmountCalculatorModal({
       <button
         type="button"
         onClick={handleApply}
-        className="w-full py-1 bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold rounded transition-colors"
+        className="w-full py-1 bg-[#3347ff] md:hover:bg-[#3347ff]/90 text-white text-xs font-semibold rounded transition-colors"
       >
         Применить
       </button>
