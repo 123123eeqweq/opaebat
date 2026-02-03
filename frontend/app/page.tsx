@@ -132,7 +132,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header and Hero Section with shared background */}
-      <div className="bg-[#061230] relative overflow-hidden pt-20 sm:pt-24">
+      <div className="bg-[#061230] relative overflow-hidden pt-16 sm:pt-20 md:pt-24">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/back1.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}></div>
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/back2.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}></div>
         
@@ -143,12 +143,33 @@ export default function Home() {
           }`}
         >
           <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
-            <span className="text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[120px] sm:max-w-none">ComforTrade</span>
+          {/* Mobile: burger | logo | войти */}
+          {/* Desktop: logo | nav | language + auth */}
+          <div className="flex-1 flex justify-start md:hidden min-w-0">
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Меню"
+            >
+              {showMobileMenu ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          <div className="flex-1 flex justify-center md:flex-initial md:justify-start min-w-0">
+            <Link href="/" className="flex items-center">
+              <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+            </Link>
           </div>
           
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
             <Link href="/start" className="text-gray-300 hover:text-white">Как начать?</Link>
             <Link href="/assets" className="text-gray-300 hover:text-white">Активы</Link>
             <Link href="/about" className="text-gray-300 hover:text-white">О компании</Link>
@@ -156,7 +177,7 @@ export default function Home() {
             <Link href="/education" className="text-gray-300 hover:text-white">Обучение</Link>
           </nav>
           
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end md:flex-initial min-w-0">
             <div className="relative hidden sm:block">
               <button
                 onClick={() => setShowLanguageMenu(!showLanguageMenu)}
@@ -215,7 +236,7 @@ export default function Home() {
               <>
                 {isAuthenticated && user ? (
                   <>
-                    <span className="hidden sm:inline text-white text-sm truncate max-w-[100px] md:max-w-[140px]">{user.email}</span>
+                    <span className="hidden md:inline text-white text-sm truncate max-w-[100px] lg:max-w-[140px]">{user.email}</span>
                     <button
                       onClick={handleLogout}
                       className="bg-transparent text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base border border-white/50 hover:bg-white/10 transition-colors"
@@ -224,7 +245,7 @@ export default function Home() {
                     </button>
                     <Link
                       href="/terminal"
-                      className="bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors"
+                      className="bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors flex items-center justify-center"
                     >
                       Терминал
                     </Link>
@@ -239,7 +260,7 @@ export default function Home() {
                     </button>
                     <button
                       onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }}
-                      className="bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors"
+                      className="hidden md:inline-flex bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors items-center justify-center"
                     >
                       Регистрация
                     </button>
@@ -248,22 +269,6 @@ export default function Home() {
               </>
             )}
 
-            {/* Кнопка мобильного меню */}
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-colors"
-              aria-label="Меню"
-            >
-              {showMobileMenu ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
           </div>
           </div>
 
@@ -319,13 +324,30 @@ export default function Home() {
           )}
         </header>
 
+        {/* Hero + Marquee wrapper: 100vh on mobile (header + hero + marquee all visible) */}
+        <div className="min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] md:min-h-0 flex flex-col md:block">
         {/* Hero Section */}
-        <section className="py-24 md:py-32 relative z-10">
+        <section className="flex-1 flex flex-col justify-center md:flex-initial md:justify-start py-10 sm:py-16 md:py-32 relative z-10">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               {/* Left Column - Text Content */}
-              <div className="space-y-8">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
+              <div className="space-y-8 text-center md:text-left">
+                {/* Rating badge - mobile only */}
+                <div className="md:hidden flex justify-center">
+                  <div className="relative inline-block">
+                    <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-white font-semibold text-sm shadow-lg" style={{ background: 'linear-gradient(135deg, #061230 0%, #0d1f4a 50%, #061230 100%)' }}>
+                      <div className="flex gap-0.5 text-amber-400">
+                        {[1,2,3,4,5].map((i) => (
+                          <svg key={i} className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <span>4.9 из 5</span>
+                    </div>
+                  </div>
+                </div>
+                <h1 className="text-[2.5rem] md:text-5xl lg:text-6xl font-bold text-white leading-tight">
                   Твоя прибыль на валютном рынке начинается с{' '}
                   <span className="relative inline-block">
                     COMFORTRADE
@@ -339,22 +361,22 @@ export default function Home() {
                   </span>
                 </h1>
                 
-                <p className="text-lg text-gray-300 leading-relaxed max-w-lg">
+                <p className="text-base text-gray-300 leading-relaxed max-w-sm sm:max-w-md md:max-w-lg mx-auto md:mx-0 font-light">
                   Надежный брокер с высокой доходностью и широким выбором инструментов торговли
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button onClick={() => setShowRegisterPanel(true)} className="text-white px-8 py-4 rounded-lg font-semibold transition-colors hover:opacity-95" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                  <button onClick={() => setShowRegisterPanel(true)} className="text-white px-6 py-3.5 sm:px-8 sm:py-4 rounded-lg font-semibold text-sm sm:text-base transition-colors hover:opacity-95 w-fit min-w-[240px] sm:min-w-0 mx-auto sm:mx-0" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
                     Создать аккаунт
                   </button>
-                  <button className="bg-transparent text-white px-8 py-4 rounded-lg font-semibold border border-white/50 hover:bg-white/10 transition-colors">
+                  <button className="bg-transparent text-white px-6 py-3.5 sm:px-8 sm:py-4 rounded-lg font-semibold text-sm sm:text-base border border-white/50 hover:bg-white/10 transition-colors w-fit min-w-[240px] sm:min-w-0 mx-auto sm:mx-0">
                     Открыть Демо
                   </button>
                 </div>
               </div>
 
-              {/* Right Column - Phone Image */}
-              <div className="flex items-center justify-center md:justify-end">
+              {/* Right Column - Phone Image (hidden on mobile) */}
+              <div className="hidden md:flex items-center justify-center md:justify-end">
                 <Image
                   src="/images/hero.png"
                   alt="Торговая платформа ComforTrade"
@@ -369,7 +391,7 @@ export default function Home() {
         </section>
 
         {/* Company Logos Section - Бегущая строка */}
-        <section className="w-full py-12 px-4 border-t border-gray-700 relative z-10 overflow-hidden">
+        <section className="flex-shrink-0 w-full py-8 md:py-12 px-4 border-t border-gray-700 relative z-10 overflow-hidden">
           <div className="relative w-full">
             <div className="flex animate-marquee gap-8 md:gap-12 whitespace-nowrap w-max" style={{ width: 'max-content' }}>
               {[...NON_OTC_INSTRUMENTS, ...NON_OTC_INSTRUMENTS, ...NON_OTC_INSTRUMENTS].map((inst, idx) => {
@@ -404,6 +426,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+        </div>
       </div>
 
       {/* Features Section */}
