@@ -643,10 +643,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Latest Resources Block */}
+      {/* Latest Resources Block - закомментировано
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
-          {/* Header */}
           <div className="mb-12">
             <div className="mb-4">
               <span className="text-[#3347ff] text-base">07 — 08</span>
@@ -660,98 +659,47 @@ export default function Home() {
               </p>
             </div>
           </div>
-
-          {/* Resources Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1 */}
             <div className="bg-white rounded-2xl shadow-md overflow-hidden">
               <div className="relative h-48 overflow-hidden">
-                <Image
-                  src="/images/111.jpeg"
-                  alt="Торговля на валютном рынке"
-                  width={400}
-                  height={300}
-                  className="w-full h-full object-cover"
-                />
+                <Image src="/images/111.jpeg" alt="Торговля на валютном рынке" width={400} height={300} className="w-full h-full object-cover" />
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
-                  <span>Приложения</span>
-                  <span>•</span>
-                  <span>1 фев 2026</span>
+                  <span>Приложения</span><span>•</span><span>1 фев 2026</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  Как начать торговать на валютном рынке: пошаговое руководство
-                </h3>
-                <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
-                  Читать далее
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Как начать торговать на валютном рынке: пошаговое руководство</h3>
+                <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">Читать далее</a>
               </div>
             </div>
-
-            {/* Card 2 */}
             <div className="bg-white rounded-2xl shadow-md overflow-hidden">
               <div className="relative h-48 overflow-hidden">
-                <Image
-                  src="/images/222.jpeg"
-                  alt="Торговля криптовалютами"
-                  width={400}
-                  height={300}
-                  className="w-full h-full object-cover"
-                />
+                <Image src="/images/222.jpeg" alt="Торговля криптовалютами" width={400} height={300} className="w-full h-full object-cover" />
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
-                  <span>Продукты</span>
-                  <span>•</span>
-                  <span>1 фев 2026</span>
+                  <span>Продукты</span><span>•</span><span>1 фев 2026</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  Торговля криптовалютами: BTC, ETH и другие активы
-                </h3>
-                <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
-                  Читать далее
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Торговля криптовалютами: BTC, ETH и другие активы</h3>
+                <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">Читать далее</a>
               </div>
             </div>
-
-            {/* Card 3 */}
             <div className="bg-white rounded-2xl shadow-md overflow-hidden">
               <div className="relative h-48 overflow-hidden">
-                <Image
-                  src="/images/333.jpeg"
-                  alt="Торговые инструменты"
-                  width={400}
-                  height={300}
-                  className="w-full h-full object-cover"
-                />
+                <Image src="/images/333.jpeg" alt="Торговые инструменты" width={400} height={300} className="w-full h-full object-cover" />
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
-                  <span>Приложения</span>
-                  <span>•</span>
-                  <span>1 фев 2026</span>
+                  <span>Приложения</span><span>•</span><span>1 фев 2026</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  5 советов для успешной торговли на валютном рынке
-                </h3>
-                <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">
-                  Читать далее
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">5 советов для успешной торговли на валютном рынке</h3>
+                <a href="#" className="text-[#3347ff] font-medium flex items-center gap-2 hover:gap-3 transition-all">Читать далее</a>
               </div>
             </div>
           </div>
         </div>
       </section>
+      */}
 
       {/* End Block - Download CTA */}
       <section className="py-16 md:py-24 bg-[#f7f7fc]">
