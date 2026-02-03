@@ -225,13 +225,13 @@ export function WalletTab() {
   return (
     <div className="flex flex-col w-full min-h-full">
       {/* Табы */}
-      <div className="shrink-0 flex border-b border-white/[0.08] px-4 sm:px-6 md:px-8 pt-4 md:pt-6 overflow-x-auto">
+      <div className="shrink-0 flex border-b border-white/[0.08] px-3 sm:px-6 md:px-8 pt-3 sm:pt-4 md:pt-6 overflow-x-auto">
         {WALLET_TABS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
             onClick={() => setWalletTab(id)}
-            className={`flex items-center gap-2 px-5 py-3 text-xs font-medium uppercase tracking-wider border-b-2 transition-colors -mb-px ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 text-[10px] sm:text-xs font-medium uppercase tracking-wider border-b-2 transition-colors -mb-px ${
               walletTab === id
                 ? 'border-[#3347ff] text-white'
                 : 'border-transparent text-white/50 hover:text-white/80'
@@ -247,27 +247,27 @@ export function WalletTab() {
         {walletTab === 'deposit' && (
           <>
             {/* Левая колонка — форма */}
-            <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto">
+            <div className="flex-1 min-w-0 p-3 sm:p-6 md:p-8 overflow-auto">
               <div className="w-full">
-                <h1 className="text-2xl font-bold text-white mb-1">Пополнение счёта</h1>
-          <p className="text-sm text-white/50 mb-8">
+                <h1 className="text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">Пополнение счёта</h1>
+          <p className="text-xs sm:text-sm text-white/50 mb-5 sm:mb-8">
             Выберите способ оплаты и введите сумму для безопасного пополнения.
           </p>
 
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm">
               {error}
             </div>
           )}
           {success && (
-            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm">
               Депозит успешно создан. Средства поступят после подтверждения платёжной системой.
             </div>
           )}
 
           {/* 1. Выбор способа оплаты */}
-          <div className="mb-8 rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-6">
-            <div className="flex items-center gap-2 mb-4">
+          <div className="mb-5 sm:mb-8 rounded-xl sm:rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
               <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#3347ff]/30 text-[#7b8fff] text-sm font-bold">
                 1
               </span>
@@ -360,8 +360,8 @@ export function WalletTab() {
           </div>
 
           {/* 2. Ввод суммы */}
-          <div className="mb-8 rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-6">
-            <div className="flex items-center gap-2 mb-5">
+          <div className="mb-5 sm:mb-8 rounded-xl sm:rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4 sm:mb-5">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#3347ff]/30 text-[#7b8fff] text-xs font-bold">
                 2
               </span>
@@ -373,7 +373,7 @@ export function WalletTab() {
                   Сумма пополнения (UAH)
                 </label>
                 <div className="flex rounded-lg bg-white/5 border border-white/10 overflow-hidden focus-within:ring-2 focus-within:ring-[#3347ff]/50 focus-within:border-[#3347ff]/50">
-                  <span className="flex items-center pl-3 text-white/50 text-sm">UAH</span>
+                  <span className="flex items-center pl-2 sm:pl-3 text-white/50 text-xs sm:text-sm">UAH</span>
                   <input
                     type="number"
                     value={amount}
@@ -382,7 +382,7 @@ export function WalletTab() {
                     min={MIN_AMOUNT_UAH}
                     max={MAX_AMOUNT_UAH}
                     step="1"
-                    className="flex-1 px-3 py-2.5 bg-transparent text-base text-white placeholder-white/30 focus:outline-none"
+                    className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 bg-transparent text-sm sm:text-base text-white placeholder-white/30 focus:outline-none"
                   />
                   <span className="flex items-center pr-3 text-white/40 text-xs">UAH</span>
                 </div>
@@ -404,7 +404,7 @@ export function WalletTab() {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 <input
                   type="text"
                   value={promoCode}
@@ -413,13 +413,13 @@ export function WalletTab() {
                     setPromoApplied(false);
                   }}
                   placeholder="Промо-код (необязательно)"
-                  className="flex-1 px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
+                  className="flex-1 min-w-0 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
                 />
                 <button
                   type="button"
                   onClick={handleApplyPromo}
                   disabled={!promoCode.trim()}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-[10px] sm:text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 shrink-0"
                 >
                   <Tag className="w-3.5 h-3.5" />
                   Применить
@@ -429,8 +429,8 @@ export function WalletTab() {
           </div>
 
           {/* Кнопка оплаты — на мобилке (на десктопе в сайдбаре) */}
-          <div className="lg:hidden mb-8">
-            <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-4 mb-4">
+          <div className="lg:hidden mb-5 sm:mb-8">
+            <div className="rounded-lg sm:rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-3 sm:p-4 mb-3 sm:mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-white/60 text-sm">К оплате</span>
                 <span className="text-lg font-bold text-[#3347ff] tabular-nums">{totalPay.toFixed(0)} UAH</span>
@@ -439,7 +439,7 @@ export function WalletTab() {
                 type="button"
                 onClick={handleDeposit}
                 disabled={submitting || !isValidAmount}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
@@ -620,10 +620,10 @@ export function WalletTab() {
 
         {walletTab === 'withdraw' && (
           <>
-            <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto">
+            <div className="flex-1 min-w-0 p-3 sm:p-6 md:p-8 overflow-auto">
               <div className="w-full">
-                <h1 className="text-2xl font-bold text-white mb-1">Вывод средств</h1>
-                <p className="text-sm text-white/50 mb-8">
+                <h1 className="text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">Вывод средств</h1>
+                <p className="text-xs sm:text-sm text-white/50 mb-5 sm:mb-8">
                   Выберите способ вывода и введите сумму.
                 </p>
 
@@ -639,7 +639,7 @@ export function WalletTab() {
                 )}
 
                 {/* 1. Выбор способа */}
-                <div className="mb-8 rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-6">
+                <div className="mb-5 sm:mb-8 rounded-xl sm:rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-4 sm:p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#3347ff]/30 text-[#7b8fff] text-sm font-bold">1</span>
                     <h2 className="text-base font-semibold text-white">Способ вывода</h2>
@@ -697,7 +697,7 @@ export function WalletTab() {
                 </div>
 
                 {/* 2. Сумма */}
-                <div className="mb-8 rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-6">
+                <div className="mb-5 sm:mb-8 rounded-xl sm:rounded-2xl border border-white/[0.08] bg-[#0f1a2e]/60 p-4 sm:p-6">
                   <div className="flex items-center gap-2 mb-5">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#3347ff]/30 text-[#7b8fff] text-xs font-bold">2</span>
                     <h2 className="text-sm font-semibold text-white">Сумма вывода</h2>
@@ -708,7 +708,7 @@ export function WalletTab() {
                         Сумма (UAH)
                       </label>
                       <div className="flex rounded-lg bg-white/5 border border-white/10 overflow-hidden focus-within:ring-2 focus-within:ring-[#3347ff]/50 focus-within:border-[#3347ff]/50">
-                        <span className="flex items-center pl-3 text-white/50 text-sm">UAH</span>
+                        <span className="flex items-center pl-2 sm:pl-3 text-white/50 text-xs sm:text-sm">UAH</span>
                         <input
                           type="number"
                           value={withdrawAmount}
@@ -717,7 +717,7 @@ export function WalletTab() {
                           min={MIN_AMOUNT_UAH}
                           max={MAX_AMOUNT_UAH}
                           step="1"
-                          className="flex-1 px-3 py-2.5 bg-transparent text-base text-white placeholder-white/30 focus:outline-none"
+                          className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 bg-transparent text-sm sm:text-base text-white placeholder-white/30 focus:outline-none"
                         />
                         <span className="flex items-center pr-3 text-white/40 text-xs">UAH</span>
                       </div>
@@ -744,8 +744,8 @@ export function WalletTab() {
               </div>
 
               {/* Кнопка вывода — на мобилке */}
-              <div className="lg:hidden mt-8">
-                <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-4">
+              <div className="lg:hidden mt-5 sm:mt-8">
+                <div className="rounded-lg sm:rounded-xl border border-white/[0.08] bg-[#0f1a2e]/80 p-3 sm:p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-white/60 text-sm">К получению</span>
                     <span className="text-lg font-bold text-[#3347ff] tabular-nums">
@@ -844,10 +844,10 @@ export function WalletTab() {
         )}
 
         {walletTab === 'history' && (
-          <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto w-full">
+          <div className="flex-1 min-w-0 p-3 sm:p-6 md:p-8 overflow-auto w-full">
             <div className="w-full">
-              <h1 className="text-2xl font-bold text-white mb-1">История транзакций</h1>
-              <p className="text-sm text-white/50 mb-8">
+              <h1 className="text-lg sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">История транзакций</h1>
+              <p className="text-xs sm:text-sm text-white/50 mb-5 sm:mb-8">
                 Все пополнения и выводы средств
               </p>
 

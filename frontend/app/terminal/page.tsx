@@ -684,7 +684,7 @@ export default function TerminalPage() {
     <AuthGuard requireAuth>
       <div ref={fullscreenContainerRef} className="terminal-page min-h-screen bg-[#061230] flex flex-col">
       {/* Header */}
-      <header className="bg-[#040d1f] border-b border-white/10 shrink-0">
+      <header className="bg-[#05122a] border-b border-white/10 shrink-0">
         <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
@@ -815,15 +815,15 @@ export default function TerminalPage() {
               </div>
             </div>
 
-            <Link href="/profile?tab=wallet" className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all flex items-center justify-center shrink-0" title="Пополнить счёт">
-              <Wallet className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+            <Link href="/profile?tab=wallet" className="h-9 w-9 sm:h-11 sm:w-11 rounded-lg bg-gradient-to-r from-[#3347ff] to-[#1e2fcc] text-white md:hover:from-[#3347ff]/90 md:hover:to-[#1e2fcc]/90 transition-all flex items-center justify-center shrink-0" title="Пополнить счёт">
+              <Wallet className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area — pb под нижнюю навигацию + safe-area (iOS Safari, iPhone с вырезом) */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+      {/* Main Content Area — на мобилке нижняя навигация в потоке (не fixed), решает баг на iOS */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 min-w-0 overflow-y-auto md:overflow-hidden">
         {/* Left Sidebar — скрыт на мобилке, на десктопе слева */}
         <aside className="hidden md:flex w-[88px] shrink-0 bg-[#05122a] border-r border-white/10 flex-col items-center py-2.5 gap-2">
           <div className="flex-1 flex flex-col items-center gap-2 w-full min-h-0">
@@ -1469,54 +1469,53 @@ export default function TerminalPage() {
           </div>
         </aside>
 
-      </div>
-
-      {/* Нижняя навигация — компактная на мобилке; pb-safe для iOS Safari */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-1.5 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] bg-[#05122a] border-t border-white/10">
+        {/* Нижняя навигация — на мобилке в потоке после секции кнопок (не fixed), pb-safe для iOS */}
+        <nav className="md:hidden shrink-0 order-3 flex items-center justify-around gap-2 py-2 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-[#05122a] border-t border-white/10">
         <button
           onClick={() => setShowTradesHistory((prev) => !prev)}
-          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
-            showTradesHistory ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 md:hover:text-white/80 md:hover:bg-white/5'
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] border transition-colors ${
+            showTradesHistory ? 'text-[#7b8fff] bg-[#3347ff]/15 border-[#3347ff]/30' : 'text-white/50 border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5'
           }`}
         >
-          <History className="w-4 h-4 stroke-[3]" />
-          <span className="text-[8px] font-semibold leading-tight">История</span>
+          <History className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">История</span>
         </button>
         <button
           onClick={() => setShowNews(true)}
-          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] text-white/50 border border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
         >
-          <Newspaper className="w-4 h-4 stroke-[3]" />
-          <span className="text-[8px] font-semibold leading-tight">Новости</span>
+          <Newspaper className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">Новости</span>
         </button>
         <Link
           href="/profile?tab=wallet"
-          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
-            activeMenu === 'кошелек' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 md:hover:text-white/80 md:hover:bg-white/5'
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] border transition-colors ${
+            activeMenu === 'кошелек' ? 'text-[#7b8fff] bg-[#3347ff]/15 border-[#3347ff]/30' : 'text-white/50 border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5'
           }`}
         >
-          <Wallet className="w-4 h-4 stroke-[3]" />
-          <span className="text-[8px] font-semibold leading-tight">Кошелёк</span>
+          <Wallet className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">Кошелёк</span>
         </Link>
         <Link
           href="/profile"
-          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
-            activeMenu === 'личный-профиль' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 md:hover:text-white/80 md:hover:bg-white/5'
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] border transition-colors ${
+            activeMenu === 'личный-профиль' ? 'text-[#7b8fff] bg-[#3347ff]/15 border-[#3347ff]/30' : 'text-white/50 border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5'
           }`}
         >
-          <UserCircle className="w-4 h-4 stroke-[3]" />
-          <span className="text-[8px] font-semibold leading-tight">Профиль</span>
+          <UserCircle className="w-5 h-5 stroke-[3]" />
+          <span className="text-[9px] font-semibold leading-tight">Профиль</span>
         </Link>
         <a
           href="https://t.me/your_support_channel"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-1 px-2 py-2 rounded-xl min-w-[52px] text-white/50 border border-white/10 bg-white/[0.03] md:hover:text-white/80 md:hover:bg-white/5 transition-colors"
         >
-          <Image src="/images/support.png" alt="Поддержка" width={16} height={16} className="w-4 h-4 object-contain" />
-          <span className="text-[8px] font-semibold leading-tight">Поддержка</span>
+          <Image src="/images/support.png" alt="Поддержка" width={20} height={20} className="w-5 h-5 object-contain" />
+          <span className="text-[9px] font-semibold leading-tight">Поддержка</span>
         </a>
-      </nav>
+        </nav>
+      </div>
 
       {/* Chart Settings Modal */}
       {showChartSettingsModal && (

@@ -111,7 +111,7 @@ function parsePhoneToE164(formatted: string): string {
 
 function LabelWithHint({ label, hint }: { label: string; hint: string }) {
   return (
-    <label className="flex items-center gap-1.5 text-sm font-medium text-white/70 mb-2">
+    <label className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-white/70 mb-1.5 sm:mb-2">
       {label}
       <span className="group/tip relative inline-flex cursor-help">
         <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-medium text-white/50 hover:bg-white/20 hover:text-white/70 transition-colors">
@@ -367,35 +367,35 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
 
   return (
     <div className="w-full min-h-full flex flex-col">
-      <div className="flex flex-1 min-h-[calc(100vh-3.5rem)]">
+      <div className="flex flex-1 min-h-[calc(100vh-3rem)] sm:min-h-[calc(100vh-3.5rem)]">
         {/* Левая колонка — форма */}
-        <div className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-auto">
-        <h1 className="text-2xl font-semibold text-white mb-6">Личные данные</h1>
+        <div className="flex-1 min-w-0 p-3 sm:p-6 md:p-8 overflow-auto">
+        <h1 className="text-lg sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Личные данные</h1>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm">
             Профиль сохранён
           </div>
         )}
 
         {/* Аватар */}
-        <div className="mb-8">
+        <div className="mb-5 sm:mb-8">
         <LabelWithHint label="Фото профиля" hint="JPG или PNG, до 2 МБ" />
-        <div className="flex items-center gap-6 mt-3">
+        <div className="flex items-center gap-3 sm:gap-6 mt-2 sm:mt-3">
           <div className="relative">
             {profile?.avatarUrl ? (
               <img
                 src={`${API_BASE}${profile.avatarUrl}`}
                 alt=""
-                className="w-24 h-24 rounded-full object-cover ring-2 ring-white/20"
+                className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover ring-2 ring-white/20"
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#3347ff] via-[#3d52ff] to-[#1f2a45] flex items-center justify-center text-3xl font-bold text-white shadow-lg ring-2 ring-white/20">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-[#3347ff] via-[#3d52ff] to-[#1f2a45] flex items-center justify-center text-xl sm:text-3xl font-bold text-white shadow-lg ring-2 ring-white/20">
                 {[firstName, lastName].filter(Boolean).join(' ').charAt(0) || profile?.email?.charAt(0) || '?'}
               </div>
             )}
@@ -407,14 +407,14 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               onChange={handleAvatarUpload}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-[10px] sm:text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
             >
-              <Upload className="w-4 h-4" strokeWidth={2} />
+              <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
               {uploading ? 'Загрузка...' : 'Загрузить'}
             </button>
             {profile?.avatarUrl && (
@@ -422,9 +422,9 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
                 type="button"
                 onClick={handleAvatarDelete}
                 disabled={uploading}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" strokeWidth={2} />
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
                 Удалить
               </button>
             )}
@@ -433,7 +433,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
       </div>
 
         {/* Поля формы — по два на строку */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <LabelWithHint label="Имя" hint="До 50 символов" />
             <input
@@ -441,7 +441,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Иван"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
               maxLength={50}
             />
           </div>
@@ -452,7 +452,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Иванов"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
               maxLength={50}
             />
           </div>
@@ -463,7 +463,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               placeholder="@username"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
               maxLength={21}
             />
           </div>
@@ -474,15 +474,15 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               value={formatPhoneValue(phone)}
               onChange={(e) => setPhone(parsePhoneToE164(e.target.value))}
               placeholder="+380 (__) ___-__-__"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Страна</label>
+            <label className="block text-xs sm:text-sm font-medium text-white/70 mb-1.5 sm:mb-2">Страна</label>
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 [&>option]:bg-[#0a1635]"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 [&>option]:bg-[#0a1635]"
             >
               {COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -497,23 +497,23 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               type="date"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 [color-scheme:dark]"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 [color-scheme:dark]"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-white/70 mb-2">Почта</label>
-            <div className="flex flex-wrap items-stretch gap-3">
+            <label className="block text-xs sm:text-sm font-medium text-white/70 mb-1.5 sm:mb-2">Почта</label>
+            <div className="flex flex-wrap items-stretch gap-2 sm:gap-3">
               <input
                 type="email"
                 value={profile?.email || ''}
                 readOnly
-                className="flex-1 min-w-[200px] px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 cursor-not-allowed"
+                className="flex-1 min-w-0 sm:min-w-[200px] px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-xs sm:text-base text-white/70 cursor-not-allowed"
               />
               <button
                 type="button"
                 onClick={handleConfirmEmail}
                 disabled={emailConfirming || emailVerified}
-                className="px-5 py-3 rounded-xl bg-[#3347ff]/20 hover:bg-[#3347ff]/30 text-[#7b8fff] font-medium text-xs uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-[#3347ff]/30 flex items-center justify-center shrink-0 self-stretch"
+                className="px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl bg-[#3347ff]/20 hover:bg-[#3347ff]/30 text-[#7b8fff] font-medium text-[10px] sm:text-xs uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-[#3347ff]/30 flex items-center justify-center shrink-0 self-stretch"
               >
                 {emailVerified ? 'Подтверждена' : emailConfirming ? 'Отправка...' : 'Подтвердить'}
               </button>
@@ -527,7 +527,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
             <button
               type="button"
               onClick={() => setShowTimezoneMenu(!showTimezoneMenu)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 flex items-center justify-between gap-2 hover:bg-white/[0.07] transition-colors"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 flex items-center justify-between gap-2 hover:bg-white/[0.07] transition-colors"
             >
               <span className="text-left">{TIMEZONES.find((t) => t.value === timezone)?.label || 'Киев (UTC+2)'}</span>
               <svg className={`w-4 h-4 shrink-0 text-white/50 transition-transform duration-200 ${showTimezoneMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -563,11 +563,11 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
 
           {/* Язык интерфейса */}
           <div className="relative">
-            <label className="block text-sm font-medium text-white/70 mb-2">Язык интерфейса</label>
+            <label className="block text-xs sm:text-sm font-medium text-white/70 mb-1.5 sm:mb-2">Язык интерфейса</label>
             <button
               type="button"
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 flex items-center justify-between gap-2 hover:bg-white/[0.07] transition-colors"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 flex items-center justify-between gap-2 hover:bg-white/[0.07] transition-colors"
             >
               <div className="flex items-center gap-3">
                 <img
@@ -610,31 +610,31 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
           </div>
         </div>
 
-        <div className="mt-8 flex gap-3">
+        <div className="mt-6 sm:mt-8 flex gap-2 sm:gap-3">
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-8 py-4 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-5 sm:px-8 py-2.5 sm:py-4 rounded-lg sm:rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs sm:text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
           >
             {saving ? 'Сохранение...' : 'Сохранить изменения'}
           </button>
         </div>
 
         {/* Безопасность */}
-        <div className="mt-12 pt-8 border-t border-white/[0.06]">
-          <h2 className="text-lg font-medium text-white mb-6">Безопасность</h2>
+        <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/[0.06]">
+          <h2 className="text-base sm:text-lg font-medium text-white mb-4 sm:mb-6">Безопасность</h2>
           <SecuritySection profile={profile} onProfileUpdate={(p) => { setProfile(prev => { const merged = prev ? { ...prev, ...p } : null; if (merged) onProfileUpdate?.(merged); return merged; }); }} />
         </div>
 
         {/* Удаление аккаунта */}
-        <div className="mt-12 pt-8 border-t border-white/[0.06]">
-          <p className="text-sm font-medium text-white/50 mb-2">Опасная зона</p>
-          <p className="text-xs text-white/40 mb-4">Удаление аккаунта необратимо. Все данные будут удалены.</p>
+        <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/[0.06]">
+          <p className="text-xs sm:text-sm font-medium text-white/50 mb-1.5 sm:mb-2">Опасная зона</p>
+          <p className="text-[11px] sm:text-xs text-white/40 mb-3 sm:mb-4">Удаление аккаунта необратимо. Все данные будут удалены.</p>
           <button
             type="button"
             onClick={() => setShowDeleteModal(true)}
-            className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium uppercase tracking-wider border border-red-500/20 transition-colors"
+            className="w-full py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider border border-red-500/20 transition-colors"
           >
             Удалить аккаунт
           </button>
@@ -676,11 +676,11 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
       {showDeleteModal && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !deleting && (setShowDeleteModal(false), setDeleteError(null), setDeleteReason(''), setDeletePassword(''))} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md p-6 rounded-2xl bg-[#0f1a2e] border border-white/10 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white mb-2">Удалить аккаунт</h3>
-            <p className="text-sm text-white/60 mb-4">Это действие необратимо. Все данные будут удалены.</p>
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-2rem)] max-w-md p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-[#0f1a2e] border border-white/10 shadow-2xl">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2">Удалить аккаунт</h3>
+            <p className="text-xs sm:text-sm text-white/60 mb-3 sm:mb-4">Это действие необратимо. Все данные будут удалены.</p>
 
-            <p className="text-sm font-medium text-white/80 mb-2">Укажите причину</p>
+            <p className="text-xs sm:text-sm font-medium text-white/80 mb-1.5 sm:mb-2">Укажите причину</p>
             <div className="space-y-2 mb-4">
               {[
                 { value: 'other_platform', label: 'Перехожу на другую платформу' },
@@ -693,7 +693,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
                   key={r.value}
                   type="button"
                   onClick={() => setDeleteReason(r.value)}
-                  className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  className={`w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-colors ${
                     deleteReason === r.value
                       ? 'bg-red-500/20 border border-red-500/40 text-red-400'
                       : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white'
@@ -704,21 +704,21 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
               ))}
             </div>
 
-            <p className="text-sm font-medium text-white/80 mb-2">Введите пароль для подтверждения</p>
-            {deleteError && <p className="mb-2 text-sm text-red-400">{deleteError}</p>}
+            <p className="text-xs sm:text-sm font-medium text-white/80 mb-1.5 sm:mb-2">Введите пароль для подтверждения</p>
+            {deleteError && <p className="mb-1.5 sm:mb-2 text-xs sm:text-sm text-red-400">{deleteError}</p>}
             <input
               type="password"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               placeholder="Пароль"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-red-500/50 mb-4"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-red-500/50 mb-3 sm:mb-4"
             />
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => { setShowDeleteModal(false); setDeleteReason(''); setDeletePassword(''); setDeleteError(null); }}
                 disabled={deleting}
-                className="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 hover:bg-white/15 text-white text-[10px] sm:text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
               >
                 Отмена
               </button>
@@ -726,7 +726,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
                 type="button"
                 onClick={handleDeleteAccount}
                 disabled={deleting}
-                className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-red-500 hover:bg-red-600 text-white text-[10px] sm:text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
               >
                 {deleting ? 'Удаление...' : 'Удалить'}
               </button>
@@ -745,21 +745,21 @@ function ProfileHeader() {
   const pageTitle = TAB_LABELS[activeTab] || 'Профиль';
 
   return (
-    <header className="shrink-0 h-14 bg-[#05122a] border-b border-white/10 flex items-center px-4 md:px-6">
+    <header className="shrink-0 h-12 sm:h-14 bg-[#05122a] border-b border-white/10 flex items-center px-3 sm:px-4 md:px-6">
       <div className="flex items-center gap-2 md:gap-4 w-full min-w-0">
         <Link href="/terminal" className="hidden sm:flex items-center gap-2 text-white/70 hover:text-white transition-colors shrink-0">
           <span className="text-sm font-medium">Терминал</span>
         </Link>
         <div className="hidden sm:block h-4 w-px bg-white/20 shrink-0" />
-        <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-          <Image src="/images/logo.png" alt="" width={28} height={28} className="object-contain shrink-0" />
-          <span className="text-base md:text-lg font-semibold text-white truncate">ComforTrade</span>
+        <div className="flex items-center gap-1.5 md:gap-3 flex-1 min-w-0">
+          <Image src="/images/logo.png" alt="" width={28} height={28} className="object-contain shrink-0 h-6 w-6 sm:h-7 sm:w-7" />
+          <span className="text-sm md:text-lg font-semibold text-white truncate">ComforTrade</span>
           <span className="text-white/40 shrink-0">/</span>
           <span className="text-white/90 font-medium truncate">{pageTitle}</span>
         </div>
         <Link
           href="/terminal"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors text-sm shrink-0"
+          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors text-xs sm:text-sm shrink-0"
         >
           <span className="hidden sm:inline">К торговле</span>
           <span className="sm:hidden">Терминал</span>

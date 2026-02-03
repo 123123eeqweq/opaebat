@@ -211,25 +211,25 @@ export function SupportTab() {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-3.5rem)] p-4 sm:p-6 md:p-8 overflow-auto relative">
+    <div className="w-full min-h-[calc(100vh-3rem)] sm:min-h-[calc(100vh-3.5rem)] p-3 sm:p-6 md:p-8 overflow-auto relative">
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(51,71,255,0.04),transparent_60%)]" />
       <div className="relative w-full">
-        <div className="mb-6 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Поддержка</h1>
+        <div className="mb-4 sm:mb-10">
+          <h1 className="text-lg sm:text-3xl font-bold text-white tracking-tight">Поддержка</h1>
           <p className="text-sm text-white/50 mt-1">
             Ответы на частые вопросы и способы связи
           </p>
         </div>
 
         {/* Как связаться с поддержкой */}
-        <div className="mb-10 sm:mb-14 rounded-2xl border border-white/[0.08] bg-white/[0.02] overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]">
-          <div className="p-4 sm:p-6 border-b border-white/[0.06]">
-            <h2 className="text-lg font-semibold text-white mb-1">Связаться с поддержкой</h2>
+        <div className="mb-6 sm:mb-14 rounded-xl sm:rounded-2xl border border-white/[0.08] bg-white/[0.02] overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]">
+          <div className="p-3 sm:p-6 border-b border-white/[0.06]">
+            <h2 className="text-base sm:text-lg font-semibold text-white mb-0.5 sm:mb-1">Связаться с поддержкой</h2>
             <p className="text-sm text-white/50">
               Напишите нам — ответим в течение 24 часов
             </p>
           </div>
-          <div className="p-4 sm:p-6 md:p-8 grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 sm:gap-10 xl:gap-12">
+          <div className="p-3 sm:p-6 md:p-8 grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-4 sm:gap-10 xl:gap-12">
             {/* Форма */}
             <div>
               {formSent ? (
@@ -254,7 +254,7 @@ export function SupportTab() {
                       ref={topicButtonRef}
                       type="button"
                       onClick={() => setShowTopicModal(!showTopicModal)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-medium uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 flex items-center justify-between gap-2 hover:bg-white/[0.07] transition-colors"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white text-[10px] sm:text-xs font-medium uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 flex items-center justify-between gap-2 hover:bg-white/[0.07] transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className={formData.topic ? 'text-white' : 'text-white/40'}>
@@ -322,15 +322,15 @@ export function SupportTab() {
                       value={formData.message}
                       onChange={(e) => setFormData((d) => ({ ...d, message: e.target.value }))}
                       placeholder="Опишите ваш вопрос или проблему..."
-                      rows={4}
+                      rows={3}
                       required
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 resize-none"
+                      className="w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-xs sm:text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50 resize-none"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={!formData.message.trim()}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-4 h-4" />
                     Отправить
@@ -367,11 +367,11 @@ export function SupportTab() {
         </div>
 
         {/* FAQ */}
-        <div className="space-y-6 sm:space-y-10">
-          <h2 className="text-lg font-semibold text-white">Частые вопросы</h2>
+        <div className="space-y-4 sm:space-y-10">
+          <h2 className="text-base sm:text-lg font-semibold text-white">Частые вопросы</h2>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-6 xl:gap-x-12 gap-y-6 sm:gap-y-10">
             {FAQ_CATEGORIES.map((category) => (
-              <section key={category.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+              <section key={category.id} className="rounded-xl sm:rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-6">
                 <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">
                   {category.title}
                 </h3>
@@ -386,7 +386,7 @@ export function SupportTab() {
                       <button
                         type="button"
                         onClick={() => setOpenId(isOpen ? null : id)}
-                        className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left"
+                        className="w-full flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 text-left"
                       >
                         <span className="font-medium text-white text-xs sm:text-[13px] uppercase tracking-wider">{question}</span>
                         <ChevronDown

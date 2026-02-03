@@ -158,19 +158,19 @@ export function SecuritySection({ profile, onProfileUpdate }: SecuritySectionPro
     setTwoFAError(null);
   };
 
-  const inputClass = 'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50';
-  const labelClass = 'block text-sm font-medium text-white/70 mb-2';
+  const inputClass = 'w-full px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff]/50';
+  const labelClass = 'block text-xs sm:text-sm font-medium text-white/70 mb-1.5 sm:mb-2';
 
   return (
     <div className="w-full space-y-6">
       {/* Смена пароля — карточка на всю ширину */}
-      <section className="rounded-xl bg-[#0a1635] border border-white/10 p-6">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-white">Смена пароля</h2>
+      <section className="rounded-lg sm:rounded-xl bg-[#0a1635] border border-white/10 p-4 sm:p-6">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-lg font-semibold text-white">Смена пароля</h2>
           <p className="text-sm text-white/50 mt-0.5">Обновите пароль для защиты аккаунта</p>
         </div>
         <form onSubmit={handleChangePassword} className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div>
               <label className={labelClass}>Текущий пароль</label>
               <input
@@ -209,11 +209,11 @@ export function SecuritySection({ profile, onProfileUpdate }: SecuritySectionPro
               />
             </div>
           </div>
-          <div className="mt-6 flex flex-wrap items-center gap-4">
+          <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-4">
             <button
               type="submit"
               disabled={passwordSaving}
-              className="px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+              className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs sm:text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
             >
               {passwordSaving ? 'Сохранение...' : 'Изменить пароль'}
             </button>
@@ -224,9 +224,9 @@ export function SecuritySection({ profile, onProfileUpdate }: SecuritySectionPro
       </section>
 
       {/* 2FA — карточка на всю ширину */}
-      <section className="rounded-xl bg-[#0a1635] border border-white/10 p-6">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-white">Двухфакторная аутентификация (2FA)</h2>
+      <section className="rounded-lg sm:rounded-xl bg-[#0a1635] border border-white/10 p-4 sm:p-6">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-lg font-semibold text-white">Двухфакторная аутентификация (2FA)</h2>
           <p className="text-sm text-white/50 mt-0.5">Дополнительный уровень защиты при входе</p>
         </div>
 
