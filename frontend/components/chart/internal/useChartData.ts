@@ -35,7 +35,9 @@ interface UseChartDataReturn {
     currentPrice: number | null, // FLOW C-MARKET-CLOSED: может быть null
     currentTime: number,
     timeframeMs: number,
-    marketStatus: MarketStatus // FLOW C-MARKET-CLOSED: статус рынка
+    marketStatus: MarketStatus, // FLOW C-MARKET-CLOSED: статус рынка
+    nextMarketOpenAt?: string | null, // FLOW C-MARKET-COUNTDOWN: ISO string или null
+    topAlternatives?: Array<{ instrumentId: string; label: string; payout: number }> // FLOW C-MARKET-ALTERNATIVES
   ) => void;
   handlePriceUpdate: (price: number, timestamp: number) => void;
   handleCandleClose: (
@@ -50,6 +52,10 @@ interface UseChartDataReturn {
   getEarliestRealTime: () => number | null;
   /** FLOW C-MARKET-CLOSED: получить текущий статус рынка */
   getMarketStatus: () => MarketStatus;
+  /** FLOW C-MARKET-COUNTDOWN: timestamp следующего открытия рынка */
+  getNextMarketOpenAt: () => number | null;
+  /** FLOW C-MARKET-ALTERNATIVES: топ альтернативных пар */
+  getTopAlternatives: () => Array<{ instrumentId: string; label: string; payout: number }>;
 }
 
 /**
@@ -167,15 +173,13 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     currentTime: number,
     timeframeMs: number,
     marketStatus: MarketStatus, // FLOW C-MARKET-CLOSED: статус рынка
-    nextMarketOpenAt: string | null, // FLOW C-MARKET-COUNTDOWN: ISO string или null
-    topAlternatives: Array<{ instrumentId: string; label: string; payout: number }> // FLOW C-MARKET-ALTERNATIVES
+    nextMarketOpenAt?: string | null, // FLOW C-MARKET-COUNTDOWN: ISO string или null
+    topAlternatives?: Array<{ instrumentId: string; label: string; payout: number }> // FLOW C-MARKET-ALTERNATIVES
   ): void => {
     // FLOW C-MARKET-CLOSED: Сохраняем статус рынка
     marketStatusRef.current = marketStatus;
     // FLOW C-MARKET-COUNTDOWN: Сохраняем время следующего открытия
-    nextMarketOpenAtRef.current = nextMarketOpenAt 
-      ? Date.parse(nextMarketOpenAt) 
-      : null;
+    nextMarketOpenAtRef.current = nextMarketOpenAt ? Date.parse(nextMarketOpenAt) : null;
     // FLOW C-MARKET-ALTERNATIVES: Сохраняем альтернативные пары
     topAlternativesRef.current = topAlternatives ?? [];
 

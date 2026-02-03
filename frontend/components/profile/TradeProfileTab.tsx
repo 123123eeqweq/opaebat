@@ -312,7 +312,7 @@ export function TradeProfileTab() {
                         borderRadius: '12px',
                       }}
                       labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
-                      formatter={(value: number) => [`${formatBalance(value)} UAH`, 'Баланс']}
+                      formatter={(value: number | undefined) => [value != null ? `${formatBalance(value)} UAH` : '', 'Баланс']}
                       labelFormatter={(label) => label}
                     />
                     <Area
@@ -368,7 +368,7 @@ export function TradeProfileTab() {
                           border: '1px solid rgba(255,255,255,0.1)',
                           borderRadius: '12px',
                         }}
-                        formatter={(value: number) => [`${value} сделок`, 'Количество']}
+                        formatter={(value: number | undefined) => [value != null ? `${value} сделок` : '', 'Количество']}
                       />
                       <Bar dataKey="count" fill="#3347ff" radius={[0, 4, 4, 0]} />
                     </BarChart>
@@ -409,7 +409,7 @@ export function TradeProfileTab() {
                           outerRadius={75}
                           paddingAngle={2}
                           dataKey="value"
-                          label={({ name, percent }) => (percent > 0.02 ? `${name} ${(percent * 100).toFixed(0)}%` : '')}
+                          label={({ name, percent }) => ((percent ?? 0) > 0.02 ? `${name} ${((percent ?? 0) * 100).toFixed(0)}%` : '')}
                           labelLine={false}
                         >
                           {[
@@ -427,7 +427,7 @@ export function TradeProfileTab() {
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '12px',
                           }}
-                          formatter={(value: number, name: string) => [`${value} сделок`, name]}
+                          formatter={(value: number | undefined, name?: string) => [value != null ? `${value} сделок` : '', name ?? '']}
                         />
                       </PieChart>
                     </ResponsiveContainer>

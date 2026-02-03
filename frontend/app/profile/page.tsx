@@ -624,7 +624,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
         {/* Безопасность */}
         <div className="mt-12 pt-8 border-t border-white/[0.06]">
           <h2 className="text-lg font-medium text-white mb-6">Безопасность</h2>
-          <SecuritySection profile={profile} onProfileUpdate={(p) => { setProfile(p); onProfileUpdate?.(p); }} />
+          <SecuritySection profile={profile} onProfileUpdate={(p) => { setProfile(prev => { const merged = prev ? { ...prev, ...p } : null; if (merged) onProfileUpdate?.(merged); return merged; }); }} />
         </div>
 
         {/* Удаление аккаунта */}
@@ -960,19 +960,19 @@ function ProfileBottomNav() {
   const activeTab = searchParams.get('tab') || 'profile';
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-2 px-2 bg-[#051228] border-t border-white/[0.08]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-1.5 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] bg-[#051228] border-t border-white/[0.08]">
       {SIDEBAR_ITEMS.map(({ id, shortLabel, href, icon: Icon }) => {
         const isActive = activeTab === id;
         return (
           <Link
             key={id}
             href={href}
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg min-w-[64px] transition-colors ${
+            className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
               isActive ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
             }`}
           >
-            <Icon className="w-5 h-5" strokeWidth={2.5} />
-            <span className="text-[10px] font-medium uppercase tracking-wider">{shortLabel}</span>
+            <Icon className="w-4 h-4" strokeWidth={2.5} />
+            <span className="text-[8px] font-medium uppercase tracking-wider">{shortLabel}</span>
           </Link>
         );
       })}
@@ -990,7 +990,7 @@ export default function ProfilePage() {
         <ProfileHeader />
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <ProfileSidebar />
-          <main className="flex-1 min-w-0 overflow-auto pb-20 md:pb-0">
+          <main className="flex-1 min-w-0 overflow-auto pb-[calc(3.25rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             {activeTab === 'profile' && <PersonalProfileTab />}
             {activeTab === 'wallet' && <WalletTab />}
             {activeTab === 'trade' && <TradeProfileTab />}

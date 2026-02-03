@@ -31,6 +31,7 @@ interface UseChartInteractionsParams {
   getIsEditingDrawing?: () => boolean; // FLOW G16: Проверка, идет ли редактирование drawing
   getDrawingEditState?: () => { mode: string } | null; // FLOW G16: режим при драге (move / resize-*)
   getHoveredDrawingMode?: () => string | null; // FLOW G16: режим при наведении на drawing
+  getIsPointOnDrawing?: (x: number, y: number) => boolean; // FLOW G16-TOUCH: touch на drawing — не начинаем pan
   setFollowMode?: (on: boolean) => void; // 🔥 FLOW F1: Выключение follow при взаимодействии
   // 🔥 FLOW Y1: Y-scale drag API
   beginYScaleDrag?: (startY: number) => void;
@@ -119,6 +120,7 @@ export function useChartInteractions({
   getIsEditingDrawing,
   getDrawingEditState,
   getHoveredDrawingMode,
+  getIsPointOnDrawing,
   setFollowMode,
   beginYScaleDrag,
   updateYScaleDrag,
@@ -464,6 +466,14 @@ export function useChartInteractions({
     if (getIsEditingDrawing?.()) return;
 
     if (e.touches.length === 1) {
+      // FLOW G16-TOUCH: если touch на drawing — не начинаем pan (drawing edit обработает)
+      const canvasEl = canvasRef.current;
+      const rect = canvasEl?.getBoundingClientRect();
+      if (rect && getIsPointOnDrawing) {
+        const x = e.touches[0].clientX - rect.left;
+        const y = e.touches[0].clientY - rect.top;
+        if (getIsPointOnDrawing(x, y)) return;
+      }
       touchModeRef.current = 'pan';
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       inertiaActiveRef.current = false;
@@ -513,7 +523,8 @@ export function useChartInteractions({
       if (!pinch) return;
 
       const newDistance = getTouchDistance(t1, t2);
-      const zoomFactor = newDistance / pinch.distance;
+      // Инвертировано: разведение пальцев = zoom in, сведение = zoom out (как на линейном графике)
+      const zoomFactor = pinch.distance / newDistance;
       const anchorTime = mouseXToTime(pinch.centerX, canvas, viewport);
 
       const newViewport = zoomViewportTime({

@@ -53,10 +53,7 @@ interface UseLineChartParams {
   /** FLOW G12: Конфигурация индикаторов */
   indicatorConfigs?: IndicatorConfig[];
   /** FLOW O: Overlay Registry — для синхронизации drawings с панелью */
-  overlayRegistry?: {
-    onDrawingAdded?: (overlay: { id: string; type: 'drawing'; name: string; visible: boolean; drawingType: string; points: Array<{ time: number; price: number }> }) => void;
-    getVisibleOverlayIds?: () => Set<string> | null;
-  };
+  overlayRegistry?: import('../useChart').OverlayRegistryParams;
 }
 
 export function useLineChart({
@@ -290,6 +287,8 @@ export function useLineChart({
   const editStateRef = useRef<{ drawingId: string; mode: string } | null>(null);
   const isEditingDrawingRef = useRef<boolean>(false);
 
+  const hitTestDrawingRef = useRef<(x: number, y: number) => boolean>(() => false);
+
   useDrawingEdit({
     canvasRef,
     getViewport: getViewportForCrosshair,
@@ -305,7 +304,10 @@ export function useLineChart({
       isEditingDrawingRef.current = editState !== null;
     },
     getIsEditing: () => isEditingDrawingRef.current,
+    onRegisterHitTest: (fn) => { hitTestDrawingRef.current = fn; },
   });
+
+  const getIsPointOnDrawing = useCallback((x: number, y: number) => hitTestDrawingRef.current(x, y), []);
 
   const getHoveredDrawingId = useCallback((): string | null => {
     return hoveredDrawingIdRef.current;
@@ -659,7 +661,8 @@ export function useLineChart({
             ctx.save();
 
             const CIRCLE_RADIUS = 18;
-            const CIRCLE_Y = 30;
+            const isMobile = width < 600; // На мобилке — ниже (под контролами графика)
+            const CIRCLE_Y = isMobile ? 78 : 30;
             const circleX = expirationX;
             const circleY = CIRCLE_Y;
 
@@ -759,7 +762,7 @@ export function useLineChart({
           renderDrawings({
             ctx,
             drawings: allDrawings,
-            viewport: timePriceViewport,
+            viewport: { ...timePriceViewport, yMode: 'auto' as const },
             width,
             height: mainHeight,
             hoveredDrawingId: getHoveredDrawingId(),
@@ -771,15 +774,14 @@ export function useLineChart({
         if (filteredIndicators.length > 0) {
           renderIndicators({
             ctx,
-            indicatorSeries: filteredIndicators,
+            indicators: filteredIndicators,
+            indicatorConfigs,
             viewport: {
               ...timePriceViewport,
               yMode: 'auto' as const,
             },
             width,
             height: mainHeight,
-            hoveredDrawingId: getHoveredDrawingId(),
-            selectedDrawingId: getSelectedDrawingId(),
           });
         }
         
@@ -1062,6 +1064,7 @@ export function useLineChart({
     getViewport: viewport.getViewport,
     getPoints: pointStore.getAll,
     getIsEditingDrawing,
+    getIsPointOnDrawing,
     setPanInertiaRefs,
     advancePanInertia,
     scheduleReturnToFollow,

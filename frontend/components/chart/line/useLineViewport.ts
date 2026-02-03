@@ -12,7 +12,7 @@
 
 import { useRef } from 'react';
 import type { LineViewport } from './lineTypes';
-import type { TimePriceViewport } from '../../internal/render/ui/viewport.types';
+import type { TimePriceViewport } from '../internal/render/ui/viewport.types';
 
 const DEFAULT_WINDOW_MS = 60_000; // 60 секунд по умолчанию
 const RIGHT_PADDING_RATIO = 0.30; // 30% свободного места справа

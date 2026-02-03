@@ -84,6 +84,9 @@ interface UseViewportReturn {
   advancePanInertia: (now: number) => void;
   // 🔥 FLOW Y-SMOOTH: Плавная анимация Y-оси
   advanceYAnimation: (now: number) => void;
+  // 🔥 FLOW RETURN-TO-FOLLOW: Auto return API
+  scheduleReturnToFollow: () => void;
+  cancelReturnToFollow: () => void;
 }
 
 const DEFAULT_CONFIG: ViewportConfig = {

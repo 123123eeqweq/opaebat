@@ -350,6 +350,12 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
         e.preventDefault();
 
         if (e.touches.length === 1) {
+          // FLOW G16-TOUCH: если touch на drawing — не начинаем pan
+          const rect = canvas.getBoundingClientRect();
+          const x = e.touches[0].clientX - rect.left;
+          const y = e.touches[0].clientY - rect.top;
+          if (lineChart.getIsPointOnDrawing?.(x, y)) return;
+
           touchModeRef.current = 'pan';
           touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
           panInertiaRefs.activeRef.current = false;

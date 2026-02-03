@@ -157,8 +157,14 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
     setWsState('connecting');
 
     // Определяем WebSocket URL
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + '/ws';
+    // - Локально: фронт 3000, бэк 3001 — WebSocket на бэке
+    // - Продакшен: same-origin, nginx проксирует /ws на бэк
+    const wsBase = typeof window !== 'undefined'
+      ? (window.location.hostname === 'localhost' && window.location.port === '3000'
+          ? 'http://localhost:3001'
+          : window.location.origin)
+      : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '');
+    const wsUrl = wsBase.replace(/^http/, 'ws') + '/ws';
 
     const activeId = activeInstrumentRefRef.current?.current;
     if (activeId === 'AUDCHF') {

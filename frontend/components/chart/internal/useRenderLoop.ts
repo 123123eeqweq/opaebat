@@ -406,7 +406,8 @@ export function useRenderLoop({
           ctx.save();
           
           const CIRCLE_RADIUS = 18; // Еще больше увеличен радиус кружка
-          const CIRCLE_Y = 30; // Опущен кружок еще ниже
+          const isMobile = width < 600; // На мобилке — ниже (под контролами графика)
+          const CIRCLE_Y = isMobile ? 78 : 30;
 
           // Рисуем кружок на линии экспирации сверху
           const circleX = expirationX;

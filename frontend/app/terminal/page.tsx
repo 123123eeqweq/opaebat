@@ -70,9 +70,9 @@ export default function TerminalPage() {
   const router = useRouter();
   const { logout, user } = useAuth();
   // FLOW P7: activeInstrument — один терминал один актив; смена = hard reset
-  // FLOW R-FIX: Инициализируем instrument из localStorage синхронно, чтобы избежать лишних запросов
+  // FLOW R-FIX: Инициализируем instrument из localStorage синхронно (SSR-safe)
   const [instrument, setInstrument] = useState<string>(() => {
-    // Загружаем layout синхронно при инициализации state
+    if (typeof window === 'undefined') return DEFAULT_INSTRUMENT_ID;
     try {
       const raw = localStorage.getItem('terminal.layout.v1');
       if (raw) {
@@ -126,8 +126,9 @@ export default function TerminalPage() {
     }
   }, [instrument, instrumentsData]);
 
-  // 🔥 FLOW T-LS1.3: Инициализация chartType из localStorage
+  // 🔥 FLOW T-LS1.3: Инициализация chartType из localStorage (SSR-safe)
   const [chartType, setChartType] = useState<ChartType>(() => {
+    if (typeof window === 'undefined') return 'candles';
     const raw = localStorage.getItem('terminal.layout.v1');
     if (!raw) return 'candles';
 
@@ -160,8 +161,9 @@ export default function TerminalPage() {
   
   // 🔥 FLOW A-ACCOUNT: Используем Zustand store вместо useState
   const snapshot = useAccountStore((s) => s.snapshot);
-  // 🔥 FLOW T-LS1.4: Инициализация candleMode из localStorage
+  // 🔥 FLOW T-LS1.4: Инициализация candleMode из localStorage (SSR-safe)
   const [candleMode, setCandleMode] = useState<CandleMode>(() => {
+    if (typeof window === 'undefined') return 'classic';
     const raw = localStorage.getItem('terminal.layout.v1');
     if (!raw) return 'classic';
 
@@ -822,8 +824,8 @@ export default function TerminalPage() {
         </div>
       </header>
 
-      {/* Main Content Area with Sidebar — pb-20 на мобилке под нижнюю навигацию */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden pb-20 md:pb-0">
+      {/* Main Content Area — pb под нижнюю навигацию (компактная) + safe-area (iOS Safari) */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden pb-[calc(3.25rem+env(safe-area-inset-bottom,0px))] md:pb-0">
         {/* Left Sidebar — скрыт на мобилке, на десктопе слева */}
         <aside className="hidden md:flex w-[88px] shrink-0 bg-[#05122a] border-r border-white/10 flex-col items-center py-2.5 gap-2">
           <div className="flex-1 flex flex-col items-center gap-2 w-full min-h-0">
@@ -1261,8 +1263,8 @@ export default function TerminalPage() {
           </div>
           </div>
 
-          {/* 🔥 FLOW I-PAYOUT: Доходность и потенциальный выигрыш */}
-          <div className="flex flex-row md:flex-col gap-2 md:gap-1.5 items-center justify-center py-2 md:py-3">
+          {/* 🔥 FLOW I-PAYOUT: Доходность — на десктопе сверху, на мобилке между кнопками */}
+          <div className="hidden md:flex flex-row md:flex-col gap-2 md:gap-1.5 items-center justify-center py-2 md:py-3">
             <div className="text-xl md:text-2xl font-bold text-green-400">
               +{payoutPercent}%
             </div>
@@ -1271,19 +1273,23 @@ export default function TerminalPage() {
             </div>
           </div>
 
-          {/* Buttons — на мобилке в ряд */}
-          <div className="flex flex-row md:flex-col gap-2 md:gap-2.5">
+          {/* Buttons — на мобилке в ряд с доходностью между ними */}
+          <div className="flex flex-row md:flex-col gap-2 md:gap-2.5 items-stretch md:items-stretch">
             {/* Купить */}
             <button
               className="flex-1 md:flex-none w-full py-3 md:py-3.5 px-3 md:px-4 text-white font-semibold text-sm md:text-base rounded-lg transition-all flex items-center justify-center tracking-wide shadow-lg shadow-green-500/20"
               style={{ background: 'linear-gradient(135deg, #4fc63f 0%, #45b833 50%, #3aa028 100%)' }}
               onMouseEnter={() => {
-                candleChartRef.current?.setHoverAction('CALL');
-                lineChartRef.current?.setHoverAction('CALL');
+                if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+                  candleChartRef.current?.setHoverAction('CALL');
+                  lineChartRef.current?.setHoverAction('CALL');
+                }
               }}
               onMouseLeave={() => {
-                candleChartRef.current?.setHoverAction(null);
-                lineChartRef.current?.setHoverAction(null);
+                if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+                  candleChartRef.current?.setHoverAction(null);
+                  lineChartRef.current?.setHoverAction(null);
+                }
               }}
               onClick={async () => {
                 try {
@@ -1333,20 +1339,30 @@ export default function TerminalPage() {
                 }
               }}
             >
-              Купить
+              КУПИТЬ
             </button>
+
+            {/* Доходность — только на мобилке, между кнопками */}
+            <div className="flex flex-col items-center justify-center gap-0.5 px-2 md:hidden shrink-0 min-w-[72px]">
+              <span className="text-base font-bold text-green-400">+{payoutPercent}%</span>
+              <span className="text-xs text-gray-400">+{((Number.parseFloat(amount || '100') * payoutPercent) / 100).toFixed(2)} UAH</span>
+            </div>
 
             {/* Продать */}
             <button
               className="flex-1 md:flex-none w-full py-3 md:py-3.5 px-3 md:px-4 text-white font-semibold text-sm md:text-base rounded-lg transition-all flex items-center justify-center tracking-wide shadow-lg shadow-red-500/20"
               style={{ background: 'linear-gradient(135deg, #ff5d3f 0%, #ff3d1f 50%, #e63515 100%)' }}
               onMouseEnter={() => {
-                candleChartRef.current?.setHoverAction('PUT');
-                lineChartRef.current?.setHoverAction('PUT');
+                if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+                  candleChartRef.current?.setHoverAction('PUT');
+                  lineChartRef.current?.setHoverAction('PUT');
+                }
               }}
               onMouseLeave={() => {
-                candleChartRef.current?.setHoverAction(null);
-                lineChartRef.current?.setHoverAction(null);
+                if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+                  candleChartRef.current?.setHoverAction(null);
+                  lineChartRef.current?.setHoverAction(null);
+                }
               }}
               onClick={async () => {
                 try {
@@ -1395,7 +1411,7 @@ export default function TerminalPage() {
                 }
               }}
             >
-              Продать
+              ПРОДАТЬ
             </button>
           </div>
 
@@ -1457,50 +1473,50 @@ export default function TerminalPage() {
 
       </div>
 
-      {/* Нижняя навигация — только на мобилке (кнопки слева перенесены вниз) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-2 px-2 bg-[#05122a] border-t border-white/10">
+      {/* Нижняя навигация — компактная на мобилке; pb-safe для iOS Safari */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around py-1.5 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] bg-[#05122a] border-t border-white/10">
         <button
           onClick={() => setShowTradesHistory((prev) => !prev)}
-          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] transition-colors ${
+          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
             showTradesHistory ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
           }`}
         >
-          <History className="w-5 h-5 stroke-[3]" />
-          <span className="text-[9px] font-semibold leading-tight">История</span>
+          <History className="w-4 h-4 stroke-[3]" />
+          <span className="text-[8px] font-semibold leading-tight">История</span>
         </button>
         <button
           onClick={() => setShowNews(true)}
-          className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
         >
-          <Newspaper className="w-5 h-5 stroke-[3]" />
-          <span className="text-[9px] font-semibold leading-tight">Новости</span>
+          <Newspaper className="w-4 h-4 stroke-[3]" />
+          <span className="text-[8px] font-semibold leading-tight">Новости</span>
         </button>
         <Link
           href="/profile?tab=wallet"
-          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] transition-colors ${
+          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
             activeMenu === 'кошелек' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
           }`}
         >
-          <Wallet className="w-5 h-5 stroke-[3]" />
-          <span className="text-[9px] font-semibold leading-tight">Кошелёк</span>
+          <Wallet className="w-4 h-4 stroke-[3]" />
+          <span className="text-[8px] font-semibold leading-tight">Кошелёк</span>
         </Link>
         <Link
           href="/profile"
-          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] transition-colors ${
+          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] transition-colors ${
             activeMenu === 'личный-профиль' ? 'text-[#7b8fff] bg-[#3347ff]/15' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
           }`}
         >
-          <UserCircle className="w-5 h-5 stroke-[3]" />
-          <span className="text-[9px] font-semibold leading-tight">Профиль</span>
+          <UserCircle className="w-4 h-4 stroke-[3]" />
+          <span className="text-[8px] font-semibold leading-tight">Профиль</span>
         </Link>
         <a
           href="https://t.me/your_support_channel"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg min-w-[56px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
+          className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg min-w-[44px] text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
         >
-          <Image src="/images/support.png" alt="Поддержка" width={20} height={20} className="w-5 h-5 object-contain" />
-          <span className="text-[9px] font-semibold leading-tight">Поддержка</span>
+          <Image src="/images/support.png" alt="Поддержка" width={16} height={16} className="w-4 h-4 object-contain" />
+          <span className="text-[8px] font-semibold leading-tight">Поддержка</span>
         </a>
       </nav>
 

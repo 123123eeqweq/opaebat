@@ -58,6 +58,13 @@
   }
 }
 
+/* iOS Safari: safe-area для fixed bottom элементов */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 .feature-card-shadow {
   box-shadow: 0 1px 4px rgba(20, 20, 43, .01), 0 3px 6px rgba(51, 71, 255, .01), 0 4px 22px rgba(21, 19, 91, .04);
 }

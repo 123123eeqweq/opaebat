@@ -370,6 +370,7 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
   const selectedDrawingIdRef = useRef<string | null>(null);
   const editStateRef = useRef<{ drawingId: string; mode: string } | null>(null);
   const isEditingDrawingRef = useRef<boolean>(false);
+  const hitTestDrawingRef = useRef<(x: number, y: number) => boolean>(() => false);
 
   useDrawingEdit({
     canvasRef,
@@ -386,6 +387,7 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
       isEditingDrawingRef.current = editState !== null;
     },
     getIsEditing: () => isEditingDrawingRef.current,
+    onRegisterHitTest: (fn) => { hitTestDrawingRef.current = fn; },
   });
 
   // FLOW G4: запуск render loop
@@ -477,7 +479,6 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
     advancePanInertia: viewport.advancePanInertia, // 🔥 FLOW C-INERTIA: Pan inertia animation
     getMarketStatus: chartData.getMarketStatus, // FLOW C-MARKET-CLOSED: статус рынка
     getNextMarketOpenAt: chartData.getNextMarketOpenAt, // FLOW C-MARKET-COUNTDOWN: время следующего открытия
-    getServerTimeMs, // FLOW C-MARKET-COUNTDOWN: синхронизированное серверное время
     getTopAlternatives: chartData.getTopAlternatives, // FLOW C-MARKET-ALTERNATIVES: альтернативные пары
     marketAlternativesHitboxesRef, // FLOW C-MARKET-ALTERNATIVES: ref для hitboxes
     getMarketAlternativesHoveredIndex: () => marketAlternativesHoveredIndexRef.current, // FLOW C-MARKET-ALTERNATIVES: hovered index
@@ -517,6 +518,7 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
     },
     panInertiaRefs, // 🔥 FLOW C-INERTIA: Передаем refs для инерции
     getIsEditingDrawing: () => isEditingDrawingRef.current, // FLOW G16: Блокируем pan при редактировании
+    getIsPointOnDrawing: (x, y) => hitTestDrawingRef.current(x, y), // FLOW G16-TOUCH: пропуск pan при touch на drawing
     getMarketStatus: chartData.getMarketStatus, // FLOW C-MARKET-CLOSED: блокируем pan/zoom когда рынок закрыт
     marketAlternativesHitboxesRef, // FLOW C-MARKET-ALTERNATIVES: Hitboxes для альтернативных пар
     onAlternativeClick: handleAlternativeClick, // FLOW C-MARKET-ALTERNATIVES: Обработка клика
@@ -706,10 +708,6 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
           window.alert(`Цена пересекла уровень ${priceAlert.price.toFixed(2)}`);
         }
       }
-    },
-    onTradeClose: (tradeId: string) => {
-      // Удаляем закрытую сделку с графика
-      removeTrade(tradeId);
     },
     onCandleClose: (wsCandle, timeframeStr) => {
       // Логирование только для AUDCHF

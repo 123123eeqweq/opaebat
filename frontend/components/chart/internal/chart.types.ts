@@ -15,6 +15,7 @@ export type Candle = {
   startTime: number;
   endTime: number;
   isClosed: boolean;
+  volume?: number; // Опционально для line chart индикаторов
 };
 
 /**
