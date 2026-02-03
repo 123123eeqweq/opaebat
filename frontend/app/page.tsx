@@ -348,7 +348,7 @@ export default function Home() {
                     Создать аккаунт
                   </button>
                   <button className="bg-transparent text-white px-8 py-4 rounded-lg font-semibold border border-white/50 hover:bg-white/10 transition-colors">
-                    Начать в 1 клик
+                    Открыть Демо
                   </button>
                 </div>
               </div>
@@ -416,7 +416,7 @@ export default function Home() {
 
           {/* Main Heading */}
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
-            Всё для торговли на Forex и криптовалютах
+            Всё для успешной торговли на валютном рынке
           </h2>
 
           {/* Features Grid */}
@@ -428,9 +428,9 @@ export default function Home() {
                 <div className="w-20 h-20 flex items-center justify-center mb-4 rounded-lg overflow-hidden">
                   <Image src="/images/1.svg" alt="Торговые инструменты" width={64} height={64} className="rounded-lg" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">40+ валютных пар и криптовалют</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">50+ валютных пар и криптовалют</h3>
                 <p className="text-base font-medium text-[#7c7f9c]">
-                  Forex (EUR/USD, GBP/USD, USD/JPY и др.), крипто (BTC, ETH, SOL) — торгуйте тем, что вам удобно.
+                  (EUR/USD, GBP/USD, USD/JPY и др.), крипто (BTC, ETH, SOL) — торгуйте тем, что вам удобно.
                 </p>
               </div>
 
@@ -493,13 +493,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors">
-              Регистрация
-            </button>
-            <button className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors">
-              Узнать подробнее
+          {/* CTA Button */}
+          <div className="flex justify-center">
+            <button onClick={() => setShowRegisterPanel(true)} className="text-white px-8 py-4 rounded-lg font-semibold transition-colors hover:opacity-95" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
+              Открыть торговый счет
             </button>
           </div>
         </div>
@@ -523,7 +520,7 @@ export default function Home() {
 
               {/* Description */}
               <p className="text-lg text-gray-600 leading-relaxed">
-                Удобный терминал с интуитивным интерфейсом: выбирайте актив, ставку и время — торгуйте без лишних действий.
+                Удобный терминал с интуитивным интерфейсом: выбирайте актив, сделку и время — торгуйте без лишних действий.
               </p>
 
               {/* Features List */}
@@ -543,7 +540,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">Прозрачные условия Call/Put</span>
+                  <span className="text-lg font-bold text-gray-900">Прозрачные условия сделок</span>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -583,7 +580,7 @@ export default function Home() {
                   Будьте в курсе обновлений
                 </h2>
                 <p className="text-gray-400 text-base md:text-lg">
-                  Подпишитесь на рассылку — новости брокера, акции и полезные материалы по торговле на Forex и крипте.
+                  Подпишитесь на рассылку — новости платформы, выгодные акции и полезные материалы по торговле на финансовом рынке.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 flex-1 md:flex-initial md:min-w-[320px]">
@@ -679,12 +676,12 @@ export default function Home() {
               Что говорят о ComforTrade
             </h2>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors">
-                Регистрация
+              <button onClick={() => setShowRegisterPanel(true)} className="text-white px-6 py-3 rounded-lg font-semibold transition-colors hover:opacity-95" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
+                Создать аккаунт
               </button>
-              <button className="bg-white text-[#3347ff] px-6 py-3 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors">
+              <Link href="/reviews" className="bg-white text-[#3347ff] px-6 py-3 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors flex items-center justify-center">
                 Все отзывы
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -702,14 +699,14 @@ export default function Home() {
                 <div className="flex items-center gap-3 min-w-0">
                   <Image
                     src="/images/11.jpg"
-                    alt="Джон Картер"
+                    alt="Олександр Коваленко"
                     width={48}
                     height={48}
                     className="w-12 h-12 rounded-full object-cover shrink-0"
                   />
                   <div className="min-w-0">
-                    <div className="font-bold text-gray-900">Джон Картер</div>
-                    <div className="text-sm text-gray-500">@johncater</div>
+                    <div className="font-bold text-gray-900">Олександр Коваленко</div>
+                    <div className="text-sm text-gray-500">@olexandr_k</div>
                   </div>
                 </div>
                 <div className="flex gap-0.5 shrink-0">
@@ -734,14 +731,14 @@ export default function Home() {
                 <div className="flex items-center gap-3 min-w-0">
                   <Image
                     src="/images/22.jpg"
-                    alt="Майкл Скотт"
+                    alt="Михайло Бондаренко"
                     width={48}
                     height={48}
                     className="w-12 h-12 rounded-full object-cover shrink-0"
                   />
                   <div className="min-w-0">
-                    <div className="font-bold text-gray-900">Майкл Скотт</div>
-                    <div className="text-sm text-gray-500">@michscott</div>
+                    <div className="font-bold text-gray-900">Михайло Бондаренко</div>
+                    <div className="text-sm text-gray-500">@mykhailo_b</div>
                   </div>
                 </div>
                 <div className="flex gap-0.5 shrink-0">
@@ -766,14 +763,14 @@ export default function Home() {
                 <div className="flex items-center gap-3 min-w-0">
                   <Image
                     src="/images/33.jpg"
-                    alt="Софи Мур"
+                    alt="Софія Кравченко"
                     width={48}
                     height={48}
                     className="w-12 h-12 rounded-full object-cover shrink-0"
                   />
                   <div className="min-w-0">
-                    <div className="font-bold text-gray-900">Софи Мур</div>
-                    <div className="text-sm text-gray-500">@soph_moore</div>
+                    <div className="font-bold text-gray-900">Софія Кравченко</div>
+                    <div className="text-sm text-gray-500">@sofia_k</div>
                   </div>
                 </div>
                 <div className="flex gap-0.5 shrink-0">
@@ -798,14 +795,14 @@ export default function Home() {
                 <div className="flex items-center gap-3 min-w-0">
                   <Image
                     src="/images/44.jpg"
-                    alt="Мэтт Кэннон"
+                    alt="Максим Бойко"
                     width={48}
                     height={48}
                     className="w-12 h-12 rounded-full object-cover shrink-0"
                   />
                   <div className="min-w-0">
-                    <div className="font-bold text-gray-900">Мэтт Кэннон</div>
-                    <div className="text-sm text-gray-500">@matt_cannon</div>
+                    <div className="font-bold text-gray-900">Максим Бойко</div>
+                    <div className="text-sm text-gray-500">@max_b</div>
                   </div>
                 </div>
                 <div className="flex gap-0.5 shrink-0">
@@ -950,8 +947,8 @@ export default function Home() {
               <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
                 Создать аккаунт
               </button>
-              <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors flex items-center justify-center gap-3">
-                Перейти в терминал
+              <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-semibold border border-gray-300 hover:border-[#3347ff] hover:bg-gray-50 transition-colors flex items-center justify-center gap-3">
+                Открыть Демо
               </Link>
             </div>
           </div>
@@ -966,34 +963,6 @@ export default function Home() {
                 height={800}
                 className="w-full h-auto"
               />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer CTA Block */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-            {/* Left Section - Logo and Text */}
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              <div className="flex items-center gap-4">
-                <Image src="/images/logo.png" alt="ComforTrade" width={48} height={48} className="h-12 w-auto object-contain" />
-                <span className="text-2xl font-bold text-gray-900 uppercase">ComforTrade</span>
-              </div>
-              <p className="text-gray-600 max-w-md">
-                Брокер для торговли на Forex и криптовалютах. Демо и реальный счёт, честная доходность, удобный терминал.
-              </p>
-            </div>
-
-            {/* Right Section - CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
-                Регистрация
-              </button>
-              <Link href="/terminal" className="bg-white text-[#3347ff] px-6 py-3 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors flex items-center justify-center gap-3">
-                Терминал
-              </Link>
             </div>
           </div>
         </div>
