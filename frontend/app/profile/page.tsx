@@ -11,6 +11,7 @@ import { WalletTab } from '@/components/profile/WalletTab';
 import { TradeProfileTab } from '@/components/profile/TradeProfileTab';
 import { SupportTab } from '@/components/profile/SupportTab';
 import { SecuritySection } from '@/components/profile/SecurityTab';
+import { VerificationSection } from '@/components/profile/VerificationTab';
 import { api } from '@/lib/api/api';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LANGUAGES, LANG_STORAGE_KEY } from '@/lib/languages';
@@ -653,6 +654,11 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
           >
             {saving ? 'Сохранение...' : 'Сохранить изменения'}
           </button>
+        </div>
+
+        {/* Верификация — вкладка выше Безопасности. TODO: интеграция SumSub */}
+        <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/[0.06]">
+          <VerificationSection />
         </div>
 
         {/* Безопасность */}
