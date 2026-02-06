@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 import { getPrismaClient } from '../../bootstrap/database.js';
 import type { TradeRepository } from '../../ports/repositories/TradeRepository.js';
 import type { Trade } from '../../domain/trades/TradeTypes.js';
-import { TradeStatus } from '../../domain/trades/TradeTypes.js';
+import { TradeDirection, TradeStatus } from '../../domain/trades/TradeTypes.js';
 
 export class PrismaTradeRepository implements TradeRepository {
   async create(tradeData: Omit<Trade, 'id' | 'openedAt'>): Promise<Trade> {
@@ -73,7 +73,7 @@ export class PrismaTradeRepository implements TradeRepository {
     const where =
       status === 'open'
         ? { userId, status: 'OPEN' as const }
-        : { userId, status: { in: ['WIN', 'LOSS', 'TIE'] as const }, closedAt: { not: null } };
+        : { userId, status: { in: ['WIN', 'LOSS', 'TIE'] as ['WIN', 'LOSS', 'TIE'] }, closedAt: { not: null } };
     const orderBy = status === 'open'
       ? { openedAt: 'desc' as const }
       : { closedAt: 'desc' as const };
@@ -101,6 +101,43 @@ export class PrismaTradeRepository implements TradeRepository {
       orderBy: { openedAt: 'desc' },
     });
 
+    return trades.map(this.toDomain);
+  }
+
+  async findClosedByAccountIdBefore(
+    accountId: string,
+    beforeDate: Date
+  ): Promise<Trade[]> {
+    const prisma = getPrismaClient();
+    const trades = await prisma.trade.findMany({
+      where: {
+        accountId,
+        status: { in: ['WIN', 'LOSS', 'TIE'] },
+        closedAt: { lt: beforeDate, not: null },
+      },
+      orderBy: { closedAt: 'asc' },
+    });
+    return trades.map(this.toDomain);
+  }
+
+  async findClosedByAccountIdInDateRange(
+    accountId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Trade[]> {
+    const prisma = getPrismaClient();
+    const trades = await prisma.trade.findMany({
+      where: {
+        accountId,
+        status: { in: ['WIN', 'LOSS', 'TIE'] },
+        closedAt: {
+          gte: startDate,
+          lte: endDate,
+          not: null,
+        },
+      },
+      orderBy: { closedAt: 'asc' },
+    });
     return trades.map(this.toDomain);
   }
 
@@ -146,13 +183,13 @@ export class PrismaTradeRepository implements TradeRepository {
       id: trade.id,
       userId: trade.userId,
       accountId: trade.accountId,
-      direction: trade.direction as 'CALL' | 'PUT',
+      direction: trade.direction as TradeDirection,
       instrument: trade.instrument, // ✅ Читаем instrument из БД
       amount: typeof trade.amount === 'number' ? trade.amount : Number(trade.amount),
       entryPrice: typeof trade.entryPrice === 'number' ? trade.entryPrice : Number(trade.entryPrice),
       exitPrice: trade.exitPrice === null ? null : typeof trade.exitPrice === 'number' ? trade.exitPrice : Number(trade.exitPrice),
       payout: typeof trade.payout === 'number' ? trade.payout : Number(trade.payout),
-      status: trade.status as 'OPEN' | 'WIN' | 'LOSS',
+      status: trade.status as TradeStatus,
       openedAt: trade.openedAt,
       expiresAt: trade.expiresAt,
       closedAt: trade.closedAt,

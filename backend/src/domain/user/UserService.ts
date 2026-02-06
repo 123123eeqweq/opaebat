@@ -274,7 +274,7 @@ export class UserService {
     }
 
     // Verify TOTP token
-    const isValid = this.twoFactorService.verifyToken(user.twoFactorSecret, token);
+    const isValid = await this.twoFactorService.verifyToken(user.twoFactorSecret, token);
     if (!isValid) {
       throw new Error('Invalid 2FA code');
     }
@@ -305,7 +305,7 @@ export class UserService {
       throw new Error('2FA is not enabled');
     }
 
-    const isValidToken = this.twoFactorService.verifyToken(user.twoFactorSecret, token);
+    const isValidToken = await this.twoFactorService.verifyToken(user.twoFactorSecret, token);
     if (!isValidToken) {
       throw new Error('Invalid 2FA code');
     }

@@ -17,8 +17,8 @@ export class UserNotFoundError extends AuthError {
 }
 
 export class InvalidCredentialsError extends AuthError {
-  constructor() {
-    super('Invalid email or password');
+  constructor(message?: string) {
+    super(message ?? 'Invalid email or password');
     this.name = 'InvalidCredentialsError';
   }
 }
@@ -38,8 +38,8 @@ export class SessionNotFoundError extends AuthError {
 }
 
 export class InvalidSessionError extends AuthError {
-  constructor() {
-    super('Invalid or expired session');
+  constructor(message?: string) {
+    super(message ?? 'Invalid or expired session');
     this.name = 'InvalidSessionError';
   }
 }

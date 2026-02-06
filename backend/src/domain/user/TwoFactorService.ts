@@ -44,9 +44,10 @@ export class TwoFactorService {
   /**
    * Verify TOTP token
    */
-  verifyToken(secret: string, token: string): boolean {
+  async verifyToken(secret: string, token: string): Promise<boolean> {
     try {
-      return otplibVerify({ secret, token });
+      const result = await otplibVerify({ secret, token });
+      return typeof result === 'boolean' ? result : (result as { valid?: boolean }).valid ?? false;
     } catch (error) {
       logger.error('Failed to verify TOTP token:', error);
       return false;

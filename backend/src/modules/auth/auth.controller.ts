@@ -4,7 +4,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../../domain/auth/AuthService.js';
-import type { AuthResult2FA } from '../../domain/auth/AuthTypes.js';
+import type { AuthResult, AuthResult2FA } from '../../domain/auth/AuthTypes.js';
 import {
   UserNotFoundError,
   InvalidCredentialsError,
@@ -76,11 +76,12 @@ export class AuthController {
         });
       }
 
-      // Normal login - set cookie
-      setSessionCookie(reply, result.sessionToken);
+      // Normal login - result is AuthResult here (2FA branch returned above)
+      const authResult = result as AuthResult;
+      setSessionCookie(reply, authResult.sessionToken);
 
       return reply.send({
-        user: result.user,
+        user: authResult.user,
       });
     } catch (error) {
       if (error instanceof InvalidCredentialsError) {

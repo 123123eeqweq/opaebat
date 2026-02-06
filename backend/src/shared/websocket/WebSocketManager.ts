@@ -6,16 +6,21 @@
 import type { WsEvent } from './WsEvents.js';
 import { WsClient } from './WsClient.js';
 import { logger } from '../logger.js';
+import { WS_HEARTBEAT_INTERVAL_MS } from '../../config/constants.js';
+import { wsConnectionsTotal, wsConnectionsActive } from '../../modules/metrics/metrics.js';
 
 export class WebSocketManager {
   private clients: Set<WsClient> = new Set();
   private userClients: Map<string, Set<WsClient>> = new Map();
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Register client
    */
   register(client: WsClient): void {
     this.clients.add(client);
+    wsConnectionsTotal.inc({ event: 'connect' });
+    wsConnectionsActive.inc();
 
     if (client.userId) {
       if (!this.userClients.has(client.userId)) {
@@ -32,6 +37,8 @@ export class WebSocketManager {
    */
   unregister(client: WsClient): void {
     this.clients.delete(client);
+    wsConnectionsTotal.inc({ event: 'disconnect' });
+    wsConnectionsActive.dec();
 
     if (client.userId) {
       const userClients = this.userClients.get(client.userId);
@@ -156,5 +163,44 @@ export class WebSocketManager {
    */
   getClientCount(): number {
     return this.clients.size;
+  }
+
+  /**
+   * Start heartbeat - ping all clients periodically for keep-alive.
+   * Clients that don't respond to pong will be detected and connection closed by ws library.
+   */
+  startHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      logger.warn('WebSocket heartbeat already running');
+      return;
+    }
+    this.heartbeatInterval = setInterval(() => {
+      const deadClients: WsClient[] = [];
+      for (const client of this.clients) {
+        if (!client.isAuthenticated) continue;
+        try {
+          if (client.isOpen()) {
+            client.ping();
+          } else {
+            deadClients.push(client);
+          }
+        } catch {
+          deadClients.push(client);
+        }
+      }
+      deadClients.forEach((c) => this.unregister(c));
+    }, WS_HEARTBEAT_INTERVAL_MS);
+    logger.info(`WebSocket heartbeat started (interval: ${WS_HEARTBEAT_INTERVAL_MS}ms)`);
+  }
+
+  /**
+   * Stop heartbeat interval
+   */
+  stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+      logger.info('WebSocket heartbeat stopped');
+    }
   }
 }

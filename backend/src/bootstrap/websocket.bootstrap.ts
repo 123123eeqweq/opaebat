@@ -153,6 +153,7 @@ export async function shutdownWebSocketEvents(): Promise<void> {
   unsubscribeHandlers = [];
 
   const wsManager = getWebSocketManager();
+  wsManager.stopHeartbeat();
   const m = wsManager as { _serverTimeInterval?: NodeJS.Timeout };
   if (m._serverTimeInterval) {
     clearInterval(m._serverTimeInterval);

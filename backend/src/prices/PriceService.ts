@@ -26,7 +26,7 @@ export class PriceService {
     private priceConfig: PriceConfig,
     private candleConfig: CandleConfig,
   ) {
-    this.symbol = getInstrumentOrDefault(this.instrumentId).engine.asset;
+    this.symbol = getInstrumentOrDefault(this.instrumentId).engine?.asset ?? 'EUR/USD';
   }
 
   getEventBus(): PriceEventBus | null {

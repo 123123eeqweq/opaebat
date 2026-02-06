@@ -16,6 +16,7 @@ import { CandleStore } from './store/CandleStore.js';
 import { PriceEventBus } from './events/PriceEventBus.js';
 import { PricePointWriter } from './PricePointWriter.js';
 import { INSTRUMENTS, getInstrumentOrDefault } from '../config/instruments.js';
+import { env } from '../config/env.js';
 import { logger } from '../shared/logger.js';
 
 const CANDLE_CONFIG = {
@@ -99,8 +100,12 @@ export class PriceEngineManager {
           eventBus,
         );
       } else if (config.source === 'real') {
-        // Real engine (новый)
-        const apiKey = process.env.XCHANGE_API_KEY || '1qo4zRecPUTdgOod8u6ob14hSdVXOANH';
+        // Real engine — XCHANGE_API_KEY required (validated in env.ts for production)
+        const apiKey = env.XCHANGE_API_KEY;
+        if (!apiKey) {
+          logger.error(`[PriceEngineManager] Real instrument ${instrumentId} requires XCHANGE_API_KEY. Set it in .env`);
+          continue;
+        }
         priceEngine = new RealPriceEngine(
           instrumentId,
           {

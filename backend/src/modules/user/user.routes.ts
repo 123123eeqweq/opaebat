@@ -12,6 +12,15 @@ import { UserController } from './user.controller.js';
 import { FileStorage } from '../../infrastructure/storage/FileStorage.js';
 import { requireAuth } from '../auth/auth.middleware.js';
 import { getProfileSchema, updateProfileSchema, uploadAvatarSchema, deleteProfileSchema, changePasswordSchema } from './user.schema.js';
+import {
+  updateProfileSchema as updateProfileZodSchema,
+  changePasswordSchema as changePasswordZodSchema,
+  deleteProfileSchema as deleteProfileZodSchema,
+  verify2FASetupSchema,
+  disable2FASchema,
+} from './user.validation.js';
+import { validateBody } from '../../shared/validation/validateBody.js';
+import { env } from '../../config/env.js';
 import { logger } from '../../shared/logger.js';
 
 export async function registerUserRoutes(app: FastifyInstance) {
@@ -27,7 +36,9 @@ export async function registerUserRoutes(app: FastifyInstance) {
   try {
     const multipart = await import('@fastify/multipart');
     const plugin = multipart.default || multipart;
-    await app.register(plugin);
+    await app.register(plugin, {
+      limits: { fileSize: env.MAX_UPLOAD_SIZE },
+    });
   } catch (error) {
     logger.warn('Multipart plugin not available. Install @fastify/multipart for avatar uploads.');
   }
@@ -60,9 +71,9 @@ export async function registerUserRoutes(app: FastifyInstance) {
     '/api/user/profile',
     {
       schema: updateProfileSchema,
-      preHandler: [requireAuth],
+      preHandler: [requireAuth, validateBody(updateProfileZodSchema)],
     },
-    (request, reply) => userController.updateProfile(request, reply),
+    (request, reply) => userController.updateProfile(request as any, reply),
   );
 
   // POST /api/user/avatar
@@ -90,6 +101,13 @@ export async function registerUserRoutes(app: FastifyInstance) {
 
         // Read file buffer
         const buffer = await data.toBuffer();
+
+        // Check if file was truncated (exceeds MAX_UPLOAD_SIZE)
+        if (data.file.truncated) {
+          return reply.status(413).send({
+            error: `File too large. Maximum size: ${Math.round(env.MAX_UPLOAD_SIZE / 1024)}KB`,
+          });
+        }
 
         // Save avatar
         const result = await fileStorage.saveAvatar(buffer, data.filename, userId);
@@ -160,9 +178,9 @@ export async function registerUserRoutes(app: FastifyInstance) {
     '/api/user/profile',
     {
       schema: deleteProfileSchema,
-      preHandler: [requireAuth],
+      preHandler: [requireAuth, validateBody(deleteProfileZodSchema)],
     },
-    (request, reply) => userController.deleteProfile(request, reply),
+    (request, reply) => userController.deleteProfile(request as any, reply),
   );
 
   // 🔥 FLOW U2: POST /api/user/change-password
@@ -170,9 +188,9 @@ export async function registerUserRoutes(app: FastifyInstance) {
     '/api/user/change-password',
     {
       schema: changePasswordSchema,
-      preHandler: [requireAuth],
+      preHandler: [requireAuth, validateBody(changePasswordZodSchema)],
     },
-    (request, reply) => userController.changePassword(request, reply),
+    (request, reply) => userController.changePassword(request as any, reply),
   );
 
   // 🔥 FLOW S1: GET /api/user/sessions
@@ -190,7 +208,7 @@ export async function registerUserRoutes(app: FastifyInstance) {
     {
       preHandler: [requireAuth],
     },
-    (request, reply) => userController.revokeSession(request, reply),
+    (request, reply) => userController.revokeSession(request as any, reply),
   );
 
   // 🔥 FLOW S2: DELETE /api/user/sessions/others
@@ -215,17 +233,17 @@ export async function registerUserRoutes(app: FastifyInstance) {
   app.post(
     '/api/user/2fa/verify',
     {
-      preHandler: [requireAuth],
+      preHandler: [requireAuth, validateBody(verify2FASetupSchema)],
     },
-    (request, reply) => userController.verify2FA(request, reply),
+    (request, reply) => userController.verify2FA(request as any, reply),
   );
 
   // 🔥 FLOW S3: POST /api/user/2fa/disable
   app.post(
     '/api/user/2fa/disable',
     {
-      preHandler: [requireAuth],
+      preHandler: [requireAuth, validateBody(disable2FASchema)],
     },
-    (request, reply) => userController.disable2FA(request, reply),
+    (request, reply) => userController.disable2FA(request as any, reply),
   );
 }

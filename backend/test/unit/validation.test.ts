@@ -1,0 +1,137 @@
+/**
+ * Unit tests: Validation schemas (Zod)
+ */
+
+import { describe, it, expect } from 'vitest';
+import {
+  emailSchema,
+  passwordStrongSchema,
+  passwordSchema,
+  nicknameSchema,
+  firstNameSchema,
+  lastNameSchema,
+  avatarUrlSchema,
+} from '../../src/shared/validation/schemas.js';
+
+describe('emailSchema', () => {
+  it('should accept valid email', () => {
+    expect(emailSchema.parse('user@example.com')).toBe('user@example.com');
+    expect(emailSchema.parse('User@Example.COM')).toBe('user@example.com');
+  });
+
+  it('should reject empty', () => {
+    expect(() => emailSchema.parse('')).toThrow();
+  });
+
+  it('should reject invalid format', () => {
+    expect(() => emailSchema.parse('invalid')).toThrow();
+    expect(() => emailSchema.parse('@example.com')).toThrow();
+    expect(() => emailSchema.parse('user@')).toThrow();
+  });
+
+  it('should reject too long', () => {
+    const long = 'a'.repeat(250) + '@example.com';
+    expect(() => emailSchema.parse(long)).toThrow();
+  });
+});
+
+describe('passwordStrongSchema', () => {
+  it('should accept valid strong password', () => {
+    expect(passwordStrongSchema.parse('Password123')).toBeDefined();
+    expect(passwordStrongSchema.parse('MyP@ssw0rd')).toBeDefined();
+  });
+
+  it('should reject too short', () => {
+    expect(() => passwordStrongSchema.parse('Pass1')).toThrow();
+  });
+
+  it('should reject without uppercase', () => {
+    expect(() => passwordStrongSchema.parse('password123')).toThrow();
+  });
+
+  it('should reject without lowercase', () => {
+    expect(() => passwordStrongSchema.parse('PASSWORD123')).toThrow();
+  });
+
+  it('should reject without number', () => {
+    expect(() => passwordStrongSchema.parse('PasswordOnly')).toThrow();
+  });
+
+  it('should reject too long (>128)', () => {
+    const long = 'Password1' + 'a'.repeat(120); // 129 chars, valid pattern
+    expect(() => passwordStrongSchema.parse(long)).toThrow();
+  });
+});
+
+describe('passwordSchema', () => {
+  it('should accept any non-empty password', () => {
+    expect(passwordSchema.parse('x')).toBeDefined();
+    expect(passwordSchema.parse('password')).toBeDefined();
+  });
+
+  it('should reject empty', () => {
+    expect(() => passwordSchema.parse('')).toThrow();
+  });
+
+  it('should reject too long (>128)', () => {
+    expect(() => passwordSchema.parse('a'.repeat(129))).toThrow();
+  });
+});
+
+describe('nicknameSchema', () => {
+  it('should accept valid nickname', () => {
+    expect(nicknameSchema.parse('john_doe')).toBe('john_doe');
+    expect(nicknameSchema.parse('@trader')).toBe('@trader');
+    expect(nicknameSchema.parse('abc')).toBe('abc');
+  });
+
+  it('should reject too short', () => {
+    expect(() => nicknameSchema.parse('ab')).toThrow();
+  });
+
+  it('should reject invalid chars', () => {
+    expect(() => nicknameSchema.parse('john-doe')).toThrow();
+    expect(() => nicknameSchema.parse('john doe')).toThrow();
+  });
+});
+
+describe('firstNameSchema', () => {
+  it('should accept valid name', () => {
+    expect(firstNameSchema.parse('John')).toBe('John');
+    expect(firstNameSchema.parse("O'Brien")).toBe("O'Brien");
+  });
+
+  it('should reject empty', () => {
+    expect(() => firstNameSchema.parse('')).toThrow();
+  });
+
+  it('should reject invalid chars', () => {
+    expect(() => firstNameSchema.parse('John@123')).toThrow();
+    expect(() => firstNameSchema.parse('John<script>')).toThrow();
+  });
+});
+
+describe('lastNameSchema', () => {
+  it('should accept valid name', () => {
+    expect(lastNameSchema.parse('Doe')).toBe('Doe');
+  });
+
+  it('should reject empty', () => {
+    expect(() => lastNameSchema.parse('')).toThrow();
+  });
+});
+
+describe('avatarUrlSchema', () => {
+  it('should accept valid upload path', () => {
+    expect(avatarUrlSchema.parse('/uploads/avatars/abc123.jpg')).toBeDefined();
+    expect(avatarUrlSchema.parse('/uploads/avatars/xyz.png')).toBeDefined();
+  });
+
+  it('should reject external URL', () => {
+    expect(() => avatarUrlSchema.parse('https://evil.com/xss.jpg')).toThrow();
+  });
+
+  it('should reject path traversal', () => {
+    expect(() => avatarUrlSchema.parse('/uploads/avatars/../../../etc/passwd')).toThrow();
+  });
+});

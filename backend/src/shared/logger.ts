@@ -1,37 +1,64 @@
 /**
- * Simple logger utility
+ * Structured logger using Pino
+ * JSON output for production, pretty for development
+ * Compatible with (msg, ...args) and (obj, msg) signatures
  */
 
-type LogLevel = 'info' | 'warn' | 'error' | 'debug';
+import pino from 'pino';
+import { env } from '../config/env.js';
 
-function formatTimestamp(): string {
-  return new Date().toISOString();
-}
-
-function log(level: LogLevel, message: string, ...args: unknown[]): void {
-  const timestamp = formatTimestamp();
-  const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
-  
-  switch (level) {
-    case 'error':
-      console.error(prefix, message, ...args);
-      break;
-    case 'warn':
-      console.warn(prefix, message, ...args);
-      break;
-    case 'debug':
-      if (process.env.NODE_ENV === 'development') {
-        console.debug(prefix, message, ...args);
+const pinoLogger = pino({
+  level: env.NODE_ENV === 'development' ? 'debug' : 'info',
+  ...(env.NODE_ENV === 'development'
+    ? {
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            translateTime: 'HH:MM:ss',
+            ignore: 'pid,hostname,env',
+            colorize: true,
+          },
+        },
       }
-      break;
-    default:
-      console.log(prefix, message, ...args);
-  }
-}
+    : {}),
+  base: {
+    env: env.NODE_ENV,
+  },
+  formatters: {
+    level: (label) => ({ level: label }),
+  },
+});
 
+// Wrapper for compatibility with existing (msg, err) and (obj, msg) usage
 export const logger = {
-  info: (message: string, ...args: unknown[]) => log('info', message, ...args),
-  warn: (message: string, ...args: unknown[]) => log('warn', message, ...args),
-  error: (message: string, ...args: unknown[]) => log('error', message, ...args),
-  debug: (message: string, ...args: unknown[]) => log('debug', message, ...args),
+  info: (msgOrObj: string | object, ...args: unknown[]) => {
+    if (typeof msgOrObj === 'object') {
+      pinoLogger.info(msgOrObj, (args[0] as string) || '');
+    } else {
+      pinoLogger.info(msgOrObj);
+    }
+  },
+  warn: (msgOrObj: string | object, ...args: unknown[]) => {
+    if (typeof msgOrObj === 'object') {
+      pinoLogger.warn(msgOrObj, (args[0] as string) || '');
+    } else {
+      pinoLogger.warn(msgOrObj);
+    }
+  },
+  error: (msgOrObj: string | object, ...args: unknown[]) => {
+    if (typeof msgOrObj === 'object') {
+      pinoLogger.error(msgOrObj, (args[0] as string) || 'Error');
+    } else if (args[0] instanceof Error) {
+      pinoLogger.error({ err: args[0] }, msgOrObj);
+    } else {
+      pinoLogger.error(msgOrObj);
+    }
+  },
+  debug: (msgOrObj: string | object, ...args: unknown[]) => {
+    if (typeof msgOrObj === 'object') {
+      pinoLogger.debug(msgOrObj, (args[0] as string) || '');
+    } else {
+      pinoLogger.debug(msgOrObj);
+    }
+  },
 };

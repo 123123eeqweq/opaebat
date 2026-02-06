@@ -1,5 +1,6 @@
 /**
  * Auth routes
+ * Stricter rate limits to prevent brute force and spam.
  */
 
 import type { FastifyInstance } from 'fastify';
@@ -11,6 +12,16 @@ import { PrismaAccountRepository } from '../../infrastructure/prisma/PrismaAccou
 import { PrismaTransactionRepository } from '../../infrastructure/prisma/PrismaTransactionRepository.js';
 import { AuthController } from './auth.controller.js';
 import { registerSchema, loginSchema, logoutSchema, meSchema } from './auth.schema.js';
+import { registerSchema as registerZodSchema, loginSchema as loginZodSchema, verify2FASchema } from './auth.validation.js';
+import { validateBody } from '../../shared/validation/validateBody.js';
+import {
+  RATE_LIMIT_AUTH_LOGIN_MAX,
+  RATE_LIMIT_AUTH_LOGIN_WINDOW,
+  RATE_LIMIT_AUTH_REGISTER_MAX,
+  RATE_LIMIT_AUTH_REGISTER_WINDOW,
+  RATE_LIMIT_AUTH_2FA_MAX,
+  RATE_LIMIT_AUTH_2FA_WINDOW,
+} from '../../config/constants.js';
 
 export async function registerAuthRoutes(app: FastifyInstance) {
   // Initialize dependencies
@@ -22,14 +33,28 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   const authService = new AuthService(userRepository, sessionRepository, accountService);
   const authController = new AuthController(authService);
 
-  // Register routes
+  // Register routes with stricter rate limits + Zod validation
   app.post('/api/auth/register', {
     schema: registerSchema,
-  }, (request, reply) => authController.register(request, reply));
+    preHandler: [validateBody(registerZodSchema)],
+    config: {
+      rateLimit: {
+        max: RATE_LIMIT_AUTH_REGISTER_MAX,
+        timeWindow: RATE_LIMIT_AUTH_REGISTER_WINDOW,
+      },
+    },
+  }, (request, reply) => authController.register(request as any, reply));
 
   app.post('/api/auth/login', {
     schema: loginSchema,
-  }, (request, reply) => authController.login(request, reply));
+    preHandler: [validateBody(loginZodSchema)],
+    config: {
+      rateLimit: {
+        max: RATE_LIMIT_AUTH_LOGIN_MAX,
+        timeWindow: RATE_LIMIT_AUTH_LOGIN_WINDOW,
+      },
+    },
+  }, (request, reply) => authController.login(request as any, reply));
 
   app.post('/api/auth/logout', {
     schema: logoutSchema,
@@ -39,6 +64,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     schema: meSchema,
   }, (request, reply) => authController.me(request, reply));
 
-  // 🔥 FLOW S3: POST /api/auth/2fa
-  app.post('/api/auth/2fa', (request, reply) => authController.verifyLogin2FA(request, reply));
+  // 🔥 FLOW S3: POST /api/auth/2fa — 2FA code brute force protection
+  app.post('/api/auth/2fa', {
+    preHandler: [validateBody(verify2FASchema)],
+    config: {
+      rateLimit: {
+        max: RATE_LIMIT_AUTH_2FA_MAX,
+        timeWindow: RATE_LIMIT_AUTH_2FA_WINDOW,
+      },
+    },
+  }, (request, reply) => authController.verifyLogin2FA(request as any, reply));
 }

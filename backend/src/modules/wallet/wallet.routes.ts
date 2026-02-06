@@ -18,14 +18,14 @@ export async function registerWalletRoutes(app: FastifyInstance) {
       schema: depositSchema,
       preHandler: [requireAuth],
     },
-    (request, reply) => walletController.deposit(request, reply),
+    (request, reply) => walletController.deposit(request as any, reply),
   );
 
   // POST /api/wallet/withdraw
   app.post(
     '/api/wallet/withdraw',
     { schema: withdrawSchema, preHandler: [requireAuth] },
-    (request, reply) => walletController.withdraw(request, reply),
+    (request, reply) => walletController.withdraw(request as any, reply),
   );
 
   // GET /api/wallet/balance

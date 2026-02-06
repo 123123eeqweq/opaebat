@@ -18,10 +18,30 @@ export class WsClient {
    * FLOW WS-1: Session ID для отслеживания соединения
    */
   public sessionId: string;
+  /**
+   * Rate limit: message count in current window
+   */
+  public messageCount = 0;
+  /**
+   * Rate limit: window start timestamp
+   */
+  public rateLimitWindowStart = Date.now();
 
   constructor(private socket: WebSocket) {
-    // Генерируем sessionId при создании клиента
     this.sessionId = randomUUID();
+  }
+
+  /**
+   * Send WebSocket ping for keep-alive (client auto-responds with pong)
+   */
+  ping(): void {
+    try {
+      if (this.socket?.readyState === 1) {
+        this.socket.ping();
+      }
+    } catch (error) {
+      logger.debug('WsClient ping failed:', error);
+    }
   }
 
   /**

@@ -16,6 +16,14 @@ export interface TradeRepository {
     limit: number,
     offset: number
   ): Promise<{ trades: Trade[]; hasMore: boolean }>;
-  findByAccountId(accountId: string): Promise<Trade[]>; // 🔥 FLOW TRADE-STATS: Filter by account
+  findByAccountId(accountId: string): Promise<Trade[]>;
+  /** Closed trades before date (for initial balance calc) */
+  findClosedByAccountIdBefore(accountId: string, beforeDate: Date): Promise<Trade[]>;
+  /** Closed trades in date range (for balance history / analytics) */
+  findClosedByAccountIdInDateRange(
+    accountId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Trade[]>;
   updateResult(id: string, exitPrice: number, status: TradeStatus, closedAt: Date): Promise<Trade>;
 }

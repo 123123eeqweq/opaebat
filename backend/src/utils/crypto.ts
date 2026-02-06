@@ -3,7 +3,7 @@
  */
 
 import bcrypt from 'bcrypt';
-import { createHash } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 
 const SALT_ROUNDS = 10;
 
@@ -29,11 +29,9 @@ export function hashToken(token: string): string {
 }
 
 /**
- * Generate random session token
+ * Generate cryptographically secure random session token
  */
 export function generateSessionToken(): string {
-  return createHash('sha256')
-    .update(Math.random().toString() + Date.now().toString())
-    .digest('hex');
+  return randomBytes(32).toString('hex'); // 64 hex chars
 }
 

@@ -5,7 +5,7 @@
 import { Prisma } from '@prisma/client';
 import { getPrismaClient } from '../../bootstrap/database.js';
 import type { AccountRepository } from '../../ports/repositories/AccountRepository.js';
-import type { Account } from '../../domain/accounts/AccountTypes.js';
+import { AccountType, type Account } from '../../domain/accounts/AccountTypes.js';
 
 export class PrismaAccountRepository implements AccountRepository {
   async findByUserId(userId: string): Promise<Account[]> {
@@ -179,7 +179,7 @@ export class PrismaAccountRepository implements AccountRepository {
     return {
       id: account.id,
       userId: account.userId,
-      type: account.type as 'demo' | 'real',
+      type: account.type as AccountType,
       balance: typeof account.balance === 'number' ? account.balance : Number(account.balance),
       currency: account.currency,
       isActive: account.isActive,

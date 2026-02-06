@@ -13,7 +13,8 @@ export const registerSchema = {
       },
       password: {
         type: 'string',
-        minLength: 6,
+        minLength: 8,
+        description: 'Min 8 chars, at least 1 uppercase, 1 lowercase, 1 number',
       },
     },
   },

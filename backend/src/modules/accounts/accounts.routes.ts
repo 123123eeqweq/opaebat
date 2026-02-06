@@ -33,7 +33,7 @@ export async function registerAccountsRoutes(app: FastifyInstance) {
       schema: createAccountSchema,
       preHandler: requireAuth,
     },
-    (request, reply) => accountsController.createAccount(request, reply),
+    (request, reply) => accountsController.createAccount(request as any, reply),
   );
 
   app.post(
@@ -42,7 +42,7 @@ export async function registerAccountsRoutes(app: FastifyInstance) {
       schema: switchAccountSchema,
       preHandler: requireAuth,
     },
-    (request, reply) => accountsController.switchAccount(request, reply),
+    (request, reply) => accountsController.switchAccount(request as any, reply),
   );
 
   app.post(

@@ -5,7 +5,7 @@
 export const openTradeSchema = {
   body: {
     type: 'object',
-    required: ['accountId', 'direction', 'amount', 'expirationSeconds'],
+    required: ['accountId', 'direction', 'amount', 'expirationSeconds', 'instrument'],
     properties: {
       accountId: {
         type: 'string',
@@ -23,6 +23,10 @@ export const openTradeSchema = {
         minimum: 5,
         maximum: 300,
         multipleOf: 5,
+      },
+      instrument: {
+        type: 'string',
+        description: 'Trading instrument (e.g. EURUSD, BTCUSD)',
       },
     },
   },

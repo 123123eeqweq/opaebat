@@ -10,6 +10,7 @@ import { bootstrapPrices, shutdownPrices } from './prices.bootstrap.js';
 import { bootstrapTrades, shutdownTrades } from './trades.bootstrap.js';
 import { shutdownWebSocketEvents } from './websocket.bootstrap.js';
 import { bootstrapTimeUpdates, shutdownTimeUpdates } from './time.bootstrap.js';
+import { registerBullBoard } from '../jobs/board.js';
 import { logger } from '../shared/logger.js';
 
 export async function bootstrapAll(app: FastifyInstance): Promise<void> {
@@ -33,6 +34,9 @@ export async function bootstrapAll(app: FastifyInstance): Promise<void> {
 
     // Initialize time updates (countdown)
     await bootstrapTimeUpdates();
+
+    // Bull Board UI (when REDIS_URL is set)
+    await registerBullBoard(app);
 
     logger.info('✅ System bootstrap completed successfully');
   } catch (error) {

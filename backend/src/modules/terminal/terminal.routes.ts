@@ -40,7 +40,7 @@ export async function registerTerminalRoutes(app: FastifyInstance) {
       schema: getSnapshotSchema,
       preHandler: requireAuth,
     },
-    (request, reply) => terminalController.getSnapshot(request, reply),
+    (request, reply) => terminalController.getSnapshot(request as any, reply),
   );
 
   app.get(
@@ -48,6 +48,6 @@ export async function registerTerminalRoutes(app: FastifyInstance) {
     {
       preHandler: requireAuth,
     },
-    (request, reply) => terminalController.getCandles(request, reply),
+    (request, reply) => terminalController.getCandles(request as any, reply),
   );
 }

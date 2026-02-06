@@ -14,7 +14,7 @@ export async function registerLineChartRoutes(app: FastifyInstance) {
     {
       preHandler: requireAuth,
     },
-    (request, reply) => controller.getSnapshot(request, reply),
+    (request, reply) => controller.getSnapshot(request as any, reply),
   );
 
   app.get(
@@ -22,6 +22,6 @@ export async function registerLineChartRoutes(app: FastifyInstance) {
     {
       preHandler: requireAuth,
     },
-    (request, reply) => controller.getHistory(request, reply),
+    (request, reply) => controller.getHistory(request as any, reply),
   );
 }

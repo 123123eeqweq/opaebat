@@ -14,7 +14,7 @@ export type WsEvent =
   | { type: 'trade:open'; data: TradeDTO }
   | { type: 'trade:close'; data: TradeDTO & { result: 'WIN' | 'LOSS' | 'TIE' } }
   | { type: 'trade:countdown'; data: { tradeId: string; secondsLeft: number } }
-  | { type: 'server:time'; data: { timestamp: number } }
+  | { type: 'server:time'; data: { timestamp: number; rateLimited?: boolean } }
   // FLOW A-ACCOUNT: Account snapshot event
   | { type: 'account.snapshot'; payload: { accountId: string; type: 'REAL' | 'DEMO'; balance: number; currency: 'USD' | 'RUB' | 'UAH'; updatedAt: number } }
   // FLOW WS-1: Handshake events

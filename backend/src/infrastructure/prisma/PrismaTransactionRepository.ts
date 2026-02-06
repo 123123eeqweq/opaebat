@@ -75,6 +75,42 @@ export class PrismaTransactionRepository implements TransactionRepository {
     return transactions.map(this.toDomain);
   }
 
+  async findConfirmedByAccountIdBefore(
+    accountId: string,
+    beforeDate: Date
+  ): Promise<Transaction[]> {
+    const prisma = getPrismaClient();
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        accountId,
+        status: 'CONFIRMED',
+        createdAt: { lt: beforeDate },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return transactions.map(this.toDomain);
+  }
+
+  async findConfirmedByAccountIdInDateRange(
+    accountId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Transaction[]> {
+    const prisma = getPrismaClient();
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        accountId,
+        status: 'CONFIRMED',
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return transactions.map(this.toDomain);
+  }
+
   private toDomain(transaction: {
     id: string;
     userId: string;

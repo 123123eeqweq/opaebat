@@ -4,7 +4,7 @@
 
 import type { FastifyInstance } from 'fastify';
 import fastifyWebsocket from '@fastify/websocket';
-import { registerWebSocketRoutes } from '../modules/websocket/websocket.routes.js';
+import { registerWebSocketRoutes, getWebSocketManager } from '../modules/websocket/websocket.routes.js';
 import { logger } from '../shared/logger.js';
 
 let wsInitialized = false;
@@ -18,11 +18,19 @@ export async function initWebSocket(app: FastifyInstance): Promise<void> {
   logger.info('Initializing WebSocket server...');
 
   try {
-    // Register WebSocket plugin
-    await app.register(fastifyWebsocket);
+    // Register WebSocket plugin with compression
+    await app.register(fastifyWebsocket, {
+      options: {
+        perMessageDeflate: true,
+        maxPayload: 64 * 1024, // 64KB max message size
+      },
+    });
 
     // Register WebSocket routes
     await registerWebSocketRoutes(app);
+
+    // Start heartbeat for keep-alive (ping clients every 30s)
+    getWebSocketManager().startHeartbeat();
 
     wsInitialized = true;
     logger.info('✅ WebSocket server initialized successfully');

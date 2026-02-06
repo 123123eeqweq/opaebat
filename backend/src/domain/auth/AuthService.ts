@@ -187,7 +187,7 @@ export class AuthService {
     }
 
     // Verify TOTP code or backup code
-    const isValidToken = this.twoFactorService.verifyToken(user.twoFactorSecret, code);
+    const isValidToken = await this.twoFactorService.verifyToken(user.twoFactorSecret, code);
     const isValidBackup = user.twoFactorBackupCodes
       ? this.twoFactorService.verifyBackupCode(code, user.twoFactorBackupCodes)
       : false;

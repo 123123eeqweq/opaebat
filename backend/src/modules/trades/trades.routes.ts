@@ -49,7 +49,7 @@ export async function registerTradesRoutes(app: FastifyInstance) {
       schema: openTradeSchema,
       preHandler: requireAuth,
     },
-    (request, reply) => tradesController.openTrade(request, reply),
+    (request, reply) => tradesController.openTrade(request as any, reply),
   );
 
   app.get(
@@ -58,7 +58,7 @@ export async function registerTradesRoutes(app: FastifyInstance) {
       schema: getTradesSchema,
       preHandler: requireAuth,
     },
-    (request, reply) => tradesController.getTrades(request, reply),
+    (request, reply) => tradesController.getTrades(request as any, reply),
   );
 
   // 🔥 FLOW TRADE-STATS: GET /api/trades/statistics
@@ -76,7 +76,7 @@ export async function registerTradesRoutes(app: FastifyInstance) {
     {
       preHandler: requireAuth,
     },
-    (request, reply) => tradesController.getBalanceHistory(request, reply),
+    (request, reply) => tradesController.getBalanceHistory(request as any, reply),
   );
 
   // GET /api/trades/analytics?startDate=&endDate=
@@ -85,6 +85,6 @@ export async function registerTradesRoutes(app: FastifyInstance) {
     {
       preHandler: requireAuth,
     },
-    (request, reply) => tradesController.getAnalytics(request, reply),
+    (request, reply) => tradesController.getAnalytics(request as any, reply),
   );
 }

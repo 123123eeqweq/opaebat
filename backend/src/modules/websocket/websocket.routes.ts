@@ -7,6 +7,7 @@ import { WebSocketManager } from '../../shared/websocket/WebSocketManager.js';
 import { WsClient } from '../../shared/websocket/WsClient.js';
 import { authenticateWebSocket } from '../../infrastructure/websocket/WsAuthAdapter.js';
 import { logger } from '../../shared/logger.js';
+import { WS_RATE_LIMIT_MAX, WS_RATE_LIMIT_WINDOW_MS } from '../../config/constants.js';
 
 let wsManager: WebSocketManager | null = null;
 
@@ -55,12 +56,24 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
     socket.on('message', (message: Buffer) => {
       try {
         const rawMessage = message.toString();
-        const data = JSON.parse(rawMessage) as import('./WsEvents.js').WsClientMessage;
-        
+        const data = JSON.parse(rawMessage) as import('../../shared/websocket/WsEvents.js').WsClientMessage;
 
-        // Handle ping
+        // Handle ping (doesn't count toward rate limit - keep-alive)
         if (data.type === 'ping') {
           client.send({ type: 'server:time', data: { timestamp: Date.now() } });
+          return;
+        }
+
+        // Rate limit: check message count per client (excluding ping)
+        const now = Date.now();
+        if (now - client.rateLimitWindowStart > WS_RATE_LIMIT_WINDOW_MS) {
+          client.messageCount = 0;
+          client.rateLimitWindowStart = now;
+        }
+        client.messageCount++;
+        if (client.messageCount > WS_RATE_LIMIT_MAX) {
+          logger.warn(`WebSocket rate limit exceeded for user ${userId}`);
+          client.send({ type: 'server:time', data: { timestamp: Date.now(), rateLimited: true } });
           return;
         }
 
@@ -119,7 +132,7 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
     });
 
     // Handle error
-    socket.on('error', (error) => {
+    socket.on('error', (error: Error) => {
       logger.error(`WebSocket error for user ${userId}:`, error);
       manager.unregister(client);
     });

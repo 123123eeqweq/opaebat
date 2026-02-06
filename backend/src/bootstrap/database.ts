@@ -1,8 +1,10 @@
 /**
  * Database bootstrap - Prisma PostgreSQL connection
+ * Connection pool configured via DATABASE_URL params: connection_limit, pool_timeout, connect_timeout
  */
 
 import { PrismaClient } from '@prisma/client';
+import { env } from '../config/env.js';
 import { logger } from '../shared/logger.js';
 
 let prismaClient: PrismaClient | null = null;
@@ -15,7 +17,12 @@ export async function connectDatabase(): Promise<PrismaClient> {
   logger.info('Connecting to PostgreSQL database...');
 
   prismaClient = new PrismaClient({
-    log: ['error'], // Отключаем query логи - только ошибки
+    log: ['error'],
+    datasources: {
+      db: {
+        url: env.DATABASE_URL,
+      },
+    },
   });
 
   try {

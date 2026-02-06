@@ -46,7 +46,7 @@ describe('Auth Integration', () => {
         url: '/api/auth/register',
         payload: {
           email: `test-${Date.now()}@example.com`,
-          password: 'password123',
+          password: 'Password123',
         },
       });
 
@@ -63,14 +63,14 @@ describe('Auth Integration', () => {
       await app.inject({
         method: 'POST',
         url: '/api/auth/register',
-        payload: { email, password: 'password123' },
+        payload: { email, password: 'Password123' },
       });
 
       // Second registration with same email
       const response = await app.inject({
         method: 'POST',
         url: '/api/auth/register',
-        payload: { email, password: 'password123' },
+        payload: { email, password: 'Password123' },
       });
 
       expect(response.statusCode).toBe(400);
@@ -80,7 +80,7 @@ describe('Auth Integration', () => {
   describe('POST /api/auth/login', () => {
     it.skipIf(!app)('should login and set cookie', async () => {
       const email = `test-${Date.now()}@example.com`;
-      const password = 'password123';
+      const password = 'Password123';
 
       // Register first
       await app.inject({
@@ -118,7 +118,7 @@ describe('Auth Integration', () => {
   describe('GET /api/auth/me', () => {
     it.skipIf(!app)('should return user info with valid cookie', async () => {
       const email = `test-${Date.now()}@example.com`;
-      const password = 'password123';
+      const password = 'Password123';
 
       // Register and get cookie
       const registerResponse = await app.inject({

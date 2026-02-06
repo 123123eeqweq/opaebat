@@ -61,6 +61,7 @@ describe('TradeService', () => {
         direction: TradeDirection.CALL,
         amount: 100,
         expirationSeconds: 30,
+        instrument: 'EURUSD',
       });
 
       // Assert
@@ -84,6 +85,7 @@ describe('TradeService', () => {
           direction: TradeDirection.CALL,
           amount: 0,
           expirationSeconds: 30,
+          instrument: 'EURUSD',
         }),
       ).rejects.toThrow(InvalidTradeAmountError);
     });
@@ -102,6 +104,7 @@ describe('TradeService', () => {
           direction: TradeDirection.CALL,
           amount: -10,
           expirationSeconds: 30,
+          instrument: 'EURUSD',
         }),
       ).rejects.toThrow(InvalidTradeAmountError);
     });
@@ -125,6 +128,7 @@ describe('TradeService', () => {
           direction: TradeDirection.CALL,
           amount: 100,
           expirationSeconds: 30,
+          instrument: 'EURUSD',
         }),
       ).rejects.toThrow(InsufficientBalanceError);
     });
@@ -139,6 +143,7 @@ describe('TradeService', () => {
           direction: TradeDirection.CALL,
           amount: 100,
           expirationSeconds: 30,
+          instrument: 'EURUSD',
         }),
       ).rejects.toThrow(AccountNotFoundError);
     });
@@ -161,6 +166,7 @@ describe('TradeService', () => {
           direction: TradeDirection.CALL,
           amount: 100,
           expirationSeconds: 30,
+          instrument: 'EURUSD',
         }),
       ).rejects.toThrow(UnauthorizedAccountAccessError);
     });
@@ -179,6 +185,7 @@ describe('TradeService', () => {
           direction: TradeDirection.CALL,
           amount: 100,
           expirationSeconds: 4, // Less than 5
+          instrument: 'EURUSD',
         }),
       ).rejects.toThrow(InvalidExpirationError);
     });
@@ -197,6 +204,7 @@ describe('TradeService', () => {
           direction: TradeDirection.CALL,
           amount: 100,
           expirationSeconds: 13, // Not multiple of 5
+          instrument: 'EURUSD',
         }),
       ).rejects.toThrow(InvalidExpirationError);
     });

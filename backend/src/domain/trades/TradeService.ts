@@ -249,16 +249,23 @@ export class TradeService {
       return [];
     }
 
-    // Get all transactions and trades for the account
-    const allTransactions = await this.transactionRepository.findByAccountId(realAccount.id);
-    const allTrades = await this.tradeRepository.findByAccountId(realAccount.id);
+    // Fetch only needed data with DB-level filtering (no N+1, no full table load)
+    const [initialTransactions, initialTrades, relevantTransactions, relevantTrades] = await Promise.all([
+      this.transactionRepository.findConfirmedByAccountIdBefore(realAccount.id, normalizedStartDate),
+      this.tradeRepository.findClosedByAccountIdBefore(realAccount.id, normalizedStartDate),
+      this.transactionRepository.findConfirmedByAccountIdInDateRange(
+        realAccount.id,
+        normalizedStartDate,
+        normalizedEndDate
+      ),
+      this.tradeRepository.findClosedByAccountIdInDateRange(
+        realAccount.id,
+        normalizedStartDate,
+        normalizedEndDate
+      ),
+    ]);
 
     // Calculate initial balance (before startDate)
-    // Sum all confirmed transactions before startDate
-    const initialTransactions = allTransactions.filter(t => 
-      t.status === 'CONFIRMED' && 
-      t.createdAt < normalizedStartDate
-    );
     let initialBalance = 0;
     for (const tx of initialTransactions) {
       if (tx.type === 'DEPOSIT') {
@@ -267,12 +274,6 @@ export class TradeService {
         initialBalance -= Number(tx.amount);
       }
     }
-
-    // Sum all trades closed before startDate
-    const initialTrades = allTrades.filter(t => 
-      t.closedAt !== null && 
-      t.closedAt < normalizedStartDate
-    );
     for (const trade of initialTrades) {
       if (trade.status === TradeStatus.WIN) {
         initialBalance += Number(trade.amount) * Number(trade.payout);
@@ -281,19 +282,6 @@ export class TradeService {
       }
       // TIE: amount returned, no change
     }
-
-    // Filter transactions and trades within date range
-    const relevantTransactions = allTransactions.filter(t => 
-      t.status === 'CONFIRMED' && 
-      t.createdAt >= normalizedStartDate && 
-      t.createdAt <= normalizedEndDate
-    );
-
-    const relevantTrades = allTrades.filter(t => 
-      t.closedAt !== null && 
-      t.closedAt >= normalizedStartDate && 
-      t.closedAt <= normalizedEndDate
-    );
 
     // Group by day and calculate daily changes
     const dailyChanges: Map<string, number> = new Map();
@@ -375,14 +363,15 @@ export class TradeService {
       };
     }
 
-    const trades = await this.tradeRepository.findByAccountId(realAccount.id);
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    const closedTrades = trades.filter(
-      (t) => t.closedAt !== null && t.closedAt >= start && t.closedAt <= end
+    const closedTrades = await this.tradeRepository.findClosedByAccountIdInDateRange(
+      realAccount.id,
+      start,
+      end
     );
 
     const byInstrumentMap = new Map<string, { count: number; volume: number; winCount: number }>();

@@ -93,12 +93,12 @@ export class RealPriceEngine {
         this.handleMessage(data.toString());
       });
 
-      this.ws.on('error', (error) => {
+      this.ws.on('error', (error: Error) => {
         logger.error(`[RealPriceEngine] ${this.instrumentId} WebSocket error:`, error);
       });
 
-      this.ws.on('close', (code, reason) => {
-        logger.warn(`[RealPriceEngine] ${this.instrumentId} WebSocket closed (code: ${code}, reason: ${reason.toString()})`);
+      this.ws.on('close', (code?: number, reason?: Buffer) => {
+        logger.warn(`[RealPriceEngine] ${this.instrumentId} WebSocket closed (code: ${code}, reason: ${reason?.toString() ?? 'unknown'})`);
         this.ws = null;
         this.meta = null;
         this.pendingUpdates = [];
