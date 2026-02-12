@@ -41,9 +41,6 @@ export function timeframeToMs(timeframe: Timeframe): number {
   return seconds * 1000;
 }
 
-/** RealPriceEngine: задержка перед переподключением (мс) */
-export const PRICE_ENGINE_RECONNECT_DELAY_MS = 5000;
-
 /** RealWebSocketHub: базовая задержка переподключения (мс) */
 export const WS_HUB_BASE_RECONNECT_DELAY_MS = 2000;
 

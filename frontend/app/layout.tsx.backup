@@ -8,8 +8,8 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
-  title: 'COMFORTRADE',
-  description: 'COMFORTRADE - торговля на финансовых рынках',
+  title: 'COMFOTRADE',
+  description: 'COMFOTRADE - торговля на финансовых рынках',
   icons: {
     icon: [
       { url: '/images/logo.png', sizes: '32x32', type: 'image/png' },

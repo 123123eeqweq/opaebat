@@ -5,7 +5,19 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { authApi } from '../api/client';
+import { authApi, ApiError } from '../api/client';
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    if (typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
+      const msg = (error.data as { message: unknown }).message;
+      if (typeof msg === 'string') return msg;
+    }
+    return error.message || fallback;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 
 interface User {
   id: string;
@@ -76,13 +88,10 @@ export function useAuth() {
       }
 
       return { success: false, error: 'Unexpected response format' };
-    } catch (error: any) {
-      const status = error?.status;
+    } catch (error: unknown) {
+      const status = error instanceof ApiError ? error.status : undefined;
       if (status === 401) return { success: false, error: 'Неверный email или пароль' };
-      return {
-        success: false,
-        error: (error.data?.message || error.message || 'Ошибка входа') as string,
-      };
+      return { success: false, error: getErrorMessage(error, 'Ошибка входа') };
     }
   }, []);
 
@@ -96,11 +105,8 @@ export function useAuth() {
         isAuthenticated: true,
       });
       return { success: true };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.data?.message || error.message || '2FA verification failed',
-      };
+    } catch (error: unknown) {
+      return { success: false, error: getErrorMessage(error, '2FA verification failed') };
     }
   }, []);
 
@@ -113,13 +119,10 @@ export function useAuth() {
         isAuthenticated: true,
       });
       return { success: true };
-    } catch (error: any) {
-      const status = error?.status;
+    } catch (error: unknown) {
+      const status = error instanceof ApiError ? error.status : undefined;
       if (status === 409) return { success: false, error: 'Пользователь с этим email уже зарегистрирован. Войдите в систему.' };
-      return {
-        success: false,
-        error: (error.data?.message || error.message || 'Ошибка регистрации') as string,
-      };
+      return { success: false, error: getErrorMessage(error, 'Ошибка регистрации') };
     }
   }, []);
 

@@ -13,6 +13,12 @@ export class CandleEngine {
   private activeCandle: Candle | null = null;
   private unsubscribePriceTick: (() => void) | null = null;
   private isRunning = false;
+  
+  /**
+   * FLOW TIME-BASED-CLOSE: Таймер для автоматического закрытия свечи по истечении слота
+   * Гарантирует закрытие даже если нет новых тиков (time-based, а не tick-based)
+   */
+  private closeTimer: NodeJS.Timeout | null = null;
 
   constructor(
     private instrumentId: string, // instrumentId для агрегации (EURUSD, EURUSD_REAL)
@@ -29,11 +35,10 @@ export class CandleEngine {
       return;
     }
 
-    logger.info('Starting candle engine (5s base timeframe)');
+    logger.info('Starting candle engine (5s base timeframe, time-based closing)');
     this.isRunning = true;
 
     // Subscribe to price ticks
-    // FLOW FIX-CANDLE-TIMING: Закрытие свечей происходит по времени в handlePriceTick, не через setInterval
     this.unsubscribePriceTick = this.eventBus.on('price_tick', (event) => {
       this.handlePriceTick(event.data as PriceTick);
     });
@@ -55,6 +60,9 @@ export class CandleEngine {
       this.unsubscribePriceTick = null;
     }
 
+    // FLOW TIME-BASED-CLOSE: Очищаем таймер закрытия
+    this.clearCloseTimer();
+
     // Close current candle if exists
     if (this.activeCandle) {
       this.closeCandle();
@@ -65,12 +73,13 @@ export class CandleEngine {
    * Handle price tick
    * 
    * FLOW FIX-CANDLE-TIMING: Закрытие свечей по абсолютным границам времени
+   * FLOW TIME-BASED-CLOSE: Дополнительно — таймер гарантирует закрытие без тиков
    * 
    * Алгоритм:
    * 1. Вычисляем текущий слот времени
-   * 2. Если свечи нет → открыть
+   * 2. Если свечи нет → открыть + запланировать таймер
    * 3. Если тик в текущем слоте → обновить
-   * 4. Если время вышло за слот → закрыть и открыть новую
+   * 4. Если время вышло за слот → закрыть и открыть новую + перепланировать таймер
    */
   private handlePriceTick(tick: PriceTick): void {
     const now = tick.timestamp;
@@ -83,6 +92,7 @@ export class CandleEngine {
     // 1️⃣ Если свечи нет — открыть
     if (!this.activeCandle) {
       this.openCandle(slotStart, slotEnd, tick);
+      this.scheduleCloseTimer(slotEnd);
       return;
     }
     
@@ -96,10 +106,12 @@ export class CandleEngine {
     }
     
     // 3️⃣ Если тик в новом слоте — ЗАКРЫТЬ предыдущую свечу
+    this.clearCloseTimer();
     this.closeCandle();
     
-    // 4️⃣ Открыть новую свечу в новом слоте
+    // 4️⃣ Открыть новую свечу в новом слоте + запланировать таймер закрытия
     this.openCandle(slotStart, slotEnd, tick);
+    this.scheduleCloseTimer(slotEnd);
   }
 
   /**
@@ -183,10 +195,122 @@ export class CandleEngine {
       timestamp: slotEnd, // Используем точное время закрытия слота
     };
     
-    // Логирование для диагностики
     this.eventBus.emit(event);
 
-    // Clear active candle (новая свеча будет открыта в handlePriceTick)
+    // Clear active candle (новая свеча будет открыта в handlePriceTick или таймером)
     this.activeCandle = null;
+  }
+
+  /**
+   * FLOW TIME-BASED-CLOSE: Открывает fill-свечу (плоскую) для слота без тиков
+   * 
+   * OHLC = previousClose — на графике это "_" (чёрточка).
+   * Эмитит candle_updated, чтобы фронт получил live-свечу через WebSocket.
+   */
+  private openFillCandle(slotStart: number, previousClose: number): void {
+    this.activeCandle = {
+      open: previousClose,
+      high: previousClose,
+      low: previousClose,
+      close: previousClose,
+      timestamp: slotStart,
+      timeframe: '5s',
+    };
+
+    // Store active candle in Redis
+    this.candleStore.setActiveCandle(this.instrumentId, this.activeCandle).catch((error) => {
+      logger.error('Failed to store fill candle:', error);
+    });
+
+    // Emit candle_opened (внутреннее событие)
+    this.eventBus.emit({
+      type: 'candle_opened',
+      data: this.activeCandle,
+      timestamp: Date.now(),
+    });
+
+    // Emit candle_updated — WebSocket слушает именно это событие
+    // Без этого фронт не увидит fill-свечу
+    this.eventBus.emit({
+      type: 'candle_updated',
+      data: this.activeCandle,
+      timestamp: Date.now(),
+    });
+
+    logger.debug(
+      `[CandleEngine] ${this.instrumentId} Fill candle opened at ${new Date(slotStart).toISOString()} (price=${previousClose})`
+    );
+  }
+
+  /**
+   * FLOW TIME-BASED-CLOSE: Планирует таймер для автоматического закрытия свечи
+   * 
+   * Если к моменту окончания слота не пришёл новый тик, таймер сам закроет свечу
+   * и откроет fill-свечу для следующего слота. Это создаёт цепочку:
+   * close → openFill → scheduleTimer → close → openFill → ...
+   * 
+   * Гарантирует time-based поведение: на графике всегда есть live-свеча,
+   * даже если тиков нет — отображаются как "_" (flat candles).
+   * 
+   * @param slotEnd - абсолютное время окончания текущего слота (ms)
+   */
+  private scheduleCloseTimer(slotEnd: number): void {
+    this.clearCloseTimer();
+    
+    const now = Date.now();
+    const delay = Math.max(slotEnd - now, 0);
+    
+    // Добавляем небольшой буфер (50ms), чтобы дать шанс тику прийти вовремя
+    // и закрыть свечу через handlePriceTick (что предпочтительнее)
+    const TIMER_BUFFER_MS = 50;
+    
+    this.closeTimer = setTimeout(() => {
+      this.closeTimer = null;
+      
+      if (!this.activeCandle || !this.isRunning) {
+        return;
+      }
+      
+      const timeframeMs = BASE_TIMEFRAME_SECONDS * 1000;
+      
+      // Проверяем что свеча действительно должна быть закрыта
+      const candleSlotEnd = this.activeCandle.timestamp + timeframeMs;
+      if (Date.now() >= candleSlotEnd) {
+        const previousClose = this.activeCandle.close;
+        
+        logger.debug(
+          `[CandleEngine] ${this.instrumentId} Time-based close: candle at ${new Date(this.activeCandle.timestamp).toISOString()} closed by timer (no tick received)`
+        );
+        this.closeCandle();
+        
+        // FLOW TIME-BASED-CLOSE: Открываем fill-свечу для следующего слота
+        // Это гарантирует что на графике всегда есть live-свеча
+        const nextSlotStart = candleSlotEnd;
+        const nextSlotEnd = nextSlotStart + timeframeMs;
+        
+        // Safety: не создаём fill-свечи если слот слишком далеко в прошлом
+        // (например после рестарта сервера или длинной паузы)
+        const MAX_FILL_GAP_MS = 60 * 1000; // 60 секунд максимум
+        if (Date.now() - nextSlotStart > MAX_FILL_GAP_MS) {
+          logger.warn(
+            `[CandleEngine] ${this.instrumentId} Fill gap too large (${Math.round((Date.now() - nextSlotStart) / 1000)}s), skipping fill candles. Next tick will resume.`
+          );
+          return;
+        }
+        
+        this.openFillCandle(nextSlotStart, previousClose);
+        this.scheduleCloseTimer(nextSlotEnd);
+      }
+    }, delay + TIMER_BUFFER_MS);
+  }
+
+  /**
+   * FLOW TIME-BASED-CLOSE: Очищает таймер закрытия свечи
+   */
+  private clearCloseTimer(): void {
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
   }
 }

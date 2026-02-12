@@ -9,6 +9,7 @@
 import { forwardRef, useRef, useEffect, useImperativeHandle } from 'react';
 import { useLineChart } from './useLineChart';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
+import { dismissToastByKey, showTradeOpenToast } from '@/stores/toast.store';
 import { api } from '@/lib/api/api';
 import type { IndicatorConfig } from '../internal/indicators/indicator.types';
 import type { OverlayRegistryParams } from '../useChart';
@@ -98,7 +99,11 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
       activeInstrumentRef,
       onPriceUpdate: lineChart.handlePriceUpdate,
       onServerTime: lineChart.handleServerTime,
-      onTradeClose: lineChart.removeTrade,
+      onTradeOpen: (data) => showTradeOpenToast(data),
+      onTradeClose: (data) => {
+        lineChart.removeTrade(data.id);
+        dismissToastByKey(data.id);
+      },
       enabled: true,
     });
 

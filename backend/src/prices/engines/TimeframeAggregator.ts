@@ -62,6 +62,21 @@ export class TimeframeAggregator {
   }
 
   /**
+   * FLOW CANDLE-SNAPSHOT: Получить активную (незакрытую) свечу для таймфрейма
+   * Используется для отправки snapshot при подключении клиента
+   */
+  getActiveCandle(timeframe: Timeframe): Candle | null {
+    return this.aggregators.get(timeframe) ?? null;
+  }
+
+  /**
+   * FLOW CANDLE-SNAPSHOT: Получить все активные свечи для всех таймфреймов
+   */
+  getAllActiveCandles(): Map<Timeframe, Candle | null> {
+    return new Map(this.aggregators);
+  }
+
+  /**
    * Stop aggregator
    */
   stop(): void {

@@ -19,7 +19,7 @@ export class TwoFactorService {
   /**
    * Generate QR code data URL for the secret
    */
-  async generateQRCode(email: string, secret: string, issuer: string = 'ComforTrade'): Promise<string> {
+  async generateQRCode(email: string, secret: string, issuer: string = 'ComfoTrade'): Promise<string> {
     const otpauthUrl = generateURI({
       secret,
       label: email,

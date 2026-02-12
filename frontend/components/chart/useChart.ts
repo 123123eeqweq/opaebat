@@ -24,7 +24,8 @@ import { useDrawings } from './internal/drawings/useDrawings';
 import { useDrawingInteractions } from './internal/drawings/useDrawingInteractions';
 import { useDrawingEdit } from './internal/drawings/useDrawingEdit';
 import { useCandleAnimator } from './internal/useCandleAnimator';
-import { useWebSocket } from '@/lib/hooks/useWebSocket';
+import { useWebSocket, type TradeClosePayload } from '@/lib/hooks/useWebSocket';
+import { dismissToastByKey, showTradeOpenToast } from '@/stores/toast.store';
 import { parseTimeframeToMs } from './internal/utils/timeframe';
 import { formatServerTime } from './internal/utils/formatServerTime';
 import type { PriceAlert } from './internal/alerts/priceAlerts.types';
@@ -665,9 +666,10 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
   // snapshot нужен только для инициализации данных, но WebSocket должен работать и без него
   useWebSocket({
     activeInstrumentRef,
-    onTradeClose: (tradeId: string) => {
-      // Удаляем закрытую сделку с графика
-      removeTrade(tradeId);
+    onTradeOpen: (data) => showTradeOpenToast(data),
+    onTradeClose: (data: TradeClosePayload) => {
+      removeTrade(data.id);
+      dismissToastByKey(data.id);
     },
     onServerTime: (timestamp) => {
       if (serverTimeRef.current) serverTimeRef.current.timestamp = timestamp;
@@ -707,6 +709,16 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
           // eslint-disable-next-line no-alert
           window.alert(`Цена пересекла уровень ${priceAlert.price.toFixed(2)}`);
         }
+      }
+    },
+    // FLOW CANDLE-SNAPSHOT: Обработка снапшота активных свечей при подписке
+    onCandleSnapshot: (candles) => {
+      // Находим свечу для текущего таймфрейма
+      const match = candles.find((c: { timeframe: string; candle: any }) => c.timeframe === timeframe);
+      if (match) {
+        chartData.applyActiveCandleSnapshot(match.candle);
+        // Пересчитываем viewport чтобы учесть новые high/low
+        viewport.recalculateYOnly();
       }
     },
     onCandleClose: (wsCandle, timeframeStr) => {

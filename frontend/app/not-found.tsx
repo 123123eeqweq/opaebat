@@ -37,7 +37,7 @@ export default function NotFound() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/"
-                className="px-8 py-3 rounded-lg bg-[#3347ff] text-white font-semibold hover:bg-[#2a3ae6] transition-colors shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="px-8 py-3 rounded-lg btn-accent text-white font-semibold transition-colors shadow-lg hover:shadow-xl transform hover:scale-105"
               >
                 Вернуться на главную
               </Link>
@@ -223,7 +223,7 @@ export default function NotFound() {
                 )}
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-lg btn-accent text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={panelMode === 'register' && !agreeToTerms}
                 >
                   {panelMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
@@ -244,7 +244,7 @@ export default function NotFound() {
       <footer className="bg-[#061230] text-white py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-gray-400 text-sm">
-            © 2025 COMFORTRADE. Все права защищены.
+            © 2025 COMFOTRADE. Все права защищены.
           </p>
         </div>
       </footer>

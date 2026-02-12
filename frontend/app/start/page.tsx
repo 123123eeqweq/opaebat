@@ -41,7 +41,7 @@ export default function StartPage() {
           </nav>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Как начать</h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            Регистрация, верификация, первый депозит и первые сделки — коротко о том, как начать торговать с COMFORTRADE.
+            Регистрация, верификация, первый депозит и первые сделки — коротко о том, как начать торговать с COMFOTRADE.
           </p>
         </div>
       </section>
@@ -54,7 +54,7 @@ export default function StartPage() {
               <div className="relative w-full max-w-sm">
                 <Image
                   src="/images/third.png"
-                  alt="Торговый терминал ComforTrade"
+                  alt="Торговый терминал ComfoTrade"
                   width={400}
                   height={800}
                   className="w-full h-auto"
@@ -67,7 +67,7 @@ export default function StartPage() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
-                  Начните с ComforTrade
+                  Начните с ComfoTrade
                 </h2>
                 <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
                   за 3 простых шага
@@ -115,7 +115,7 @@ export default function StartPage() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <button onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }} className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors text-center">
+                <button onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }} className="btn-accent text-white px-8 py-4 rounded-lg font-medium transition-colors text-center">
                   Создать аккаунт
                 </button>
                 <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border border-[#3347ff] hover:bg-[#3347ff]/5 transition-colors text-center flex items-center justify-center">
@@ -182,7 +182,7 @@ export default function StartPage() {
             </div>
 
             <div className="flex justify-center">
-              <Link href="/terminal" className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors inline-block">
+              <Link href="/terminal" className="btn-accent text-white px-8 py-4 rounded-lg font-medium transition-colors inline-block">
                 Начать торговать
               </Link>
             </div>
@@ -317,7 +317,7 @@ export default function StartPage() {
 
         <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
-            Посмотрите, как легко торговать с ComforTrade
+            Посмотрите, как легко торговать с ComfoTrade
           </h2>
 
           <div className="flex justify-center items-center">
@@ -482,7 +482,7 @@ export default function StartPage() {
                 )}
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-lg btn-accent text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={panelMode === 'register' && !agreeToTerms}
                 >
                   {panelMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
@@ -505,7 +505,7 @@ export default function StartPage() {
       <button
         onClick={scrollToTop}
         aria-label="Наверх"
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg bg-[#3347ff] text-white shadow-lg hover:bg-[#2a3ae6] flex items-center justify-center transition-all duration-300 ease-out ${
+        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg btn-accent text-white shadow-lg flex items-center justify-center transition-all duration-300 ease-out ${
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto hover:scale-105'
             : 'opacity-0 translate-y-2 pointer-events-none'

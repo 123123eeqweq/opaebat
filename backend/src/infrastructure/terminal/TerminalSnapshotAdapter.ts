@@ -102,6 +102,7 @@ export class TerminalSnapshotAdapter implements TerminalSnapshotPort {
       direction: trade.direction as 'CALL' | 'PUT',
       amount: trade.amount.toString(),
       entryPrice: trade.entryPrice.toString(),
+      openedAt: trade.openedAt.toISOString(),
       expiresAt: trade.expiresAt.getTime(),
       payout: trade.payout.toString(),
       secondsLeft: this.timeService.secondsLeft(trade.expiresAt.getTime()),

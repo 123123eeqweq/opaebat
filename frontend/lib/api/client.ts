@@ -11,7 +11,7 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(
     public status: number,
     public data: unknown,
@@ -80,21 +80,19 @@ export async function apiRequest<T>(
     }
 
     return {} as T;
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
-    
-    // Если это AbortError (таймаут), выбрасываем понятную ошибку
-    if (error.name === 'AbortError') {
-      throw new ApiError(408, { error: 'Request timeout' }, 'Request timeout - server not responding');
-    }
-    
-    // Пробрасываем ApiError как есть
+
     if (error instanceof ApiError) {
       throw error;
     }
-    
-    // Для других ошибок создаем ApiError
-    throw new ApiError(0, { error: error.message || 'Network error' }, error.message || 'Network error');
+
+    const err = error instanceof Error ? error : new Error(String(error));
+    if (err.name === 'AbortError') {
+      throw new ApiError(408, { error: 'Request timeout' }, 'Request timeout - server not responding');
+    }
+
+    throw new ApiError(0, { error: err.message || 'Network error' }, err.message || 'Network error');
   }
 }
 

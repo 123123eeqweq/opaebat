@@ -82,8 +82,8 @@ export function SiteHeader({ activeNav, onOpenLogin, onOpenRegister }: SiteHeade
 
         <div className="flex-1 flex justify-center md:flex-initial md:justify-start min-w-0">
           <Link href="/" className="flex items-center gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
-            <span className="hidden md:inline text-xl font-semibold text-white uppercase">ComforTrade</span>
+            <Image src="/images/logo.png" alt="ComfoTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+            <span className="hidden md:inline text-xl font-semibold text-white uppercase">ComfoTrade</span>
           </Link>
         </div>
 
@@ -118,8 +118,8 @@ export function SiteHeader({ activeNav, onOpenLogin, onOpenRegister }: SiteHeade
             {showLanguageMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl py-2 min-w-[200px] max-h-[70vh] overflow-y-auto scrollbar-dropdown-light z-50 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="flex flex-col p-1">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white rounded-xl shadow-xl py-2 w-[320px] max-h-[70vh] overflow-y-auto scrollbar-dropdown-light z-50">
+                  <div className="grid grid-cols-3 gap-1 p-1">
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
@@ -127,14 +127,14 @@ export function SiteHeader({ activeNav, onOpenLogin, onOpenRegister }: SiteHeade
                           setCurrentLanguage(lang.code)
                           setShowLanguageMenu(false)
                         }}
-                        className={`text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
+                        className={`text-center px-2 py-2 rounded-lg text-sm font-medium transition-colors flex flex-col items-center gap-1.5 ${
                           currentLanguage === lang.code ? 'bg-[#3347ff]/10 text-[#3347ff]' : 'text-gray-700 hover:bg-gray-50'
                         }`}
                       >
-                        <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full overflow-hidden relative flex-shrink-0">
                           <Image src={lang.flag} alt={lang.code} fill className="object-cover" />
                         </div>
-                        {lang.label}
+                        <span className="text-xs truncate w-full">{lang.label}</span>
                       </button>
                     ))}
                   </div>
@@ -156,7 +156,7 @@ export function SiteHeader({ activeNav, onOpenLogin, onOpenRegister }: SiteHeade
                   </button>
                   <Link
                     href="/terminal"
-                    className="bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors flex items-center justify-center"
+                    className="btn-accent text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-medium text-sm sm:text-base transition-colors flex items-center justify-center"
                   >
                     Терминал
                   </Link>
@@ -171,7 +171,7 @@ export function SiteHeader({ activeNav, onOpenLogin, onOpenRegister }: SiteHeade
                   </button>
                   <button
                     onClick={() => onOpenRegister?.()}
-                    className="hidden md:inline-flex bg-[#3347ff] text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-[#2a3ae6] transition-colors items-center justify-center"
+                    className="hidden md:inline-flex btn-accent text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold text-sm sm:text-base transition-colors items-center justify-center"
                   >
                     Регистрация
                   </button>
@@ -206,17 +206,17 @@ export function SiteHeader({ activeNav, onOpenLogin, onOpenRegister }: SiteHeade
                   </svg>
                 </button>
                 {showLanguageMenu && (
-                  <div className="flex flex-col py-2 pl-7">
+                  <div className="grid grid-cols-3 gap-2 py-2 pl-7">
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
                         onClick={() => { setCurrentLanguage(lang.code); setShowLanguageMenu(false); }}
-                        className={`text-left py-2 rounded-lg text-sm flex items-center gap-3 ${currentLanguage === lang.code ? 'text-[#7b8fff]' : 'text-gray-400 hover:text-white'}`}
+                        className={`text-center py-2 rounded-lg text-sm flex flex-col items-center gap-1.5 ${currentLanguage === lang.code ? 'text-[#7b8fff]' : 'text-gray-400 hover:text-white'}`}
                       >
-                        <div className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0">
                           <Image src={lang.flag} alt="" fill className="object-cover" />
                         </div>
-                        {lang.label}
+                        <span className="text-xs truncate w-full">{lang.label}</span>
                       </button>
                     ))}
                   </div>

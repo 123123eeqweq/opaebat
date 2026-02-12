@@ -65,7 +65,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   }, (request, reply) => authController.me(request, reply));
 
   // 🔥 FLOW S3: POST /api/auth/2fa — 2FA code brute force protection
-  app.post('/api/auth/2fa', {
+  app.post('/auth/2fa', {
     preHandler: [validateBody(verify2FASchema)],
     config: {
       rateLimit: {

@@ -43,7 +43,7 @@ export default function AMLKYCPage() {
           <div className="prose prose-lg max-w-none">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Общие положения</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              COMFORTRADE придерживается строгих стандартов в области противодействия отмыванию денег (AML) 
+              COMFOTRADE придерживается строгих стандартов в области противодействия отмыванию денег (AML) 
               и соблюдения требований по идентификации клиентов (KYC). Мы обязуемся соблюдать все применимые 
               законы и нормативные акты, направленные на предотвращение финансовых преступлений.
             </p>
@@ -67,7 +67,7 @@ export default function AMLKYCPage() {
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Отказ в обслуживании</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              COMFORTRADE оставляет за собой право отказать в обслуживании любому клиенту, который не 
+              COMFOTRADE оставляет за собой право отказать в обслуживании любому клиенту, который не 
               предоставляет необходимую документацию или чья деятельность вызывает подозрения в нарушении 
               законодательства.
             </p>
@@ -231,7 +231,7 @@ export default function AMLKYCPage() {
                 )}
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-lg btn-accent text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={panelMode === 'register' && !agreeToTerms}
                 >
                   {panelMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
@@ -254,7 +254,7 @@ export default function AMLKYCPage() {
       <button
         onClick={scrollToTop}
         aria-label="Наверх"
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg bg-[#3347ff] text-white shadow-lg hover:bg-[#2a3ae6] flex items-center justify-center transition-all duration-300 ease-out ${
+        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg btn-accent text-white shadow-lg flex items-center justify-center transition-all duration-300 ease-out ${
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto hover:scale-105'
             : 'opacity-0 translate-y-2 pointer-events-none'

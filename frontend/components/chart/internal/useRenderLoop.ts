@@ -267,8 +267,20 @@ export function useRenderLoop({
               const baseId = i.id.replace(/_k$|_d$/, '');
               return visibleIds.has(baseId);
             }
-            if (i.type === 'BollingerBands') {
+            if (i.type === 'BollingerBands' || i.type === 'KeltnerChannels') {
               const baseId = i.id.replace(/_upper$|_middle$|_lower$/, '');
+              return visibleIds.has(baseId);
+            }
+            if (i.type === 'MACD') {
+              const baseId = i.id.replace(/_macd$|_signal$|_histogram$/, '');
+              return visibleIds.has(baseId);
+            }
+            if (i.type === 'Ichimoku') {
+              const baseId = i.id.replace(/_tenkan$|_kijun$|_senkouA$|_senkouB$|_chikou$/, '');
+              return visibleIds.has(baseId);
+            }
+            if (i.type === 'ADX') {
+              const baseId = i.id.replace(/_adx$|_plusDI$|_minusDI$/, '');
               return visibleIds.has(baseId);
             }
             return visibleIds.has(i.id);
@@ -280,10 +292,22 @@ export function useRenderLoop({
         (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Stochastic' && c.enabled));
       const hasMomentum = indicators.some((i) => i.type === 'Momentum') ||
         (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Momentum' && c.enabled));
+      const hasAwesomeOscillator = indicators.some((i) => i.type === 'AwesomeOscillator') ||
+        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'AwesomeOscillator' && c.enabled));
+      const hasMACD = indicators.some((i) => i.type === 'MACD') ||
+        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'MACD' && c.enabled));
+      const hasATR = indicators.some((i) => i.type === 'ATR') ||
+        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ATR' && c.enabled));
+      const hasADX = indicators.some((i) => i.type === 'ADX') ||
+        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ADX' && c.enabled));
       const rsiHeight = hasRSI ? 120 : 0;
       const stochHeight = hasStochastic ? 120 : 0;
       const momentumHeight = hasMomentum ? 90 : 0;
-      const mainHeight = height - rsiHeight - stochHeight - momentumHeight; // Высота основного графика
+      const awesomeOscillatorHeight = hasAwesomeOscillator ? 90 : 0;
+      const macdHeight = hasMACD ? 100 : 0;
+      const atrHeight = hasATR ? 80 : 0;
+      const adxHeight = hasADX ? 80 : 0;
+      const mainHeight = height - rsiHeight - stochHeight - momentumHeight - awesomeOscillatorHeight - macdHeight - atrHeight - adxHeight; // Высота основного графика
 
       // FLOW C-MARKET-CLOSED: Если рынок закрыт, рисуем только grid + axes + overlay
       if (!marketOpen) {
@@ -343,14 +367,13 @@ export function useRenderLoop({
       }
 
       // Вызываем render engine (только если рынок открыт)
-      // renderEngine НЕ очищает canvas (мы уже очистили выше)
       renderEngine({
         ctx,
         viewport,
         candles,
         liveCandle,
         width,
-        height: mainHeight, // Используем скорректированную высоту
+        height: mainHeight,
         timeframeMs: getTimeframeMs(),
         mode,
         digits,
@@ -524,16 +547,20 @@ export function useRenderLoop({
           rsiHeight, // Высота зоны RSI
           stochHeight, // Высота зоны Stochastic
           momentumHeight, // Высота зоны Momentum (гистограмма)
+          awesomeOscillatorHeight, // Высота зоны Awesome Oscillator (гистограмма)
+          macdHeight, // Высота зоны MACD (линия + сигнал + гистограмма)
+          atrHeight, // Высота зоны ATR (волатильность)
+          adxHeight, // Высота зоны ADX (+DI/-DI/ADX)
         });
       }
 
-      // FLOW G7: Рисуем crosshair поверх всего (только в основной зоне, не в RSI)
+      // FLOW G7: Рисуем crosshair поверх индикаторов (только в основной зоне)
       const crosshair = getCrosshair();
       renderCrosshair({
         ctx,
         crosshair,
         width,
-        height: mainHeight, // Crosshair только в основной зоне
+        height: mainHeight,
         registerInteractionZone,
         digits,
       });
@@ -615,12 +642,6 @@ export function useRenderLoop({
         ctx.restore();
       }
 
-      // Метка времени кроссхейра — рисуем последней, чтобы её никто не перекрывал
-      const crosshairForTime = getCrosshair();
-      if (crosshairForTime?.isActive) {
-        renderCrosshairTimeLabel(ctx, crosshairForTime, width, mainHeight);
-      }
-
       // FLOW C4-C5: Рисуем countdown timer справа от лайв-свечи
       if (liveCandle && getTimeframeLabel && getFormattedCountdown && settings.showCountdown) {
         // Вычисляем ширину свечи (та же логика что в renderCandles)
@@ -643,6 +664,11 @@ export function useRenderLoop({
           remainingTime: getFormattedCountdown(),
           candleWidth,
         });
+      }
+
+      // Метка времени кроссхейра — внизу основной зоны
+      if (crosshair?.isActive) {
+        renderCrosshairTimeLabel(ctx, crosshair, width, mainHeight);
       }
 
       // Продолжаем loop

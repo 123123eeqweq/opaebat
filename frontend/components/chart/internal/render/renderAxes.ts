@@ -137,20 +137,18 @@ export function renderAxes({
 
   // X-ось (внизу) - время: рисуем от нижней границы вверх, чтобы ничего не выходило за экран
   if (timeRange > 0) {
-    // Рисуем фон для секции меток времени
     ctx.fillStyle = TIME_LABEL_BG_COLOR;
     ctx.fillRect(0, height - TIME_LABEL_BG_HEIGHT, width, TIME_LABEL_BG_HEIGHT);
 
     const timeStep = calculateTimeLabelStep(timeRange, width);
     const startTime = Math.ceil(viewport.timeStart / timeStep) * timeStep;
 
-    ctx.fillStyle = LABEL_COLOR; // Восстанавливаем цвет для текста
-    ctx.textBaseline = 'alphabetic'; // нижняя граница символов на y
+    ctx.fillStyle = LABEL_COLOR;
+    ctx.textBaseline = 'alphabetic';
     for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
       const x = timeToX(time, viewport, width);
       if (x >= 0 && x <= width) {
         const label = formatTime(time);
-        // y = height - LABEL_PADDING: низ текста в 8px от низа области
         ctx.fillText(label, x, height - LABEL_PADDING);
       }
     }

@@ -18,7 +18,7 @@ export async function registerLineChartRoutes(app: FastifyInstance) {
   );
 
   app.get(
-    '/api/line/history',
+    '/line/history',
     {
       preHandler: requireAuth,
     },

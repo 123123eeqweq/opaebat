@@ -4,7 +4,7 @@
  * FLOW G12: Indicator types
  */
 
-export type IndicatorType = 'SMA' | 'EMA' | 'RSI' | 'Stochastic' | 'Momentum' | 'BollingerBands';
+export type IndicatorType = 'SMA' | 'EMA' | 'RSI' | 'Stochastic' | 'Momentum' | 'AwesomeOscillator' | 'BollingerBands' | 'KeltnerChannels' | 'Ichimoku' | 'ATR' | 'ADX' | 'MACD';
 
 export type IndicatorConfig = {
   id: string;
@@ -18,6 +18,19 @@ export type IndicatorConfig = {
   colorD?: string;
   /** Для Bollinger Bands: множитель стандартного отклонения (по умолчанию 2) */
   stdDevMult?: number;
+  /** Для Keltner Channels: множитель ATR (по умолчанию 2) */
+  atrMult?: number;
+  /** Для Awesome Oscillator: быстрый период (по умолчанию 5). Медленный = period (34) */
+  fastPeriod?: number;
+  /** Для MACD */
+  slowPeriod?: number;
+  signalPeriod?: number;
+  /** Для Ichimoku: период Kijun (по умолчанию 26) */
+  basePeriod?: number;
+  /** Для Ichimoku: период Senkou Span B (по умолчанию 52) */
+  spanBPeriod?: number;
+  /** Для Ichimoku: смещение вперёд/назад (по умолчанию 26) */
+  displacement?: number;
 };
 
 export type IndicatorPoint = {

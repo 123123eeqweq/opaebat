@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { Montserrat } from 'next/font/google'
 import './globals.css'
 
+export const dynamic = 'force-dynamic'
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -18,8 +20,8 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: 'COMFORTRADE - Торговля на финансовых рынках',
-    template: '%s | COMFORTRADE',
+    default: 'COMFOTRADE - Торговля на финансовых рынках',
+    template: '%s | COMFOTRADE',
   },
   description: 'Торгуйте на валютных парах, криптовалютах и других активах. Современная платформа с интуитивным интерфейсом, техническими индикаторами и инструментами анализа.',
   keywords: ['валютный рынок', 'торговля', 'форекс', 'криптовалюта', 'финансовые рынки', 'трейдинг'],
@@ -36,8 +38,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ru_RU',
-    siteName: 'COMFORTRADE',
-    title: 'COMFORTRADE - Торговля на финансовых рынках',
+    siteName: 'COMFOTRADE',
+    title: 'COMFOTRADE - Торговля на финансовых рынках',
     description: 'Торгуйте на валютных парах, криптовалютах и других активах.',
   },
 }

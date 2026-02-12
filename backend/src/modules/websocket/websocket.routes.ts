@@ -8,6 +8,7 @@ import { WsClient } from '../../shared/websocket/WsClient.js';
 import { authenticateWebSocket } from '../../infrastructure/websocket/WsAuthAdapter.js';
 import { logger } from '../../shared/logger.js';
 import { WS_RATE_LIMIT_MAX, WS_RATE_LIMIT_WINDOW_MS } from '../../config/constants.js';
+import { getPriceEngineManager } from '../../bootstrap/prices.bootstrap.js';
 
 let wsManager: WebSocketManager | null = null;
 
@@ -88,6 +89,12 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
             type: 'subscribed', 
             instrument: data.instrument,
           });
+
+          // FLOW CANDLE-SNAPSHOT: Отправляем снапшот активных свечей при подписке
+          // Это позволяет фронтенду восстановить live-свечу с правильными OHLC
+          sendActiveCandleSnapshot(client, data.instrument).catch((error) => {
+            logger.error(`Failed to send candle snapshot for ${data.instrument}:`, error);
+          });
           return;
         }
         
@@ -139,4 +146,38 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
   });
 
   logger.info('WebSocket routes registered');
+}
+
+/**
+ * FLOW CANDLE-SNAPSHOT: Отправляет снапшот активных (незакрытых) свечей клиенту
+ * 
+ * При подписке на инструмент, фронтенд получает историю (закрытые свечи) и создает
+ * live-свечу с нуля. Но активная свеча на бэкенде уже может иметь накопленные OHLC данные.
+ * Этот снапшот позволяет фронтенду восстановить правильное состояние live-свечи.
+ */
+async function sendActiveCandleSnapshot(client: WsClient, instrument: string): Promise<void> {
+  try {
+    const manager = getPriceEngineManager();
+    const activeCandles = await manager.getActiveCandles(instrument);
+
+    if (activeCandles.size === 0) {
+      return; // Нет активных свечей — ничего отправлять
+    }
+
+    const candlesArray = Array.from(activeCandles.entries()).map(([timeframe, candle]) => ({
+      timeframe,
+      candle,
+    }));
+
+    client.send({
+      instrument,
+      type: 'candle:snapshot',
+      data: { candles: candlesArray },
+    });
+
+    logger.debug(`📸 Sent candle snapshot to client for ${instrument}: ${candlesArray.map(c => c.timeframe).join(', ')}`);
+  } catch (error) {
+    // getPriceEngineManager может выбросить если еще не инициализирован
+    logger.warn(`[sendActiveCandleSnapshot] Failed for ${instrument}:`, error);
+  }
 }

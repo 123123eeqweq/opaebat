@@ -394,8 +394,9 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
                 >
                   <div className="flex items-center gap-2.5">
                     {/* Иконка избранного */}
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={(e) => {
                         e.stopPropagation();
                         persistFavorites((() => {
@@ -408,7 +409,22 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
                           return next;
                         })());
                       }}
-                      className="flex-shrink-0 p-0.5 md:hover:bg-white/10 rounded transition-colors"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          persistFavorites((() => {
+                            const next = new Set(favorites);
+                            if (next.has(inst.id)) {
+                              next.delete(inst.id);
+                            } else {
+                              next.add(inst.id);
+                            }
+                            return next;
+                          })());
+                        }
+                      }}
+                      className="flex-shrink-0 p-0.5 md:hover:bg-white/10 rounded transition-colors cursor-pointer"
                       title={favorites.has(inst.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
                     >
                       <Star
@@ -418,7 +434,7 @@ export function InstrumentMenu({ instrument, onInstrumentChange }: InstrumentMen
                             : 'text-gray-400 md:hover:text-yellow-400'
                         }`}
                       />
-                    </button>
+                    </span>
                     {/* Флаги валют */}
                     <div className="flex items-center">
                       {(() => {

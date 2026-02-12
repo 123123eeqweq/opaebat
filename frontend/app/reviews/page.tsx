@@ -31,7 +31,7 @@ export default function ReviewsPage() {
       id: 2,
       name: 'Мария Иванова',
       rating: 5,
-      text: 'Очень довольна ComforTrade. Начала с демо-счёта, потом перешла на реальный. Обучение на сайте помогло разобраться с основами. Рекомендую новичкам!',
+      text: 'Очень довольна ComfoTrade. Начала с демо-счёта, потом перешла на реальный. Обучение на сайте помогло разобраться с основами. Рекомендую новичкам!',
       date: '12 января 2025',
       verified: true
     },
@@ -55,7 +55,7 @@ export default function ReviewsPage() {
       id: 5,
       name: 'Игорь Волков',
       rating: 5,
-      text: 'Торгую на разных платформах, но ComforTrade — одна из лучших. Честная доходность, мгновенное исполнение. Поддержка всегда на связи.',
+      text: 'Торгую на разных платформах, но ComfoTrade — одна из лучших. Честная доходность, мгновенное исполнение. Поддержка всегда на связи.',
       date: '5 января 2025',
       verified: true
     },
@@ -113,7 +113,7 @@ export default function ReviewsPage() {
           </nav>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Отзывы</h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            Отзывы трейдеров о ComforTrade — о терминале, торговле Forex и криптой, поддержке и исполнении сделок.
+            Отзывы трейдеров о ComfoTrade — о терминале, торговле Forex и криптой, поддержке и исполнении сделок.
           </p>
         </div>
       </section>
@@ -124,7 +124,7 @@ export default function ReviewsPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Отзывы клиентов</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Реальные отзывы от трейдеров, которые используют ComforTrade для торговли на Forex и криптовалютах
+              Реальные отзывы от трейдеров, которые используют ComfoTrade для торговли на Forex и криптовалютах
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
@@ -173,7 +173,7 @@ export default function ReviewsPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Оставьте свой отзыв</h2>
             <p className="text-lg text-gray-600">
-              Поделитесь своим опытом торговли с ComforTrade
+              Поделитесь своим опытом торговли с ComfoTrade
             </p>
           </div>
           <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8 md:p-12">
@@ -263,14 +263,14 @@ export default function ReviewsPage() {
                   onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
                   rows={6}
                   required
-                  placeholder="Расскажите о своём опыте торговли с ComforTrade..."
+                  placeholder="Расскажите о своём опыте торговли с ComfoTrade..."
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff] transition-all resize-none"
                 />
               </div>
               <button
                 type="submit"
                 disabled={reviewForm.rating === 0}
-                className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 rounded-lg btn-accent text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Отправить отзыв
               </button>
@@ -429,7 +429,7 @@ export default function ReviewsPage() {
                 )}
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-lg btn-accent text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={panelMode === 'register' && !agreeToTerms}
                 >
                   {panelMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
@@ -452,7 +452,7 @@ export default function ReviewsPage() {
       <button
         onClick={scrollToTop}
         aria-label="Наверх"
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg bg-[#3347ff] text-white shadow-lg hover:bg-[#2a3ae6] flex items-center justify-center transition-all duration-300 ease-out ${
+        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg btn-accent text-white shadow-lg flex items-center justify-center transition-all duration-300 ease-out ${
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto hover:scale-105'
             : 'opacity-0 translate-y-2 pointer-events-none'

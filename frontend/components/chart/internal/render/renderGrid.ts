@@ -150,3 +150,47 @@ export function renderGrid({
 
   ctx.restore();
 }
+
+/**
+ * Рисует только вертикальные линии сетки по времени в заданном диапазоне по Y.
+ * Используется когда под графиком есть индикаторы — чтобы сетка шла и по зонам RSI/Stochastic/Momentum.
+ */
+export function renderVerticalGridOnly({
+  ctx,
+  viewport,
+  width,
+  fromY,
+  toY,
+  timeframeMs,
+}: {
+  ctx: CanvasRenderingContext2D;
+  viewport: Viewport;
+  width: number;
+  fromY: number;
+  toY: number;
+  timeframeMs?: number;
+}): void {
+  const settings = getChartSettings();
+  if (!settings.showGrid) return;
+
+  const timeRange = viewport.timeEnd - viewport.timeStart;
+  if (timeRange <= 0) return;
+
+  ctx.save();
+  ctx.strokeStyle = GRID_COLOR;
+  ctx.lineWidth = GRID_LINE_WIDTH;
+
+  const timeStep = calculateTimeStep(timeRange, width, timeframeMs);
+  const startTime = Math.ceil(viewport.timeStart / timeStep) * timeStep;
+
+  ctx.beginPath();
+  for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
+    const x = timeToX(time, viewport, width);
+    if (x >= 0 && x <= width) {
+      ctx.moveTo(x, fromY);
+      ctx.lineTo(x, toY);
+    }
+  }
+  ctx.stroke();
+  ctx.restore();
+}

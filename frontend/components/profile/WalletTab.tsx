@@ -430,7 +430,7 @@ export function WalletTab() {
                 type="button"
                 onClick={handleDeposit}
                 disabled={submitting || !isValidAmount}
-                className="w-full flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl btn-accent text-white text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
@@ -659,7 +659,7 @@ export function WalletTab() {
                     type="button"
                     onClick={handleWithdraw}
                     disabled={submitting || !isValidWithdraw}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl btn-accent text-white text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {submitting ? (
                       <>

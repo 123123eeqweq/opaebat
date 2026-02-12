@@ -43,6 +43,8 @@ export interface TerminalSnapshot {
     direction: 'CALL' | 'PUT';
     amount: string;
     entryPrice: string;
+    /** ISO string; нужен для восстановления оверлея после перезагрузки */
+    openedAt?: string;
     expiresAt: number;
     payout: string;
   }[];

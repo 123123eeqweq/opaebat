@@ -8,6 +8,7 @@ import { TrendingUp, Wallet, GraduationCap, UserCircle, Bell, PlusCircle, Plus, 
 import { useTerminalSnapshot } from '@/lib/hooks/useTerminalSnapshot';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useModalA11y } from '@/lib/hooks/useModalA11y';
 import { ChartContainer } from '@/components/chart/ChartContainer';
 import { SentimentBar } from '@/components/chart/SentimentBar';
 import { IndicatorMenu } from '@/components/chart/IndicatorMenu';
@@ -198,6 +199,28 @@ export default function TerminalPage() {
     }
   }, [chartType]);
 
+  // Восстановление оверлеев открытых сделок после загрузки/обновления страницы (как у рисунков)
+  useEffect(() => {
+    const terminalSnapshot = data;
+    if (!terminalSnapshot?.openTrades?.length || terminalSnapshot.instrument !== instrument) return;
+    const openTrades = terminalSnapshot.openTrades;
+    const timer = setTimeout(() => {
+      for (const t of openTrades) {
+        const dto = {
+          id: t.id,
+          direction: t.direction,
+          entryPrice: t.entryPrice,
+          openedAt: t.openedAt ?? new Date(t.expiresAt - 60 * 1000).toISOString(),
+          expiresAt: new Date(t.expiresAt).toISOString(),
+          amount: t.amount,
+        };
+        candleChartRef.current?.addTradeOverlayFromDTO(dto);
+        lineChartRef.current?.addTradeOverlayFromDTO(dto);
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [data, instrument]);
+
   // Модалка истории сделок
   const [showTradesHistory, setShowTradesHistory] = useState<boolean>(false);
   // Модалка новостей
@@ -213,7 +236,8 @@ export default function TerminalPage() {
 
   // FLOW O3/O4: Overlay Registry — data layer, onMutate форсит ре-рендер панели
   const [overlayVersion, setOverlayVersion] = useState(0);
-  const overlayRegistry = useOverlayRegistry({ onMutate: () => setOverlayVersion((v) => v + 1) });
+  const onOverlayMutate = useCallback(() => setOverlayVersion((v) => v + 1), []);
+  const overlayRegistry = useOverlayRegistry({ onMutate: onOverlayMutate });
 
   // 🧠 TERMINAL LAYOUT PERSISTENCE: Single source of truth
   const terminalLayoutRef = useRef<TerminalLayout>({
@@ -569,6 +593,23 @@ export default function TerminalPage() {
     }
   }, [showAccountModal]);
 
+  // ESC закрывает все модалки
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowAccountModal(false);
+        setShowProfileModal(false);
+        setShowTimeModal(false);
+        setShowAmountModal(false);
+        setShowChartSettingsModal(false);
+        setShowNews(false);
+        setShowTradesHistory(false);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, []);
+
   // FLOW O7: синхрон indicatorConfigs ↔ Overlay Registry (включённые индикаторы → overlays)
   useEffect(() => {
     indicatorConfigs.forEach((c) => {
@@ -597,7 +638,7 @@ export default function TerminalPage() {
         overlayRegistry.removeOverlay(c.id);
       }
     });
-  }, [indicatorConfigs]);
+  }, [indicatorConfigs, overlayRegistry]);
 
   // 🔥 FLOW T-LS1.1: Сохранение chartType в localStorage
   const handleChartTypeChange = (type: ChartType) => {
@@ -687,8 +728,8 @@ export default function TerminalPage() {
       <header className="bg-[#05122a] border-b border-white/10 shrink-0">
         <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
-            <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComforTrade</span>
+            <Image src="/images/logo.png" alt="ComfoTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+            <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComfoTrade</span>
             <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white md:hover:bg-white/10 transition-colors shrink-0">
               <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -698,7 +739,16 @@ export default function TerminalPage() {
             <div className="relative">
               <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#3347ff]/50 via-[#5b6bff]/30 to-[#3347ff]/50 blur-sm opacity-60 pointer-events-none" />
               <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#05122a] z-10 pointer-events-none ${accountType === 'demo' ? 'bg-sky-400' : 'bg-emerald-500'}`} title={accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'} />
-              <div onClick={() => setShowProfileModal(!showProfileModal)} className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer md:hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setShowProfileModal(!showProfileModal)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowProfileModal((v) => !v); } }}
+                className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer md:hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg"
+                aria-label="Открыть меню профиля"
+                aria-expanded={showProfileModal}
+                aria-haspopup="menu"
+              >
                 {avatarUrl ? (
                   <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" />
                 ) : (
@@ -1206,14 +1256,19 @@ export default function TerminalPage() {
                   setAmount(String(newValue));
                 }}
                 className="w-9 h-10 shrink-0 flex items-center justify-center text-white"
+                aria-label="Уменьшить сумму на 10"
               >
-                <Minus className="w-3.5 h-3.5" />
+                <Minus className="w-3.5 h-3.5" aria-hidden />
               </button>
               <div className="w-px h-4 bg-white/25 rounded-full self-center shrink-0" />
               {/* Amount Display - кликабельное поле */}
-              <div 
+              <div
+                role="button"
+                tabIndex={0}
                 className="flex-1 px-2 py-2 text-white text-center text-sm font-medium cursor-pointer md:hover:bg-white/5 transition-colors flex items-center justify-center min-w-0"
                 onClick={() => setShowAmountModal(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowAmountModal(true); } }}
+                aria-label={`Сумма сделки: ${Number.parseFloat(amount || '100').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Нажмите для изменения`}
               >
                 <span>{Number.parseFloat(amount || '100').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
@@ -1227,8 +1282,9 @@ export default function TerminalPage() {
                   setAmount(String(newValue));
                 }}
                 className="w-9 h-10 shrink-0 flex items-center justify-center text-white"
+                aria-label="Увеличить сумму на 10"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5" aria-hidden />
               </button>
             </div>
 
@@ -2135,6 +2191,7 @@ function getInstrumentInfo(instrument: string): { displayName: string; isOTC?: b
 
 // Компонент модалки настроек графика
 function ChartSettingsModal({ onClose }: { onClose: () => void }) {
+  const modalRef = useModalA11y(true, onClose, { focusFirstSelector: '[data-chart-settings-first]' });
   const [settings, setSettings] = useState<ChartSettings>(() => loadChartSettings());
   const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
   const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(settings.backgroundImage);
@@ -2191,20 +2248,31 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
       onClick={onClose}
+      aria-hidden="true"
     >
-      <div 
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chart-settings-title"
+        aria-describedby="chart-settings-desc"
         className="bg-gradient-to-b from-[#24304d] to-[#1f2a45] rounded-xl shadow-2xl w-full max-w-[400px] overflow-hidden border border-white/5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Настройки графика</h2>
+          <div>
+            <h2 id="chart-settings-title" className="text-sm font-semibold text-white">Настройки графика</h2>
+            <p id="chart-settings-desc" className="sr-only">Настройте цвета свечей, сетку и другие параметры отображения</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-gray-400 md:hover:text-white md:hover:bg-white/10 transition-colors"
+            aria-label="Закрыть настройки графика"
+            data-chart-settings-first
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

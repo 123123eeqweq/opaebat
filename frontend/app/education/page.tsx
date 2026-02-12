@@ -1020,7 +1020,7 @@ export default function EducationPage() {
           </nav>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Обучение</h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            Материалы и уроки по торговле на валютном и криптовалютном рынках. Осваивайте стратегии и инструменты COMFORTRADE.
+            Материалы и уроки по торговле на валютном и криптовалютном рынках. Осваивайте стратегии и инструменты COMFOTRADE.
           </p>
         </div>
       </section>
@@ -1290,7 +1290,7 @@ export default function EducationPage() {
                 )}
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-lg btn-accent text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={panelMode === 'register' && !agreeToTerms}
                 >
                   {panelMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
@@ -1312,7 +1312,7 @@ export default function EducationPage() {
       <button
         onClick={scrollToTop}
         aria-label="Наверх"
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg bg-[#3347ff] text-white shadow-lg hover:bg-[#2a3ae6] flex items-center justify-center transition-all duration-300 ease-out ${
+        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg btn-accent text-white shadow-lg flex items-center justify-center transition-all duration-300 ease-out ${
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto hover:scale-105'
             : 'opacity-0 translate-y-2 pointer-events-none'

@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useEffect, FormEvent } from 'react'
+import { Suspense, useState, useEffect, FormEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ReactCountryFlag from 'react-country-flag'
 // ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ТЕСТА
@@ -23,7 +23,7 @@ function getCurrencyCountryCodes(pair: string): [string | null, string | null] {
 
 const NON_OTC_INSTRUMENTS = INSTRUMENTS.filter((i) => !i.label.includes('OTC'))
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, isAuthenticated, isLoading, login, register } = useAuth()
@@ -130,8 +130,8 @@ export default function Home() {
         <div className="min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] md:min-h-0 flex flex-col md:block">
         {/* Hero Section */}
         <section className="flex-1 flex flex-col justify-center md:flex-initial md:justify-start py-10 sm:py-16 md:py-32 relative z-10">
-          <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="container mx-auto px-3 sm:px-4">
+            <div className="grid md:grid-cols-[1fr_1.25fr] gap-12 items-center">
               {/* Left Column - Text Content */}
               <div className="space-y-8 text-center md:text-left">
                 {/* Rating badge - mobile only */}
@@ -152,7 +152,7 @@ export default function Home() {
                 <h1 className="text-[2.5rem] md:text-5xl lg:text-6xl font-bold text-white leading-tight">
                   Твоя прибыль на валютном рынке начинается с{' '}
                   <span className="relative inline-block">
-                    COMFORTRADE
+                    COMFOTRADE
                     <Image
                       src="/images/star.png"
                       alt=""
@@ -163,12 +163,12 @@ export default function Home() {
                   </span>
                 </h1>
                 
-                <p className="text-base text-gray-300 leading-relaxed max-w-sm sm:max-w-md md:max-w-lg mx-auto md:mx-0 font-light">
+                <p className="text-base text-gray-300 leading-relaxed max-w-sm sm:max-w-md md:max-w-lg mx-auto md:mx-0 font-extralight">
                   Надежный брокер с высокой доходностью и широким выбором инструментов торговли
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                  <button onClick={() => setShowRegisterPanel(true)} className="text-white px-6 py-3.5 sm:px-8 sm:py-4 rounded-lg font-semibold text-sm sm:text-base transition-colors hover:opacity-95 w-fit min-w-[240px] sm:min-w-0 mx-auto sm:mx-0" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
+                  <button onClick={() => setShowRegisterPanel(true)} className="btn-accent text-white px-6 py-3.5 sm:px-8 sm:py-4 rounded-lg font-semibold text-sm sm:text-base transition-colors w-fit min-w-[240px] sm:min-w-0 mx-auto sm:mx-0">
                     Создать аккаунт
                   </button>
                   <button className="bg-transparent text-white px-6 py-3.5 sm:px-8 sm:py-4 rounded-lg font-semibold text-sm sm:text-base border border-white/50 hover:bg-white/10 transition-colors w-fit min-w-[240px] sm:min-w-0 mx-auto sm:mx-0">
@@ -177,14 +177,14 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Right Column - Phone Image (hidden on mobile) */}
-              <div className="hidden md:flex items-center justify-center md:justify-end">
+              {/* Right Column - Phone Image (hidden on mobile); column wider so image can scale up */}
+              <div className="hidden md:flex items-center justify-end min-w-0">
                 <Image
                   src="/images/hero.png"
-                  alt="Торговая платформа ComforTrade"
-                  width={600}
-                  height={1000}
-                  className="w-full h-auto max-w-[500px] md:max-w-[560px] lg:max-w-[600px]"
+                  alt="Торговая платформа ComfoTrade"
+                  width={1000}
+                  height={1667}
+                  className="w-full h-auto max-w-[620px] xl:max-w-[700px]"
                   priority
                 />
               </div>
@@ -193,7 +193,7 @@ export default function Home() {
         </section>
 
         {/* Company Logos Section - Бегущая строка */}
-        <section className="flex-shrink-0 w-full py-8 md:py-12 px-4 border-t border-gray-700 relative z-10 overflow-hidden">
+        <section className="flex-shrink-0 w-full py-8 md:py-12 px-4 relative z-10 overflow-hidden">
           <div className="relative w-full">
             <div className="flex animate-marquee gap-8 md:gap-12 whitespace-nowrap w-max" style={{ width: 'max-content' }}>
               {[...NON_OTC_INSTRUMENTS, ...NON_OTC_INSTRUMENTS, ...NON_OTC_INSTRUMENTS].map((inst, idx) => {
@@ -232,7 +232,7 @@ export default function Home() {
       </div>
 
       {/* Features Section */}
-      <section className="py-16 md:py-24 bg-[#f7f7fc]">
+      <section className="pt-10 md:pt-16 pb-16 md:pb-24 bg-[#f7f7fc]">
         <div className="container mx-auto px-4">
           {/* Page Indicator */}
           <div className="text-center mb-4">
@@ -240,7 +240,7 @@ export default function Home() {
           </div>
 
           {/* Main Heading */}
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-6 md:mb-8">
             Всё для успешной торговли на валютном рынке
           </h2>
 
@@ -259,15 +259,15 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Phone Image - Cropped at half height */}
-              <div className="relative flex-1 flex items-end justify-center p-4">
-                <div className="relative w-full max-w-[220px] h-[220px] overflow-hidden">
+              {/* Phone Image - почти на всю высоту карточки, прижата к низу и немного левее */}
+              <div className="flex-1 flex items-stretch px-0">
+                <div className="relative w-full h-full flex items-end justify-start pl-2">
                   <Image
                     src="/images/second.png"
                     alt="Интерфейс терминала"
                     width={300}
                     height={600}
-                    className="w-full h-full object-cover object-top"
+                    className="w-auto h-full max-h-[92%] object-contain"
                   />
                 </div>
               </div>
@@ -320,75 +320,88 @@ export default function Home() {
 
           {/* CTA Button */}
           <div className="flex justify-center">
-            <button onClick={() => setShowRegisterPanel(true)} className="text-white px-8 py-4 rounded-lg font-semibold transition-colors hover:opacity-95" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
+            <button onClick={() => setShowRegisterPanel(true)} className="btn-accent text-white px-8 py-4 rounded-lg font-semibold transition-colors">
               Открыть торговый счет
             </button>
           </div>
         </div>
       </section>
 
-      {/* Third Block - Crypto Wallet from the Future */}
-      <section className="py-16 md:py-24 bg-white">
+      {/* Third Block - Торговая платформа нового поколения (как на макете) */}
+      <section className="pt-14 pb-12 md:pt-20 md:pb-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Text Content */}
-            <div className="space-y-8">
-              {/* Page Indicator */}
+            {/* Left Column - Text + карточки в ряд */}
+            <div className="space-y-6">
               <div>
                 <span className="text-[#3347ff] text-base">02 — 08</span>
               </div>
-
-              {/* Main Heading */}
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
                 Торговая платформа нового поколения
               </h2>
-
-              {/* Description */}
               <p className="text-lg text-gray-600 leading-relaxed">
                 Удобный терминал с интуитивным интерфейсом: выбирайте актив, сделку и время — торгуйте без лишних действий.
               </p>
-
-              {/* Features List */}
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-[#3347ff] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              {/* Три карточки: белые, тень, иконка-закладка сверху */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div className="relative bg-white rounded-xl shadow-md pt-10 pb-6 px-6 flex flex-col items-start gap-3 text-left">
+                  <div className="absolute -top-1.5 left-5 w-7 h-8 bg-[#ebedff] flex items-center justify-center shadow-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}>
+                    <svg className="w-3 h-3 text-[#3347ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">Высокая доходность до 89%</span>
+                  <div className="text-gray-900 font-bold text-base leading-snug mt-1">
+                    <div>Высокая</div>
+                    <div>доходность до</div>
+                    <div>89%</div>
+                  </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-[#3347ff] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div className="relative bg-white rounded-xl shadow-md pt-10 pb-6 px-6 flex flex-col items-start gap-3 text-left">
+                  <div className="absolute -top-1.5 left-5 w-7 h-8 bg-[#ebedff] flex items-center justify-center shadow-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}>
+                    <svg className="w-3 h-3 text-[#3347ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">Прозрачные условия сделок</span>
+                  <div className="text-gray-900 font-bold text-base leading-snug mt-1">
+                    <div>Прозрачные</div>
+                    <div>условия</div>
+                    <div>сделок</div>
+                  </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-[#3347ff] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div className="relative bg-white rounded-xl shadow-md pt-10 pb-6 px-6 flex flex-col items-start gap-3 text-left">
+                  <div className="absolute -top-1.5 left-5 w-7 h-8 bg-[#ebedff] flex items-center justify-center shadow-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}>
+                    <svg className="w-3 h-3 text-[#3347ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">Защита данных и средств</span>
+                  <div className="text-gray-900 font-bold text-base leading-snug mt-1">
+                    <div>Защита</div>
+                    <div>данных</div>
+                    <div>и средств</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Phone Image */}
-            <div className="relative flex items-center justify-center">
-              <Image
-                src="/images/third.png"
-                alt="Интерфейс торгового терминала"
-                width={400}
-                height={800}
-                className="w-full h-auto max-w-md rounded-2xl shadow-md"
-                priority
-              />
+            {/* Right Column - Квадрат с фоном как в хиро: картинки + цвет, лого слева сверху, телефон по центру */}
+            <div className="relative flex items-center justify-center py-8">
+              <div className="relative w-full max-w-[380px] md:max-w-[480px] lg:max-w-[560px] aspect-square rounded-xl md:rounded-2xl overflow-hidden bg-[#061230]">
+                <div className="absolute inset-0 opacity-85 scale-x-[-1]" style={{ backgroundImage: 'url(/images/back1.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+                <div className="absolute inset-0 opacity-85 scale-x-[-1]" style={{ backgroundImage: 'url(/images/back2.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+                <div className="absolute left-6 top-6 z-10 p-2">
+                  <Image src="/images/logomin.png" alt="ComfoTrade" width={132} height={55} className="h-11 w-auto object-contain md:h-[3.25rem]" />
+                </div>
+                <div className="absolute inset-0 z-10 flex items-end justify-center px-4 pt-4 pb-0">
+                  <Image
+                    src="/images/third.png"
+                    alt="Интерфейс торгового терминала"
+                    width={460}
+                    height={920}
+                    className="w-full h-auto max-h-[96%] object-contain object-bottom drop-shadow-2xl"
+                    priority
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -416,7 +429,7 @@ export default function Home() {
                 />
                 <button
                   type="button"
-                  className="shrink-0 px-8 py-4 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors"
+                  className="shrink-0 px-8 py-4 rounded-lg btn-accent text-white font-medium transition-colors"
                 >
                   Подписаться
                 </button>
@@ -429,17 +442,19 @@ export default function Home() {
       {/* Fourth Block - Bulletproof Security */}
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Phone Image */}
-            <div className="relative flex items-center justify-center order-2 md:order-1">
-              <Image
-                src="/images/fourth.png"
-                alt="Безопасность платформы"
-                width={400}
-                height={800}
-                className="w-full h-auto max-w-md rounded-2xl shadow-md"
-                priority
-              />
+          <div className="grid md:grid-cols-2 gap-12 items-end">
+            {/* Left Column - Phone Image (без тени, увеличенная) */}
+            <div className="relative flex items-end justify-center order-2 md:order-1">
+              <div className="relative w-full h-auto max-w-xl">
+                <Image
+                  src="/images/fourth.png"
+                  alt="Безопасность платформы"
+                  width={560}
+                  height={1120}
+                  className="w-full h-auto rounded-2xl"
+                  priority
+                />
+              </div>
             </div>
 
             {/* Right Column - Text Content */}
@@ -455,36 +470,65 @@ export default function Home() {
               </h2>
 
               {/* Description */}
-              <p className="text-lg text-gray-600 leading-relaxed">
+              <p className="text-lg text-gray-600 leading-relaxed max-w-xl">
                 Безопасность в приоритете: защищённые счета, шифрование данных и соответствие стандартам AML/KYC.
               </p>
 
-              {/* Security Metrics Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Security Metrics Grid - в стиле макета */}
+              <div className="grid grid-cols-2 gap-4 md:gap-5">
                 {/* Security Incidents */}
-                <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-center text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">0.</div>
-                  <div className="text-sm text-gray-600">Инцидентов безопасности</div>
+                <div className="bg-white rounded-2xl shadow-md p-5 md:p-6 flex flex-col justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-none">0.</div>
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-[#f3f4ff] flex items-center justify-center text-[#3347ff]">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3a4 4 0 00-4 4v3H6.5A1.5 1.5 0 005 11.5v7A1.5 1.5 0 006.5 20h11a1.5 1.5 0 001.5-1.5v-7A1.5 1.5 0 0017.5 10H16V7a4 4 0 00-4-4z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600">Инцидентов безопасности</div>
                 </div>
 
                 {/* AES Encryption */}
-                <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-center text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">
-                    256 <span className="text-[#3347ff]">бит</span>
+                <div className="bg-white rounded-2xl shadow-md p-5 md:p-6 flex flex-col justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-none">
+                      256 <span className="text-[#3347ff]">бит</span>
+                    </div>
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-[#f3f4ff] flex items-center justify-center text-[#3347ff]">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 7h14v10H5z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M9 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">Шифрование AES</div>
+                  <div className="text-xs md:text-sm text-gray-600">Шифрование AES</div>
                 </div>
 
                 {/* Encrypted Data */}
-                <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-center text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">100%</div>
-                  <div className="text-sm text-gray-600">Данных зашифровано</div>
+                <div className="bg-white rounded-2xl shadow-md p-5 md:p-6 flex flex-col justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-none">100%</div>
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-[#f3f4ff] flex items-center justify-center text-[#3347ff]">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600">Данных зашифровано</div>
                 </div>
 
                 {/* Security Certification */}
-                <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-center text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">CISA+</div>
-                  <div className="text-sm text-gray-600">Сертификат безопасности</div>
+                <div className="bg-white rounded-2xl shadow-md p-5 md:p-6 flex flex-col justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-none">CISA+</div>
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-[#f3f4ff] flex items-center justify-center text-[#3347ff]">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600">Сертификат безопасности</div>
                 </div>
               </div>
             </div>
@@ -498,10 +542,10 @@ export default function Home() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 gap-4">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-              Что говорят о ComforTrade
+              Что говорят о ComfoTrade
             </h2>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={() => setShowRegisterPanel(true)} className="text-white px-6 py-3 rounded-lg font-semibold transition-colors hover:opacity-95" style={{ background: 'linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%)' }}>
+              <button onClick={() => setShowRegisterPanel(true)} className="btn-accent text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                 Создать аккаунт
               </button>
               <Link href="/reviews" className="bg-white text-[#3347ff] px-6 py-3 rounded-lg font-medium border border-gray-300 hover:border-[#3347ff] transition-colors flex items-center justify-center">
@@ -614,7 +658,7 @@ export default function Home() {
                 «Будущее онлайн-трейдинга»
               </div>
               <p className="text-base text-gray-600 mb-6 leading-relaxed">
-                ComforTrade — это то, как должен выглядеть современный брокер: быстро, понятно и безопасно. Очень доволен выбором.
+                ComfoTrade — это то, как должен выглядеть современный брокер: быстро, понятно и безопасно. Очень доволен выбором.
               </p>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
@@ -701,41 +745,55 @@ export default function Home() {
       </section>
       */}
 
-      {/* End Block - Download CTA */}
+      {/* End Block - CTA + Terminal image (как на макете) */}
       <section className="py-16 md:py-24 bg-[#f7f7fc]">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            {/* Page Indicator */}
-            <div className="mb-4">
-              <span className="text-[#3347ff] text-base">08 — 08</span>
+          <div className="grid md:grid-cols-[1.05fr_1.4fr] gap-10 lg:gap-16 items-stretch">
+            {/* Left: White card with CTA */}
+            <div className="relative bg-white rounded-[32px] shadow-sm px-6 py-8 sm:px-8 sm:py-10 md:px-10 md:py-12 flex flex-col justify-center items-center text-center h-full overflow-hidden">
+              <div className="absolute inset-0 bg-no-repeat opacity-95" style={{ backgroundImage: 'url(/images/bgdrop.png)', backgroundPosition: 'right 16px top 16px', backgroundSize: '18% auto' }} aria-hidden />
+              <div className="relative z-10 flex flex-col justify-center items-center text-center w-full">
+              {/* Page Indicator */}
+              <div className="mb-4">
+                <span className="text-[#3347ff] text-sm sm:text-base">08 — 08</span>
+              </div>
+
+              {/* Main Heading */}
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.5rem] font-bold text-gray-900 leading-tight mb-6">
+                Начните<br />
+                торговать уже<br />
+                сегодня
+              </h2>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                <button
+                  onClick={() => setShowRegisterPanel(true)}
+                  className="btn-accent text-white px-7 sm:px-8 py-3.5 sm:py-4 rounded-xl font-semibold text-sm sm:text-base transition-colors flex items-center justify-center gap-2"
+                >
+                  Создать аккаунт
+                </button>
+                <Link
+                  href="/terminal"
+                  className="bg-white text-[#3347ff] px-7 sm:px-8 py-3.5 sm:py-4 rounded-xl font-semibold text-sm sm:text-base border border-[#d7d9f0] hover:border-[#3347ff] hover:bg-[#f5f6ff] transition-colors flex items-center justify-center gap-2"
+                >
+                  Открыть Демо
+                </Link>
+              </div>
+              </div>
             </div>
 
-            {/* Main Heading */}
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-8">
-              Начните торговать уже сегодня
-            </h2>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <button onClick={() => setShowRegisterPanel(true)} className="bg-[#3347ff] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#2a3ae6] transition-colors flex items-center justify-center gap-3">
-                Создать аккаунт
-              </button>
-              <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-semibold border border-gray-300 hover:border-[#3347ff] hover:bg-gray-50 transition-colors flex items-center justify-center gap-3">
-                Открыть Демо
-              </Link>
-            </div>
-          </div>
-
-          {/* Large Image - Cropped at half height */}
-          <div className="flex justify-center">
-            <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl" style={{ maxHeight: '400px', overflow: 'hidden' }}>
-              <Image
-                src="/images/end.png"
-                alt="Торговый терминал ComforTrade"
-                width={600}
-                height={800}
-                className="w-full h-auto"
-              />
+            {/* Right: Terminal image */}
+            <div className="w-full flex justify-center md:justify-end">
+              <div className="relative w-full max-w-3xl">
+                <Image
+                  src="/images/hero.png"
+                  alt="Торговый терминал ComfoTrade"
+                  width={960}
+                  height={410}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -848,7 +906,7 @@ export default function Home() {
                         // TODO: вызвать API восстановления пароля
                         alert('Ссылка для восстановления пароля будет отправлена на указанный email. (Функция в разработке)');
                       }}
-                      className="w-full mt-4 py-3.5 rounded-xl bg-[#3347ff] text-white font-semibold hover:bg-[#2a3ae6] active:scale-[0.99] transition-all shadow-lg shadow-[#3347ff]/20"
+                      className="w-full mt-4 py-3.5 rounded-xl btn-accent text-white font-semibold active:scale-[0.99] transition-all shadow-lg shadow-[#3347ff]/20"
                     >
                       Восстановить пароль
                     </button>
@@ -961,7 +1019,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={(panelMode === 'register' && !agreeToTerms) || isSubmitting}
-                  className="w-full py-3.5 rounded-xl bg-[#3347ff] text-white font-semibold hover:bg-[#2a3ae6] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#3347ff]/20"
+                  className="w-full py-3.5 rounded-xl btn-accent text-white font-semibold active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#3347ff]/20"
                 >
                   {isSubmitting 
                     ? (panelMode === 'login' ? 'Вход...' : 'Регистрация...') 
@@ -982,7 +1040,7 @@ export default function Home() {
                 <div>
                   <p className="text-xs text-center text-gray-500 mb-3 font-medium">Подпишитесь на наши соц сети</p>
                   <div className="flex justify-center gap-4">
-                    <a href="https://www.instagram.com/comfortrade/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" aria-label="Instagram">
+                    <a href="https://www.instagram.com/comfotrade/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" aria-label="Instagram">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                       </svg>
@@ -1008,7 +1066,7 @@ export default function Home() {
       <button
         onClick={scrollToTop}
         aria-label="Наверх"
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg bg-[#3347ff] text-white shadow-lg hover:bg-[#2a3ae6] flex items-center justify-center transition-all duration-300 ease-out ${
+        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg btn-accent text-white shadow-lg flex items-center justify-center transition-all duration-300 ease-out ${
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto hover:scale-105'
             : 'opacity-0 translate-y-2 pointer-events-none'
@@ -1019,5 +1077,13 @@ export default function Home() {
         </svg>
       </button>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <HomeContent />
+    </Suspense>
   )
 }

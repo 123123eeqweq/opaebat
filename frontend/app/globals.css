@@ -65,6 +65,15 @@
   }
 }
 
+/* Акцентная кнопка — градиент как на «Создать аккаунт» */
+.btn-accent {
+  background: linear-gradient(135deg, #4a5aff 0%, #3347ff 50%, #2a3ae6 100%);
+}
+
+.btn-accent:hover {
+  opacity: 0.95;
+}
+
 .feature-card-shadow {
   box-shadow: 0 1px 4px rgba(20, 20, 43, .01), 0 3px 6px rgba(51, 71, 255, .01), 0 4px 22px rgba(21, 19, 91, .04);
 }

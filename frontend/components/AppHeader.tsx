@@ -66,6 +66,17 @@ export function AppHeader() {
     setDisplayedBalance(snapshot.balance.toFixed(2));
   }, [snapshot?.balance, snapshot?.accountId]);
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowAccountModal(false);
+        setShowProfileModal(false);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, []);
+
   const loadAllBalances = async () => {
     try {
       const res = await api<{ accounts: Array<{ type: string; balance: string; currency: string; isActive: boolean }> }>('/api/accounts');
@@ -100,10 +111,10 @@ export function AppHeader() {
     <header className="bg-[#05122a] border-b border-white/10 shrink-0">
       <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3">
-          <Image src="/images/logo.png" alt="ComforTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
-          <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComforTrade</span>
-          <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white md:hover:bg-white/10 transition-colors shrink-0">
-            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+          <Image src="/images/logo.png" alt="ComfoTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+          <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComfoTrade</span>
+          <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white md:hover:bg-white/10 transition-colors shrink-0" aria-label="Уведомления">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden />
           </button>
         </div>
 
@@ -111,9 +122,18 @@ export function AppHeader() {
           <div className="relative">
             <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#3347ff]/50 via-[#5b6bff]/30 to-[#3347ff]/50 blur-sm opacity-60 pointer-events-none" />
             <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#05122a] z-10 pointer-events-none ${accountType === 'demo' ? 'bg-sky-400' : 'bg-emerald-500'}`} title={accountType === 'demo' ? 'Демо-счёт' : 'Реальный счёт'} />
-            <div onClick={() => setShowProfileModal(!showProfileModal)} className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer md:hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setShowProfileModal(!showProfileModal)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowProfileModal((v) => !v); } }}
+              className="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer md:hover:opacity-90 transition-opacity overflow-hidden ring-2 ring-white/20 ring-offset-2 ring-offset-[#05122a] shadow-lg"
+              aria-label="Открыть меню профиля"
+              aria-expanded={showProfileModal}
+              aria-haspopup="menu"
+            >
               {avatarUrl ? (
-                <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" />
+                <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${avatarUrl}`} alt="" className="w-full h-full object-cover rounded-full" aria-hidden />
               ) : (
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-[#3347ff] via-[#3d52ff] to-[#1f2a45] flex items-center justify-center text-sm font-bold text-white">
                   {(user?.email || '?').charAt(0).toUpperCase()}
@@ -123,8 +143,8 @@ export function AppHeader() {
 
             {showProfileModal && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowProfileModal(false)} />
-                <div className="absolute left-full right-auto top-full mt-2 -ml-32 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden md:left-1/2 md:ml-0 md:-translate-x-1/2">
+                <div className="fixed inset-0 z-40" onClick={() => setShowProfileModal(false)} aria-hidden="true" />
+                <div role="menu" aria-label="Меню профиля" className="absolute left-full right-auto top-full mt-2 -ml-32 w-72 bg-[#1a2438] border border-white/5 rounded-lg shadow-xl z-50 overflow-hidden md:left-1/2 md:ml-0 md:-translate-x-1/2">
                   <div className="p-3 space-y-2.5">
                     <div className="flex items-center gap-2.5 p-2.5 rounded-lg">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-white/20 ring-offset-2 ring-offset-[#1a2438] bg-gradient-to-br from-[#3347ff]/30 to-[#1f2a45]">
@@ -143,8 +163,8 @@ export function AppHeader() {
                     </div>
                   </div>
                   <div className="border-t border-white/10 p-3 space-y-1">
-                    <button type="button" onClick={() => { setShowProfileModal(false); setShowAccountModal(true); loadAllBalances(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm text-left">
-                      <Repeat className="w-4 h-4" />
+                    <button type="button" role="menuitem" onClick={() => { setShowProfileModal(false); setShowAccountModal(true); loadAllBalances(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-white md:hover:bg-white/10 transition-colors text-sm text-left">
+                      <Repeat className="w-4 h-4" aria-hidden />
                       <span>Переключить счёт</span>
                     </button>
                     {accountType === 'real' && (
@@ -167,7 +187,7 @@ export function AppHeader() {
                     </Link>
                   </div>
                   <div className="border-t border-white/10 p-3">
-                    <button onClick={() => { setShowProfileModal(false); handleLogout(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-red-400 md:hover:bg-red-500/10 transition-colors text-sm">
+                    <button type="button" role="menuitem" onClick={() => { setShowProfileModal(false); handleLogout(); }} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-red-400 md:hover:bg-red-500/10 transition-colors text-sm" aria-label="Выйти из аккаунта">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                       <span>Выйти</span>
                     </button>

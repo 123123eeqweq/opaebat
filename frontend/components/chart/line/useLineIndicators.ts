@@ -15,6 +15,12 @@ import { calculateBollingerBands } from '../internal/indicators/calculations/bol
 import { calculateRSI } from '../internal/indicators/calculations/rsi';
 import { calculateStochastic } from '../internal/indicators/calculations/stochastic';
 import { calculateMomentum } from '../internal/indicators/calculations/momentum';
+import { calculateAwesomeOscillator } from '../internal/indicators/calculations/awesomeOscillator';
+import { calculateMACD } from '../internal/indicators/calculations/macd';
+import { calculateKeltnerChannels } from '../internal/indicators/calculations/keltner';
+import { calculateIchimoku } from '../internal/indicators/calculations/ichimoku';
+import { calculateATR } from '../internal/indicators/calculations/atr';
+import { calculateADX } from '../internal/indicators/calculations/adx';
 
 interface UseLineIndicatorsParams {
   getTicks: () => PricePoint[];
@@ -104,13 +110,16 @@ function aggregateTicksToCandles(ticks: PricePoint[], timeframeMs: number): Cand
 type IndicatorResult =
   | Array<{ time: number; value: number }>
   | { k: Array<{ time: number; value: number }>; d: Array<{ time: number; value: number }> }
-  | { upper: Array<{ time: number; value: number }>; middle: Array<{ time: number; value: number }>; lower: Array<{ time: number; value: number }> };
+  | { upper: Array<{ time: number; value: number }>; middle: Array<{ time: number; value: number }>; lower: Array<{ time: number; value: number }> }
+  | { macd: Array<{ time: number; value: number }>; signal: Array<{ time: number; value: number }>; histogram: Array<{ time: number; value: number }> }
+  | { tenkan: Array<{ time: number; value: number }>; kijun: Array<{ time: number; value: number }>; senkouA: Array<{ time: number; value: number }>; senkouB: Array<{ time: number; value: number }>; chikou: Array<{ time: number; value: number }> }
+  | { adx: Array<{ time: number; value: number }>; plusDI: Array<{ time: number; value: number }>; minusDI: Array<{ time: number; value: number }> };
 
 function calculateIndicator(
   candles: Candle[],
   config: IndicatorConfig
 ): IndicatorResult {
-  const { type, period, periodD, stdDevMult } = config;
+  const { type, period, periodD, stdDevMult, atrMult, fastPeriod, slowPeriod, signalPeriod, basePeriod, spanBPeriod, displacement } = config;
   switch (type) {
     case 'SMA':
       return calculateSMA(candles, period);
@@ -124,6 +133,18 @@ function calculateIndicator(
       return calculateStochastic(candles, period, periodD ?? 3);
     case 'Momentum':
       return calculateMomentum(candles, period);
+    case 'AwesomeOscillator':
+      return calculateAwesomeOscillator(candles, period ?? 34, fastPeriod ?? 5);
+    case 'MACD':
+      return calculateMACD(candles, period ?? 12, slowPeriod ?? 26, signalPeriod ?? 9);
+    case 'KeltnerChannels':
+      return calculateKeltnerChannels(candles, period ?? 20, config.atrMult ?? 2);
+    case 'Ichimoku':
+      return calculateIchimoku(candles, period ?? 9, basePeriod ?? 26, spanBPeriod ?? 52, displacement ?? 26);
+    case 'ATR':
+      return calculateATR(candles, period ?? 14);
+    case 'ADX':
+      return calculateADX(candles, period ?? 14);
     default:
       return [];
   }
@@ -183,6 +204,50 @@ export function useLineIndicators({
         series.push({ id: config.id + '_upper', type: 'BollingerBands', points: result.upper });
         series.push({ id: config.id + '_middle', type: 'BollingerBands', points: result.middle });
         series.push({ id: config.id + '_lower', type: 'BollingerBands', points: result.lower });
+      } else if (
+        config.type === 'KeltnerChannels' &&
+        typeof result === 'object' &&
+        'upper' in result &&
+        'middle' in result &&
+        'lower' in result
+      ) {
+        series.push({ id: config.id + '_upper', type: 'KeltnerChannels', points: result.upper });
+        series.push({ id: config.id + '_middle', type: 'KeltnerChannels', points: result.middle });
+        series.push({ id: config.id + '_lower', type: 'KeltnerChannels', points: result.lower });
+      } else if (
+        config.type === 'Ichimoku' &&
+        typeof result === 'object' &&
+        'tenkan' in result &&
+        'kijun' in result &&
+        'senkouA' in result &&
+        'senkouB' in result &&
+        'chikou' in result
+      ) {
+        series.push({ id: config.id + '_tenkan', type: 'Ichimoku', points: result.tenkan });
+        series.push({ id: config.id + '_kijun', type: 'Ichimoku', points: result.kijun });
+        series.push({ id: config.id + '_senkouA', type: 'Ichimoku', points: result.senkouA });
+        series.push({ id: config.id + '_senkouB', type: 'Ichimoku', points: result.senkouB });
+        series.push({ id: config.id + '_chikou', type: 'Ichimoku', points: result.chikou });
+      } else if (
+        config.type === 'ADX' &&
+        typeof result === 'object' &&
+        'adx' in result &&
+        'plusDI' in result &&
+        'minusDI' in result
+      ) {
+        series.push({ id: config.id + '_adx', type: 'ADX', points: result.adx });
+        series.push({ id: config.id + '_plusDI', type: 'ADX', points: result.plusDI });
+        series.push({ id: config.id + '_minusDI', type: 'ADX', points: result.minusDI });
+      } else if (
+        config.type === 'MACD' &&
+        typeof result === 'object' &&
+        'macd' in result &&
+        'signal' in result &&
+        'histogram' in result
+      ) {
+        series.push({ id: config.id + '_macd', type: 'MACD', points: result.macd });
+        series.push({ id: config.id + '_signal', type: 'MACD', points: result.signal });
+        series.push({ id: config.id + '_histogram', type: 'MACD', points: result.histogram });
       } else if (Array.isArray(result)) {
         series.push({
           id: config.id,

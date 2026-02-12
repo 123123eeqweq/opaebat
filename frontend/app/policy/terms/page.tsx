@@ -33,7 +33,7 @@ export default function TermsPage() {
         <div className="container mx-auto px-4 relative z-10 pt-8 pb-16 md:pt-12 md:pb-24">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Условия использования</h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            Правила и условия использования платформы COMFORTRADE
+            Правила и условия использования платформы COMFOTRADE
           </p>
         </div>
       </section>
@@ -43,7 +43,7 @@ export default function TermsPage() {
           <div className="prose prose-lg max-w-none">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Принятие условий</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              Используя платформу COMFORTRADE, вы соглашаетесь с данными условиями использования. 
+              Используя платформу COMFOTRADE, вы соглашаетесь с данными условиями использования. 
               Если вы не согласны с какими-либо условиями, пожалуйста, не используйте нашу платформу.
             </p>
 
@@ -89,14 +89,14 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Интеллектуальная собственность</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
               Все материалы на платформе, включая дизайн, логотипы, тексты и программное обеспечение, 
-              являются собственностью COMFORTRADE и защищены законами об интеллектуальной собственности. 
+              являются собственностью COMFOTRADE и защищены законами об интеллектуальной собственности. 
               Вы не имеете права копировать, распространять или использовать эти материалы без нашего 
               письменного разрешения.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Ограничение ответственности</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              COMFORTRADE предоставляет платформу "как есть" и не гарантирует бесперебойную работу 
+              COMFOTRADE предоставляет платформу "как есть" и не гарантирует бесперебойную работу 
               или отсутствие ошибок. Мы не несем ответственности за любые прямые, косвенные или 
               случайные убытки, возникшие в результате использования или невозможности использования платформы.
             </p>
@@ -118,7 +118,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Применимое право</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
               Данные условия использования регулируются и толкуются в соответствии с законодательством 
-              юрисдикции, в которой зарегистрирована компания COMFORTRADE.
+              юрисдикции, в которой зарегистрирована компания COMFOTRADE.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Контакты</h2>
@@ -280,7 +280,7 @@ export default function TermsPage() {
                 )}
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-lg bg-[#3347ff] text-white font-medium hover:bg-[#2a3ae6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-lg btn-accent text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={panelMode === 'register' && !agreeToTerms}
                 >
                   {panelMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
@@ -303,7 +303,7 @@ export default function TermsPage() {
       <button
         onClick={scrollToTop}
         aria-label="Наверх"
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg bg-[#3347ff] text-white shadow-lg hover:bg-[#2a3ae6] flex items-center justify-center transition-all duration-300 ease-out ${
+        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-lg btn-accent text-white shadow-lg flex items-center justify-center transition-all duration-300 ease-out ${
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto hover:scale-105'
             : 'opacity-0 translate-y-2 pointer-events-none'

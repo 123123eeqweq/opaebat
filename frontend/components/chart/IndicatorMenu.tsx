@@ -88,6 +88,24 @@ export function IndicatorMenu({ indicatorConfigs, onConfigChange }: IndicatorMen
     if (config.type === 'BollingerBands') {
       return 'Боллинджер';
     }
+    if (config.type === 'AwesomeOscillator') {
+      return 'Awesome Oscillator';
+    }
+    if (config.type === 'MACD') {
+      return 'MACD';
+    }
+    if (config.type === 'KeltnerChannels') {
+      return 'Кельтнер';
+    }
+    if (config.type === 'Ichimoku') {
+      return 'Ишимоку';
+    }
+    if (config.type === 'ATR') {
+      return 'ATR';
+    }
+    if (config.type === 'ADX') {
+      return 'ADX';
+    }
     return config.type;
   };
 

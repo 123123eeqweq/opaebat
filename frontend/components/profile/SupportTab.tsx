@@ -330,7 +330,7 @@ export function SupportTab() {
                   <button
                     type="submit"
                     disabled={!formData.message.trim()}
-                    className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl btn-accent text-white text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-4 h-4" />
                     Отправить
@@ -342,20 +342,20 @@ export function SupportTab() {
             {/* Telegram, Email, время работы */}
             <div className="space-y-4">
               <a
-                href="https://t.me/comfortrade_support"
+                href="https://t.me/comfotrade_support"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-[#0088cc]/10 hover:border-[#0088cc]/25 transition-all group"
               >
                 <p className="font-medium text-white group-hover:text-[#0088cc] transition-colors">Telegram</p>
-                <p className="text-xs text-white/50 mt-0.5">@comfortrade_support</p>
+                <p className="text-xs text-white/50 mt-0.5">@comfotrade_support</p>
               </a>
               <a
-                href="mailto:support@comfortrade.com"
+                href="mailto:support@comfotrade.com"
                 className="block p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-[#3347ff]/10 hover:border-[#3347ff]/25 transition-all group"
               >
                 <p className="font-medium text-white group-hover:text-[#7b8fff] transition-colors">Email</p>
-                <p className="text-xs text-white/50 mt-0.5">support@comfortrade.com</p>
+                <p className="text-xs text-white/50 mt-0.5">support@comfotrade.com</p>
               </a>
               <div className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs font-medium text-white/40 uppercase tracking-wider">Время работы</p>

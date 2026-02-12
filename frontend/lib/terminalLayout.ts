@@ -1,4 +1,5 @@
 import type { IndicatorConfig } from '@/components/chart/internal/indicators/indicator.types';
+import type { Drawing } from '@/components/chart/internal/drawings/drawing.types';
 
 /**
  * Terminal Layout Persistence
@@ -135,9 +136,10 @@ export function layoutIndicatorToConfig(
   }
   
   if (indicatorType === 'MACD') {
-    if (layoutIndicator.params.fastPeriod !== undefined) config.fastPeriod = layoutIndicator.params.fastPeriod;
-    if (layoutIndicator.params.slowPeriod !== undefined) config.slowPeriod = layoutIndicator.params.slowPeriod;
-    if (layoutIndicator.params.signalPeriod !== undefined) config.signalPeriod = layoutIndicator.params.signalPeriod;
+    const c = config as Record<string, unknown>;
+    if (layoutIndicator.params.fastPeriod !== undefined) c.fastPeriod = layoutIndicator.params.fastPeriod;
+    if (layoutIndicator.params.slowPeriod !== undefined) c.slowPeriod = layoutIndicator.params.slowPeriod;
+    if (layoutIndicator.params.signalPeriod !== undefined) c.signalPeriod = layoutIndicator.params.signalPeriod;
   }
   
   return config;
@@ -147,7 +149,7 @@ export function layoutIndicatorToConfig(
  * Конвертировать Drawing в формат для сохранения
  * График удален - функция оставлена для совместимости, но не используется
  */
-export function drawingToLayout(drawing: any): TerminalLayout['drawings'][0] {
+export function drawingToLayout(drawing: any): NonNullable<TerminalLayout['drawings']>[number] {
   const base = {
     id: drawing.id,
     type: drawing.type,
@@ -200,7 +202,7 @@ export function drawingToLayout(drawing: any): TerminalLayout['drawings'][0] {
  * Конвертировать layout drawing в Drawing
  */
 export function layoutDrawingToDrawing(
-  layoutDrawing: TerminalLayout['drawings'][0]
+  layoutDrawing: NonNullable<TerminalLayout['drawings']>[number]
 ): any | null {
   const { id, type, points, color = '#3347ff', offset } = layoutDrawing;
   

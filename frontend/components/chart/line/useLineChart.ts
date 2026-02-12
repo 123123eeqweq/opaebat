@@ -526,8 +526,20 @@ export function useLineChart({
                 const baseId = i.id.replace(/_k$|_d$/, '');
                 return visibleIds.has(baseId);
               }
-              if (i.type === 'BollingerBands') {
+              if (i.type === 'BollingerBands' || i.type === 'KeltnerChannels') {
                 const baseId = i.id.replace(/_upper$|_middle$|_lower$/, '');
+                return visibleIds.has(baseId);
+              }
+              if (i.type === 'MACD') {
+                const baseId = i.id.replace(/_macd$|_signal$|_histogram$/, '');
+                return visibleIds.has(baseId);
+              }
+              if (i.type === 'Ichimoku') {
+                const baseId = i.id.replace(/_tenkan$|_kijun$|_senkouA$|_senkouB$|_chikou$/, '');
+                return visibleIds.has(baseId);
+              }
+              if (i.type === 'ADX') {
+                const baseId = i.id.replace(/_adx$|_plusDI$|_minusDI$/, '');
                 return visibleIds.has(baseId);
               }
               return visibleIds.has(i.id);
@@ -540,10 +552,22 @@ export function useLineChart({
           (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Stochastic' && c.enabled));
         const hasMomentum = filteredIndicators.some((i) => i.type === 'Momentum') ||
           (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Momentum' && c.enabled));
+        const hasAwesomeOscillator = filteredIndicators.some((i) => i.type === 'AwesomeOscillator') ||
+          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'AwesomeOscillator' && c.enabled));
+        const hasMACD = filteredIndicators.some((i) => i.type === 'MACD') ||
+          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'MACD' && c.enabled));
+        const hasATR = filteredIndicators.some((i) => i.type === 'ATR') ||
+          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ATR' && c.enabled));
+        const hasADX = filteredIndicators.some((i) => i.type === 'ADX') ||
+          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ADX' && c.enabled));
         const rsiHeight = hasRSI ? 120 : 0;
         const stochHeight = hasStochastic ? 120 : 0;
         const momentumHeight = hasMomentum ? 90 : 0;
-        const mainHeight = height - rsiHeight - stochHeight - momentumHeight;
+        const awesomeOscillatorHeight = hasAwesomeOscillator ? 90 : 0;
+        const macdHeight = hasMACD ? 100 : 0;
+        const atrHeight = hasATR ? 80 : 0;
+        const adxHeight = hasADX ? 80 : 0;
+        const mainHeight = height - rsiHeight - stochHeight - momentumHeight - awesomeOscillatorHeight - macdHeight - atrHeight - adxHeight;
 
         // Порядок рендеринга
         renderBackground(ctx, width, height);
@@ -782,6 +806,13 @@ export function useLineChart({
             },
             width,
             height: mainHeight,
+            rsiHeight,
+            stochHeight,
+            momentumHeight,
+            awesomeOscillatorHeight,
+            macdHeight,
+            atrHeight,
+            adxHeight,
           });
         }
         

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ReactCountryFlag from 'react-country-flag';
@@ -14,6 +14,7 @@ import { SecuritySection } from '@/components/profile/SecurityTab';
 import { VerificationSection } from '@/components/profile/VerificationTab';
 import { api } from '@/lib/api/api';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useModalA11y } from '@/lib/hooks/useModalA11y';
 import { LANGUAGES, LANG_STORAGE_KEY } from '@/lib/languages';
 import type { AccountSnapshot } from '@/types/account';
 
@@ -107,8 +108,8 @@ function LabelWithHint({ label, hint }: { label: string; hint: string }) {
   return (
     <label className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-white/70 mb-1.5 sm:mb-2">
       {label}
-      <span className="group/tip relative inline-flex cursor-help">
-        <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-medium text-white/50 hover:bg-white/20 hover:text-white/70 transition-colors">
+      <span className="group/tip relative inline-flex cursor-help" aria-label={hint}>
+        <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-medium text-white/50 hover:bg-white/20 hover:text-white/70 transition-colors" aria-hidden>
           ?
         </span>
         <span className="absolute left-0 bottom-full mb-1.5 px-2.5 py-1.5 bg-[#0f1a2e] border border-white/10 rounded-lg text-xs text-white/80 max-w-[220px] opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-20 shadow-xl pointer-events-none">
@@ -148,6 +149,17 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const closeDeleteModal = useCallback(() => {
+    if (!deleting) {
+      setShowDeleteModal(false);
+      setDeleteError(null);
+      setDeleteReason('');
+      setDeletePassword('');
+    }
+  }, [deleting]);
+
+  const deleteModalRef = useModalA11y(showDeleteModal, closeDeleteModal, { focusFirstSelector: '[data-delete-modal-first]' });
 
   useEffect(() => {
     const stored = localStorage.getItem(LANG_STORAGE_KEY);
@@ -650,7 +662,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 sm:px-8 py-2.5 sm:py-4 rounded-lg sm:rounded-xl bg-[#3347ff] hover:bg-[#3347ff]/90 text-white text-xs sm:text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-5 sm:px-8 py-2.5 sm:py-4 rounded-lg sm:rounded-xl btn-accent text-white text-xs sm:text-sm font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
           >
             {saving ? 'Сохранение...' : 'Сохранить изменения'}
           </button>
@@ -675,6 +687,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
             type="button"
             onClick={() => setShowDeleteModal(true)}
             className="w-full py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider border border-red-500/20 transition-colors"
+            aria-label="Удалить аккаунт безвозвратно"
           >
             Удалить аккаунт
           </button>
@@ -715,10 +728,21 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
       {/* Модалка удаления */}
       {showDeleteModal && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !deleting && (setShowDeleteModal(false), setDeleteError(null), setDeleteReason(''), setDeletePassword(''))} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-2rem)] max-w-md p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-[#0f1a2e] border border-white/10 shadow-2xl">
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2">Удалить аккаунт</h3>
-            <p className="text-xs sm:text-sm text-white/60 mb-3 sm:mb-4">Это действие необратимо. Все данные будут удалены.</p>
+          <div
+            className="fixed inset-0 bg-black/60 z-40"
+            onClick={closeDeleteModal}
+            aria-hidden="true"
+          />
+          <div
+            ref={deleteModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+            aria-describedby="delete-modal-desc"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-2rem)] max-w-md p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-[#0f1a2e] border border-white/10 shadow-2xl"
+          >
+            <h3 id="delete-modal-title" className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2">Удалить аккаунт</h3>
+            <p id="delete-modal-desc" className="text-xs sm:text-sm text-white/60 mb-3 sm:mb-4">Это действие необратимо. Все данные будут удалены.</p>
 
             <p className="text-xs sm:text-sm font-medium text-white/80 mb-1.5 sm:mb-2">Укажите причину</p>
             <div className="space-y-2 mb-4">
@@ -728,10 +752,11 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
                 { value: 'privacy', label: 'Хочу удалить личные данные' },
                 { value: 'difficult', label: 'Сложно разобраться в интерфейсе' },
                 { value: 'other', label: 'Другая причина' },
-              ].map((r) => (
+              ].map((r, idx) => (
                 <button
                   key={r.value}
                   type="button"
+                  data-delete-modal-first={idx === 0 ? true : undefined}
                   onClick={() => setDeleteReason(r.value)}
                   className={`w-full text-left px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-colors ${
                     deleteReason === r.value
@@ -756,9 +781,10 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
             <div className="flex gap-2 sm:gap-3">
               <button
                 type="button"
-                onClick={() => { setShowDeleteModal(false); setDeleteReason(''); setDeletePassword(''); setDeleteError(null); }}
+                onClick={closeDeleteModal}
                 disabled={deleting}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/10 hover:bg-white/15 text-white text-[10px] sm:text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+                aria-label="Отменить удаление аккаунта"
               >
                 Отмена
               </button>
@@ -767,6 +793,7 @@ function PersonalProfileTab({ onProfileUpdate }: { onProfileUpdate?: (p: UserPro
                 onClick={handleDeleteAccount}
                 disabled={deleting}
                 className="flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-red-500 hover:bg-red-600 text-white text-[10px] sm:text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+                aria-label={deleting ? 'Удаление аккаунта...' : 'Подтвердить удаление аккаунта'}
               >
                 {deleting ? 'Удаление...' : 'Удалить'}
               </button>

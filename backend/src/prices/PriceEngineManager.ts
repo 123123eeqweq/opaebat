@@ -8,7 +8,7 @@
 import type { PriceTick, Timeframe } from './PriceTypes.js';
 import type { Candle } from './PriceTypes.js';
 import { OtcPriceEngine } from './engines/OtcPriceEngine.js';
-import { RealPriceEngine } from './engines/RealPriceEngine.js';
+import { RealWebSocketHub } from './engines/RealWebSocketHub.js';
 import { CandleEngine } from './engines/CandleEngine.js';
 import { TimeframeAggregator } from './engines/TimeframeAggregator.js';
 import { PriceStore } from './store/PriceStore.js';
@@ -28,7 +28,8 @@ const CANDLE_CONFIG = {
 };
 
 interface InstrumentEngines {
-  priceEngine: OtcPriceEngine | RealPriceEngine;
+  /** OtcPriceEngine для OTC-инструментов, null для REAL (управляются через RealWebSocketHub) */
+  priceEngine: OtcPriceEngine | null;
   candleEngine: CandleEngine;
   aggregator: TimeframeAggregator;
   eventBus: PriceEventBus;
@@ -39,6 +40,8 @@ export class PriceEngineManager {
   private candleStore = new CandleStore();
   private pricePointWriter = new PricePointWriter();
   private engines = new Map<string, InstrumentEngines>();
+  /** Единый WebSocket hub для ВСЕХ real-инструментов (вместо N отдельных соединений) */
+  private realHub: RealWebSocketHub | null = null;
   private isRunning = false;
 
   /**
@@ -63,22 +66,30 @@ export class PriceEngineManager {
 
     logger.info('Starting PriceEngineManager (multi-instrument)...');
 
+    // FLOW HUB: Создаем единый WebSocket hub для ВСЕХ real-инструментов
+    // Вместо N отдельных соединений — одно, без 429 rate limit
+    const apiKey = env.XCHANGE_API_KEY;
+    let realInstrumentCount = 0;
+
+    if (apiKey) {
+      this.realHub = new RealWebSocketHub(apiKey);
+    }
+
     for (const [instrumentId, config] of Object.entries(INSTRUMENTS)) {
       // Унифицированный symbol для всех инструментов (EUR/USD формат)
-      // Используется для CandleEngine, TimeframeAggregator, Redis, WebSocket routing
       let symbol: string;
       if (config.source === 'otc') {
         if (!config.engine) {
           logger.error(`[PriceEngineManager] OTC instrument ${instrumentId} missing engine config`);
           continue;
         }
-        symbol = config.engine.asset; // "EUR/USD", "BTC/USD"
+        symbol = config.engine.asset;
       } else if (config.source === 'real') {
         if (!config.real) {
           logger.error(`[PriceEngineManager] Real instrument ${instrumentId} missing real config`);
           continue;
         }
-        symbol = config.real.symbol; // "EUR/USD" - унифицированный формат
+        symbol = config.real.symbol;
       } else {
         logger.error(`[PriceEngineManager] Unknown source for ${instrumentId}: ${(config as any).source}`);
         continue;
@@ -89,10 +100,10 @@ export class PriceEngineManager {
       const eventBus = new PriceEventBus();
 
       // FLOW R6: Создаем engine в зависимости от источника
-      let priceEngine: OtcPriceEngine | RealPriceEngine;
+      let priceEngine: OtcPriceEngine | null = null;
 
       if (config.source === 'otc') {
-        // OTC engine (существующая логика)
+        // OTC engine — индивидуальный генератор цен
         priceEngine = new OtcPriceEngine(
           config.engine!,
           instrumentId,
@@ -100,27 +111,20 @@ export class PriceEngineManager {
           eventBus,
         );
       } else if (config.source === 'real') {
-        // Real engine — XCHANGE_API_KEY required (validated in env.ts for production)
-        const apiKey = env.XCHANGE_API_KEY;
-        if (!apiKey) {
+        // FLOW HUB: Real инструменты — подписываемся через единый hub
+        if (!this.realHub) {
           logger.error(`[PriceEngineManager] Real instrument ${instrumentId} requires XCHANGE_API_KEY. Set it in .env`);
           continue;
         }
-        priceEngine = new RealPriceEngine(
-          instrumentId,
-          {
-            pair: config.real!.pair,
-            apiKey,
-          },
-          eventBus,
-        );
+        // Регистрируем пару в hub — он будет роутить тики в этот eventBus
+        this.realHub.subscribe(config.real!.pair, instrumentId, eventBus);
+        realInstrumentCount++;
       } else {
         logger.error(`[PriceEngineManager] Unknown source for ${instrumentId}: ${(config as any).source}`);
         continue;
       }
 
       // CandleEngine и Aggregator работают для всех источников
-      // Используем instrumentId для разделения OTC и REAL источников
       const candleEngine = new CandleEngine(instrumentId, this.candleStore, eventBus);
       const aggregator = new TimeframeAggregator(
         instrumentId,
@@ -129,16 +133,17 @@ export class PriceEngineManager {
         eventBus,
       );
 
-      priceEngine.start();
+      // Запускаем только OTC engine (REAL тики приходят через hub)
+      if (priceEngine) {
+        priceEngine.start();
+      }
       candleEngine.start();
       aggregator.start();
 
       // FLOW R-LINE-2: Подписываемся на price_tick для записи price points
-      // Используем instrumentId напрямую (унифицированный ключ для OTC и REAL)
       eventBus.on('price_tick', (event) => {
         if (event.type === 'price_tick') {
           const tick = event.data as PriceTick;
-          // FLOW R-LINE-1: Используем instrumentId как ключ в БД (не symbol)
           this.pricePointWriter.handleTick(instrumentId, tick.price, tick.timestamp).catch((error) => {
             logger.error(`[PriceEngineManager] Failed to write price point for ${instrumentId}:`, error);
           });
@@ -155,6 +160,13 @@ export class PriceEngineManager {
       logger.debug(`✅ Engines started for ${instrumentId} (${config.source})`);
     }
 
+    // FLOW HUB: Запускаем hub ПОСЛЕ регистрации всех подписчиков
+    // Одно соединение на все real-пары вместо N отдельных
+    if (this.realHub && realInstrumentCount > 0) {
+      this.realHub.start();
+      logger.info(`✅ RealWebSocketHub started (${realInstrumentCount} real pairs via 1 WebSocket connection)`);
+    }
+
     this.isRunning = true;
     logger.info(`✅ PriceEngineManager started (${this.engines.size} instruments)`);
   }
@@ -164,8 +176,17 @@ export class PriceEngineManager {
 
     logger.info('Stopping PriceEngineManager...');
 
+    // Останавливаем единый hub для real-инструментов
+    if (this.realHub) {
+      this.realHub.stop();
+      this.realHub = null;
+    }
+
     for (const [id, { priceEngine, candleEngine, aggregator }] of this.engines) {
-      priceEngine.stop();
+      // priceEngine есть только у OTC инструментов (REAL управляются через hub)
+      if (priceEngine) {
+        priceEngine.stop();
+      }
       candleEngine.stop();
       aggregator.stop();
     }
@@ -175,15 +196,46 @@ export class PriceEngineManager {
   }
 
   /**
+   * FLOW CANDLE-SNAPSHOT: Получить активные (незакрытые) свечи для инструмента
+   * Возвращает Map<timeframe, Candle> для всех таймфреймов, где есть активная свеча
+   * Используется для отправки snapshot при подключении клиента через WebSocket
+   */
+  async getActiveCandles(instrumentId: string): Promise<Map<string, Candle>> {
+    const result = new Map<string, Candle>();
+    const eng = this.engines.get(instrumentId);
+    if (!eng) return result;
+
+    // 1. Base 5s candle from Redis (CandleStore)
+    try {
+      const activeCandle = await this.candleStore.getActiveCandle(instrumentId);
+      if (activeCandle) {
+        result.set('5s', activeCandle);
+      }
+    } catch (error) {
+      logger.error(`[PriceEngineManager] Failed to get active 5s candle for ${instrumentId}:`, error);
+    }
+
+    // 2. Aggregated candles from TimeframeAggregator (in-memory)
+    const aggregatedCandles = eng.aggregator.getAllActiveCandles();
+    for (const [timeframe, candle] of aggregatedCandles) {
+      if (candle) {
+        result.set(timeframe, candle);
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Get current price for instrument (id = BTCUSD, EURUSD, EURUSD_REAL, …)
    */
   async getCurrentPrice(instrumentId: string): Promise<PriceTick | null> {
     const eng = this.engines.get(instrumentId);
     if (!this.isRunning || !eng) return null;
     
-    // RealPriceEngine.getCurrentPrice() возвращает null
-    // Для real источников можно получить из PriceStore
-    const price = eng.priceEngine.getCurrentPrice();
+    // OTC: получаем из priceEngine напрямую
+    // REAL: priceEngine = null, получаем из PriceStore (Redis)
+    const price = eng.priceEngine?.getCurrentPrice() ?? null;
     if (price) return price;
     
     // Fallback: получаем из PriceStore (Redis)

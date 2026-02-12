@@ -21,8 +21,10 @@ type WsEvent =
   | { instrument?: string; type: 'price:update'; data: { asset: string; price: number; timestamp: number } }
   | { instrument?: string; type: 'candle:update'; data: { timeframe: string; candle: any } }
   | { instrument?: string; type: 'candle:close'; data: { timeframe: string; candle: any } }
-  | { type: 'trade:open'; data: any }
-  | { type: 'trade:close'; data: any }
+  // FLOW CANDLE-SNAPSHOT: Активные свечи при подписке (восстановление live-свечи после reload)
+  | { instrument?: string; type: 'candle:snapshot'; data: { candles: Array<{ timeframe: string; candle: any }> } }
+  | { type: 'trade:open'; data: TradeOpenPayload }
+  | { type: 'trade:close'; data: TradeClosePayload }
   | { type: 'trade:countdown'; data: any }
   | { type: 'server:time'; data: { timestamp: number } }
   // FLOW A-ACCOUNT: Account snapshot event
@@ -32,18 +34,51 @@ type WsEvent =
   | { type: 'subscribed'; instrument: string }
   | { type: 'unsubscribed'; instrument: string };
 
+/** Payload при открытии сделки (backend: TradeDTO) */
+export interface TradeOpenPayload {
+  id: string;
+  instrument: string;
+  direction: 'CALL' | 'PUT';
+  amount: string;
+  entryPrice: string;
+  payout: string;
+  status: string;
+  openedAt: string;
+  expiresAt: string;
+}
+
+/** Payload при закрытии сделки (backend: TradeDTO & { result }) */
+export interface TradeClosePayload {
+  id: string;
+  instrument: string;
+  direction: 'CALL' | 'PUT';
+  amount: string;
+  entryPrice: string;
+  exitPrice: string | null;
+  payout: string;
+  status: string;
+  result: 'WIN' | 'LOSS' | 'TIE';
+  openedAt: string;
+  expiresAt: string;
+  closedAt: string | null;
+}
+
 interface UseWebSocketParams {
   activeInstrumentRef?: React.MutableRefObject<string>;
   onPriceUpdate?: (price: number, timestamp: number) => void;
   onCandleClose?: (candle: any, timeframe: string) => void;
+  /** FLOW CANDLE-SNAPSHOT: Снапшот активных свечей при подписке (для восстановления live-свечи) */
+  onCandleSnapshot?: (candles: Array<{ timeframe: string; candle: any }>) => void;
   /** FLOW T3: серверное время — источник истины, обновление ref без setInterval */
   onServerTime?: (timestamp: number) => void;
-  /** Обработка закрытия сделки - удаление с графика */
-  onTradeClose?: (tradeId: string) => void;
+  /** Тост «сделка открыта» (постоянный до закрытия) */
+  onTradeOpen?: (data: TradeOpenPayload) => void;
+  /** Обработка закрытия сделки — снять тост открытия, тост результата, удаление с графика */
+  onTradeClose?: (data: TradeClosePayload) => void;
   enabled?: boolean;
 }
 
-export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose, onServerTime, onTradeClose, enabled = true }: UseWebSocketParams) {
+export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose, onCandleSnapshot, onServerTime, onTradeOpen, onTradeClose, enabled = true }: UseWebSocketParams) {
   const { isAuthenticated } = useAuth();
   
   // FLOW WS-1.2: Состояние WebSocket
@@ -64,7 +99,9 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
 
   const onPriceUpdateRef = useRef(onPriceUpdate);
   const onCandleCloseRef = useRef(onCandleClose);
+  const onCandleSnapshotRef = useRef(onCandleSnapshot);
   const onServerTimeRef = useRef(onServerTime);
+  const onTradeOpenRef = useRef(onTradeOpen);
   const onTradeCloseRef = useRef(onTradeClose);
   const activeInstrumentRefRef = useRef(activeInstrumentRef);
   const subscribedInstrumentRef = useRef<string | null>(null);
@@ -74,10 +111,12 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
   useEffect(() => {
     onPriceUpdateRef.current = onPriceUpdate;
     onCandleCloseRef.current = onCandleClose;
+    onCandleSnapshotRef.current = onCandleSnapshot;
     onServerTimeRef.current = onServerTime;
+    onTradeOpenRef.current = onTradeOpen;
     onTradeCloseRef.current = onTradeClose;
     activeInstrumentRefRef.current = activeInstrumentRef;
-  }, [onPriceUpdate, onCandleClose, onServerTime, onTradeClose, activeInstrumentRef]);
+  }, [onPriceUpdate, onCandleClose, onCandleSnapshot, onServerTime, onTradeOpen, onTradeClose, activeInstrumentRef]);
 
   /**
    * FLOW WS-1.4: Подписка на инструмент (только когда state === 'ready')
@@ -250,7 +289,8 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
           if (
             (message.type === 'price:update' ||
               message.type === 'candle:update' ||
-              message.type === 'candle:close') &&
+              message.type === 'candle:close' ||
+              message.type === 'candle:snapshot') &&
             activeId != null &&
             'instrument' in message &&
             message.instrument !== activeId
@@ -287,16 +327,30 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
             return;
           }
 
-          // Обработка trade событий (без алертов)
+          // FLOW CANDLE-SNAPSHOT: Обработка снапшота активных свечей при подписке
+          if (message.type === 'candle:snapshot') {
+            const activeId = activeInstrumentRefRef.current?.current;
+            if (
+              'instrument' in message &&
+              message.instrument === activeId
+            ) {
+              if (onCandleSnapshotRef.current && message.data?.candles) {
+                onCandleSnapshotRef.current(message.data.candles);
+              }
+            }
+            return;
+          }
+
           if (message.type === 'trade:open') {
-            // Trade открыта - можно добавить обработку в будущем
+            if (onTradeOpenRef.current && message.data?.id != null) {
+              onTradeOpenRef.current(message.data);
+            }
             return;
           }
 
           if (message.type === 'trade:close') {
-            // Trade закрыта - удаляем из списка сделок на графике
-            if (onTradeCloseRef.current && message.data?.id) {
-              onTradeCloseRef.current(message.data.id);
+            if (onTradeCloseRef.current && message.data?.id != null) {
+              onTradeCloseRef.current(message.data);
             }
             return;
           }

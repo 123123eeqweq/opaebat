@@ -13,7 +13,7 @@ export async function registerWalletRoutes(app: FastifyInstance) {
 
   // POST /api/wallet/deposit
   app.post(
-    '/api/wallet/deposit',
+    '/wallet/deposit',
     {
       schema: depositSchema,
       preHandler: [requireAuth],
@@ -23,14 +23,14 @@ export async function registerWalletRoutes(app: FastifyInstance) {
 
   // POST /api/wallet/withdraw
   app.post(
-    '/api/wallet/withdraw',
+    '/wallet/withdraw',
     { schema: withdrawSchema, preHandler: [requireAuth] },
     (request, reply) => walletController.withdraw(request as any, reply),
   );
 
   // GET /api/wallet/balance
   app.get(
-    '/api/wallet/balance',
+    '/wallet/balance',
     {
       schema: getBalanceSchema,
       preHandler: [requireAuth],
@@ -40,7 +40,7 @@ export async function registerWalletRoutes(app: FastifyInstance) {
 
   // GET /api/wallet/transactions
   app.get(
-    '/api/wallet/transactions',
+    '/wallet/transactions',
     { preHandler: [requireAuth] },
     (request, reply) => walletController.getTransactions(request, reply),
   );

@@ -5,7 +5,7 @@
  * onMutate вызывается после любой мутации — родитель может форсить ре-рендер панели.
  */
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import type { Overlay, IndicatorOverlay, DrawingOverlay } from './overlay.types';
 
 export interface OverlayRegistryApi {
@@ -73,12 +73,15 @@ export function useOverlayRegistry(params: UseOverlayRegistryParams = {}): Overl
     return new Set(overlaysRef.current.filter((o) => o.visible).map((o) => o.id));
   }, []);
 
-  return {
-    addOverlay,
-    removeOverlay,
-    toggleVisibility,
-    getOverlays,
-    getVisibleOverlays,
-    getVisibleOverlayIds,
-  };
+  return useMemo(
+    () => ({
+      addOverlay,
+      removeOverlay,
+      toggleVisibility,
+      getOverlays,
+      getVisibleOverlays,
+      getVisibleOverlayIds,
+    }),
+    [addOverlay, removeOverlay, toggleVisibility, getOverlays, getVisibleOverlays, getVisibleOverlayIds]
+  );
 }

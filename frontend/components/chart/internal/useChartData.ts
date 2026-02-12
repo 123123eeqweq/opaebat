@@ -44,6 +44,8 @@ interface UseChartDataReturn {
     closedCandle: SnapshotCandle,
     nextCandleStartTime: number
   ) => void;
+  /** FLOW CANDLE-SNAPSHOT: Применить снапшот активной свечи к live-свече (восстановление OHLC после reload) */
+  applyActiveCandleSnapshot: (candle: { open: number; high: number; low: number; close: number; timestamp: number }) => void;
   prependCandles: (newCandles: SnapshotCandle[], timeframeMs: number) => void;
   reset: () => void; // 🔥 FLOW T1: сброс данных при смене timeframe
   getCandles: () => Candle[];
@@ -476,6 +478,51 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
   };
 
   /**
+   * FLOW CANDLE-SNAPSHOT: Применяет снапшот активной свечи с бэкенда к текущей live-свече
+   * 
+   * При перезагрузке страницы фронтенд теряет накопленные OHLC live-свечи.
+   * Этот метод восстанавливает их из снапшота, который бэкенд отправляет при подписке.
+   * 
+   * Стратегия MERGE:
+   * - open: оставляем фронтендовый (он привязан к close предыдущей свечи для инварианта)
+   * - high: берём максимум (бэкенд может знать о более высоком пике до reload)
+   * - low: берём минимум (бэкенд может знать о более низком минимуме до reload)
+   * - close: оставляем фронтендовый (он актуальнее — обновляется каждым тиком)
+   */
+  const applyActiveCandleSnapshot = (
+    snapshotCandle: { open: number; high: number; low: number; close: number; timestamp: number }
+  ): void => {
+    const liveCandle = liveCandleRef.current;
+    if (!liveCandle) {
+      return;
+    }
+
+    // Валидация данных снапшота
+    if (!Number.isFinite(snapshotCandle.high) || snapshotCandle.high <= 0 ||
+        !Number.isFinite(snapshotCandle.low) || snapshotCandle.low <= 0) {
+      console.warn('[applyActiveCandleSnapshot] Invalid snapshot data:', snapshotCandle);
+      return;
+    }
+
+    // MERGE: расширяем high/low live-свечи данными из снапшота
+    const mergedHigh = Math.max(liveCandle.high, snapshotCandle.high);
+    const mergedLow = Math.min(liveCandle.low, snapshotCandle.low);
+
+    // Проверяем, изменилось ли что-то
+    if (mergedHigh === liveCandle.high && mergedLow === liveCandle.low) {
+      return; // Ничего не изменилось
+    }
+
+    liveCandleRef.current = normalizeCandle({
+      ...liveCandle,
+      high: mergedHigh,
+      low: mergedLow,
+    });
+
+    onDataChange?.();
+  };
+
+  /**
    * Получить все закрытые свечи
    */
   const getCandles = (): Candle[] => {
@@ -650,6 +697,7 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     initializeFromSnapshot,
     handlePriceUpdate,
     handleCandleClose,
+    applyActiveCandleSnapshot,
     prependCandles,
     reset,
     getCandles,
