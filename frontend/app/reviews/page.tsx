@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Footer from '@/components/Footer'
@@ -31,7 +32,7 @@ export default function ReviewsPage() {
       id: 2,
       name: 'Мария Иванова',
       rating: 5,
-      text: 'Очень довольна ComfoTrade. Начала с демо-счёта, потом перешла на реальный. Обучение на сайте помогло разобраться с основами. Рекомендую новичкам!',
+      text: 'Очень довольна Comfortrade. Начала с демо-счёта, потом перешла на реальный. Обучение на сайте помогло разобраться с основами. Рекомендую новичкам!',
       date: '12 января 2025',
       verified: true
     },
@@ -55,7 +56,7 @@ export default function ReviewsPage() {
       id: 5,
       name: 'Игорь Волков',
       rating: 5,
-      text: 'Торгую на разных платформах, но ComfoTrade — одна из лучших. Честная доходность, мгновенное исполнение. Поддержка всегда на связи.',
+      text: 'Торгую на разных платформах, но Comfortrade — одна из лучших. Честная доходность, мгновенное исполнение. Поддержка всегда на связи.',
       date: '5 января 2025',
       verified: true
     },
@@ -105,16 +106,23 @@ export default function ReviewsPage() {
 
       <section className="pt-24 bg-[#061230] relative overflow-hidden">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/small.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
-        <div className="container mx-auto px-4 relative z-10 pt-8 pb-16 md:pt-12 md:pb-24">
-          <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6" aria-label="Хлебные крошки">
-            <Link href="/" className="hover:text-white transition-colors">Главная</Link>
-            <span className="text-gray-500">→</span>
-            <span className="text-white">Отзывы</span>
-          </nav>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Отзывы</h1>
-          <p className="text-lg text-gray-400 max-w-2xl">
-            Отзывы трейдеров о ComfoTrade — о терминале, торговле Forex и криптой, поддержке и исполнении сделок.
-          </p>
+        <div className="container mx-auto px-6 md:px-8 relative z-10 pt-12 pb-20 md:pt-16 md:pb-28">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div>
+              <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6" aria-label="Хлебные крошки">
+                <Link href="/" className="hover:text-white transition-colors">Главная</Link>
+                <span className="text-gray-500">→</span>
+                <span className="text-white">Отзывы</span>
+              </nav>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Отзывы</h1>
+              <p className="text-lg text-gray-400 max-w-2xl">
+                Отзывы трейдеров о Comfortrade — о терминале, торговле Forex и криптой, поддержке и исполнении сделок.
+              </p>
+            </div>
+            <div className="flex-shrink-0 w-[5.5rem] h-[5.5rem] md:w-[6.5rem] md:h-[6.5rem] rounded-2xl bg-[#ebedff] flex items-center justify-center overflow-hidden">
+              <Image src="/images/howtoostart.png" alt="" width={48} height={48} className="w-10 h-10 md:w-12 md:h-12 object-contain" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -124,7 +132,7 @@ export default function ReviewsPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Отзывы клиентов</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Реальные отзывы от трейдеров, которые используют ComfoTrade для торговли на Forex и криптовалютах
+              Реальные отзывы от трейдеров, которые используют Comfortrade для торговли на Forex и криптовалютах
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
@@ -173,7 +181,7 @@ export default function ReviewsPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Оставьте свой отзыв</h2>
             <p className="text-lg text-gray-600">
-              Поделитесь своим опытом торговли с ComfoTrade
+              Поделитесь своим опытом торговли с Comfortrade
             </p>
           </div>
           <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8 md:p-12">
@@ -263,7 +271,7 @@ export default function ReviewsPage() {
                   onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
                   rows={6}
                   required
-                  placeholder="Расскажите о своём опыте торговли с ComfoTrade..."
+                  placeholder="Расскажите о своём опыте торговли с Comfortrade..."
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3347ff]/50 focus:border-[#3347ff] transition-all resize-none"
                 />
               </div>

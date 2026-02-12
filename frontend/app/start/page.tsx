@@ -33,95 +33,103 @@ export default function StartPage() {
 
       <section className="pt-24 bg-[#061230] relative overflow-hidden">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/small.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
-        <div className="container mx-auto px-4 relative z-10 pt-8 pb-16 md:pt-12 md:pb-24">
-          <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6" aria-label="Хлебные крошки">
-            <Link href="/" className="hover:text-white transition-colors">Главная</Link>
-            <span className="text-gray-500">→</span>
-            <span className="text-white">Как начать</span>
-          </nav>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Как начать</h1>
-          <p className="text-lg text-gray-400 max-w-2xl">
-            Регистрация, верификация, первый депозит и первые сделки — коротко о том, как начать торговать с COMFOTRADE.
-          </p>
+        <div className="container mx-auto px-6 md:px-8 relative z-10 pt-12 pb-20 md:pt-16 md:pb-28">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div>
+              <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6" aria-label="Хлебные крошки">
+                <Link href="/" className="hover:text-white transition-colors">Главная</Link>
+                <span className="text-gray-500">→</span>
+                <span className="text-white">Как начать</span>
+              </nav>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Как начать</h1>
+              <p className="text-lg text-gray-400 max-w-2xl">
+                Регистрация, верификация, первый депозит и первые сделки — коротко о том, как начать торговать с COMFORTRADE.
+              </p>
+            </div>
+            <div className="flex-shrink-0 w-[5.5rem] h-[5.5rem] md:w-[6.5rem] md:h-[6.5rem] rounded-2xl bg-[#ebedff] flex items-center justify-center overflow-hidden">
+              <Image src="/images/howtoostart.png" alt="" width={48} height={48} className="w-10 h-10 md:w-12 md:h-12 object-contain" />
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Phone Image */}
-            <div className="flex items-center justify-center md:justify-start">
-              <div className="relative w-full max-w-sm">
-                <Image
-                  src="/images/third.png"
-                  alt="Торговый терминал ComfoTrade"
-                  width={400}
-                  height={800}
-                  className="w-full h-auto"
-                  priority
-                />
-              </div>
-            </div>
-
-            {/* Right Column - Steps */}
-            <div className="space-y-8">
+          <div className="grid md:grid-cols-[1.15fr_0.85fr] gap-12 items-start">
+            <div>
+            <div className="space-y-6">
               <div>
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
-                  Начните с ComfoTrade
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#1A1A3C] leading-tight">
+                  Начните с Comfortrade
                 </h2>
-                <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
+                <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#1A1A3C] mt-1">
                   за 3 простых шага
                 </h3>
               </div>
 
-              {/* Step 1 */}
-              <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0">
-                  <UserPlus className="w-8 h-8 text-[#3347ff]" strokeWidth={2} aria-hidden />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Step 1 */}
+                <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+                <div className="flex gap-3 items-start mb-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#3347ff]/10 flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-[#3347ff]" strokeWidth={2} aria-hidden />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 pt-1">1. Зарегистрируйтесь</h4>
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">1. Зарегистрируйтесь</h4>
-                  <p className="text-gray-600 leading-relaxed">
-                    Email, пароль — и готово. Демо-счёт даём сразу, без пополнения. Потренируйтесь, пока не почувствуете себя уверенно.
-                  </p>
-                </div>
+                <p className="text-gray-600 text-sm leading-relaxed pl-0">
+                  Email, пароль — и готово. Демо-счёт даём сразу, без пополнения. Потренируйтесь, пока не почувствуете себя уверенно.
+                </p>
               </div>
 
-              {/* Step 2 */}
-              <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0">
-                  <Wallet className="w-8 h-8 text-[#3347ff]" strokeWidth={2} aria-hidden />
+                {/* Step 2 */}
+                <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+                <div className="flex gap-3 items-start mb-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#3347ff]/10 flex items-center justify-center">
+                    <Wallet className="w-5 h-5 text-[#3347ff]" strokeWidth={2} aria-hidden />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 pt-1">2. Пополните счёт</h4>
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">2. Пополните счёт</h4>
-                  <p className="text-gray-600 leading-relaxed">
-                    Карта, электронные кошельки, крипта — как удобнее. Минимум небольшой, можно начать с малого.
-                  </p>
+                <p className="text-gray-600 text-sm leading-relaxed pl-0">
+                  Карта, электронные кошельки, крипта — как удобнее. Минимум небольшой, можно начать с малого.
+                </p>
                 </div>
-              </div>
 
-              {/* Step 3 */}
-              <div className="flex gap-4 items-start">
-                <div className="flex-shrink-0">
-                  <TrendingUp className="w-8 h-8 text-[#3347ff]" strokeWidth={2} aria-hidden />
+                {/* Step 3 */}
+                <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+                <div className="flex gap-3 items-start mb-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#3347ff]/10 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-[#3347ff]" strokeWidth={2} aria-hidden />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 pt-1">3. Начните торговать</h4>
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">3. Начните торговать</h4>
-                  <p className="text-gray-600 leading-relaxed">
-                    Выберите актив, поставьте на рост или падение — и ждите результат. Работает в браузере, даже с телефона.
-                  </p>
+                <p className="text-gray-600 text-sm leading-relaxed pl-0">
+                  Выберите актив, поставьте на рост или падение — и ждите результат. Работает в браузере, даже с телефона.
+                </p>
                 </div>
               </div>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <button onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }} className="btn-accent text-white px-8 py-4 rounded-lg font-medium transition-colors text-center">
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <button onClick={() => { setPanelMode('register'); setShowRegisterPanel(true); }} className="btn-accent text-white px-8 py-4 rounded-xl font-medium transition-colors text-center">
                   Создать аккаунт
                 </button>
-                <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-lg font-medium border border-[#3347ff] hover:bg-[#3347ff]/5 transition-colors text-center flex items-center justify-center">
+                <Link href="/terminal" className="bg-white text-[#3347ff] px-8 py-4 rounded-xl font-medium border-2 border-[#3347ff] hover:bg-[#3347ff]/5 transition-colors text-center flex items-center justify-center">
                   Открыть Демо
                 </Link>
               </div>
+            </div>
+            </div>
+
+            {/* Картинка harf справа, прижата к низу секции */}
+            <div className="flex justify-end pt-8 md:pt-0 md:self-end md:-mb-16 lg:-mb-24">
+              <Image
+                src="/images/harf.png"
+                alt=""
+                width={600}
+                height={520}
+                className="max-w-[380px] md:max-w-[480px] lg:max-w-[560px] h-auto"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -317,7 +325,7 @@ export default function StartPage() {
 
         <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
-            Посмотрите, как легко торговать с ComfoTrade
+            Посмотрите, как легко торговать с Comfortrade
           </h2>
 
           <div className="flex justify-center items-center">

@@ -342,20 +342,20 @@ export function SupportTab() {
             {/* Telegram, Email, время работы */}
             <div className="space-y-4">
               <a
-                href="https://t.me/comfotrade_support"
+                href="https://t.me/comfortrade_support"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-[#0088cc]/10 hover:border-[#0088cc]/25 transition-all group"
               >
                 <p className="font-medium text-white group-hover:text-[#0088cc] transition-colors">Telegram</p>
-                <p className="text-xs text-white/50 mt-0.5">@comfotrade_support</p>
+                <p className="text-xs text-white/50 mt-0.5">@comfortrade_support</p>
               </a>
               <a
-                href="mailto:support@comfotrade.com"
+                href="mailto:support@comfortrade.com"
                 className="block p-4 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-[#3347ff]/10 hover:border-[#3347ff]/25 transition-all group"
               >
                 <p className="font-medium text-white group-hover:text-[#7b8fff] transition-colors">Email</p>
-                <p className="text-xs text-white/50 mt-0.5">support@comfotrade.com</p>
+                <p className="text-xs text-white/50 mt-0.5">support@comfortrade.com</p>
               </a>
               <div className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-xs font-medium text-white/40 uppercase tracking-wider">Время работы</p>

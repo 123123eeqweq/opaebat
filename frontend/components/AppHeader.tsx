@@ -111,8 +111,8 @@ export function AppHeader() {
     <header className="bg-[#05122a] border-b border-white/10 shrink-0">
       <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3">
-          <Image src="/images/logo.png" alt="ComfoTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
-          <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">ComfoTrade</span>
+          <Image src="/images/logo.png" alt="Comfortrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+          <span className="hidden sm:inline text-base sm:text-xl font-semibold text-white uppercase truncate max-w-[140px] sm:max-w-none">Comfortrade</span>
           <button type="button" className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-lg items-center justify-center text-white md:hover:bg-white/10 transition-colors shrink-0" aria-label="Уведомления">
             <Bell className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden />
           </button>

@@ -20,8 +20,8 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: 'COMFOTRADE - Торговля на финансовых рынках',
-    template: '%s | COMFOTRADE',
+    default: 'COMFORTRADE - Торговля на финансовых рынках',
+    template: '%s | COMFORTRADE',
   },
   description: 'Торгуйте на валютных парах, криптовалютах и других активах. Современная платформа с интуитивным интерфейсом, техническими индикаторами и инструментами анализа.',
   keywords: ['валютный рынок', 'торговля', 'форекс', 'криптовалюта', 'финансовые рынки', 'трейдинг'],
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ru_RU',
-    siteName: 'COMFOTRADE',
-    title: 'COMFOTRADE - Торговля на финансовых рынках',
+    siteName: 'COMFORTRADE',
+    title: 'COMFORTRADE - Торговля на финансовых рынках',
     description: 'Торгуйте на валютных парах, криптовалютах и других активах.',
   },
 }

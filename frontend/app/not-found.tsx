@@ -244,7 +244,7 @@ export default function NotFound() {
       <footer className="bg-[#061230] text-white py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-gray-400 text-sm">
-            © 2025 COMFOTRADE. Все права защищены.
+            © 2025 COMFORTRADE. Все права защищены.
           </p>
         </div>
       </footer>

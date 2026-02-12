@@ -82,8 +82,8 @@ export function SiteHeader({ activeNav, onOpenLogin, onOpenRegister }: SiteHeade
 
         <div className="flex-1 flex justify-center md:flex-initial md:justify-start min-w-0">
           <Link href="/" className="flex items-center gap-3">
-            <Image src="/images/logo.png" alt="ComfoTrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
-            <span className="hidden md:inline text-xl font-semibold text-white uppercase">ComfoTrade</span>
+            <Image src="/images/logo.png" alt="Comfortrade" width={40} height={40} className="h-8 sm:h-10 w-auto object-contain" />
+            <span className="hidden md:inline text-xl font-semibold text-white uppercase">Comfortrade</span>
           </Link>
         </div>
 

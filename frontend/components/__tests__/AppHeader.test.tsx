@@ -35,7 +35,7 @@ jest.mock('next/navigation', () => ({
 describe('AppHeader', () => {
   it('renders logo', () => {
     render(<AppHeader />);
-    expect(screen.getByAltText('ComfoTrade')).toBeInTheDocument();
+    expect(screen.getByAltText('Comfortrade')).toBeInTheDocument();
   });
 
   it('renders profile menu trigger', () => {

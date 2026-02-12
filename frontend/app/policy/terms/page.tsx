@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Footer from '@/components/Footer'
@@ -30,11 +31,18 @@ export default function TermsPage() {
 
       <section className="pt-24 bg-[#061230] relative overflow-hidden">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/small.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
-        <div className="container mx-auto px-4 relative z-10 pt-8 pb-16 md:pt-12 md:pb-24">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Условия использования</h1>
-          <p className="text-lg text-gray-400 max-w-2xl">
-            Правила и условия использования платформы COMFOTRADE
-          </p>
+        <div className="container mx-auto px-6 md:px-8 relative z-10 pt-12 pb-20 md:pt-16 md:pb-28">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Условия использования</h1>
+              <p className="text-lg text-gray-400 max-w-2xl">
+                Правила и условия использования платформы COMFORTRADE
+              </p>
+            </div>
+            <div className="flex-shrink-0 w-[5.5rem] h-[5.5rem] md:w-[6.5rem] md:h-[6.5rem] rounded-2xl bg-[#ebedff] flex items-center justify-center overflow-hidden">
+              <Image src="/images/howtoostart.png" alt="" width={48} height={48} className="w-10 h-10 md:w-12 md:h-12 object-contain" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -43,7 +51,7 @@ export default function TermsPage() {
           <div className="prose prose-lg max-w-none">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Принятие условий</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              Используя платформу COMFOTRADE, вы соглашаетесь с данными условиями использования. 
+              Используя платформу COMFORTRADE, вы соглашаетесь с данными условиями использования. 
               Если вы не согласны с какими-либо условиями, пожалуйста, не используйте нашу платформу.
             </p>
 
@@ -89,14 +97,14 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Интеллектуальная собственность</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
               Все материалы на платформе, включая дизайн, логотипы, тексты и программное обеспечение, 
-              являются собственностью COMFOTRADE и защищены законами об интеллектуальной собственности. 
+              являются собственностью COMFORTRADE и защищены законами об интеллектуальной собственности. 
               Вы не имеете права копировать, распространять или использовать эти материалы без нашего 
               письменного разрешения.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Ограничение ответственности</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              COMFOTRADE предоставляет платформу "как есть" и не гарантирует бесперебойную работу 
+              COMFORTRADE предоставляет платформу "как есть" и не гарантирует бесперебойную работу 
               или отсутствие ошибок. Мы не несем ответственности за любые прямые, косвенные или 
               случайные убытки, возникшие в результате использования или невозможности использования платформы.
             </p>
@@ -118,7 +126,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Применимое право</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">
               Данные условия использования регулируются и толкуются в соответствии с законодательством 
-              юрисдикции, в которой зарегистрирована компания COMFOTRADE.
+              юрисдикции, в которой зарегистрирована компания COMFORTRADE.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Контакты</h2>

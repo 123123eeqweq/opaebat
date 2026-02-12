@@ -33,37 +33,54 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="pt-24 bg-[#061230] relative overflow-hidden">
         <div className="absolute inset-0 opacity-85" style={{ backgroundImage: 'url(/images/small.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
-        <div className="container mx-auto px-4 relative z-10 pt-8 pb-16 md:pt-12 md:pb-24">
-          <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6" aria-label="Хлебные крошки">
-            <Link href="/" className="hover:text-white transition-colors">Главная</Link>
-            <span className="text-gray-500">→</span>
-            <span className="text-white">О компании</span>
-          </nav>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">О компании</h1>
-          <p className="text-lg text-gray-400 max-w-2xl">
-            COMFOTRADE — надёжный брокер для торговли валютными парами и криптовалютами. Высокая доходность до 89%, 50+ инструментов, демо и реальный счёт.
-          </p>
+        <div className="container mx-auto px-6 md:px-8 relative z-10 pt-12 pb-20 md:pt-16 md:pb-28">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div>
+              <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6" aria-label="Хлебные крошки">
+                <Link href="/" className="hover:text-white transition-colors">Главная</Link>
+                <span className="text-gray-500">→</span>
+                <span className="text-white">О компании</span>
+              </nav>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">О компании</h1>
+              <p className="text-lg text-gray-400 max-w-2xl">
+                COMFORTRADE — надёжный брокер для торговли валютными парами и криптовалютами. Высокая доходность до 89%, 50+ инструментов, демо и реальный счёт.
+              </p>
+            </div>
+            <div className="flex-shrink-0 w-[5.5rem] h-[5.5rem] md:w-[6.5rem] md:h-[6.5rem] rounded-2xl bg-[#ebedff] flex items-center justify-center overflow-hidden">
+              <Image src="/images/about.png" alt="" width={48} height={48} className="w-10 h-10 md:w-12 md:h-12 object-contain" />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Mission block */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
+      {/* Mission block — фон aboutmain, текст и ноутбук поверх */}
+      <section className="relative py-16 md:py-24 overflow-x-hidden min-h-[600px] md:min-h-[700px]">
+        <div className="absolute inset-0">
+          <Image
+            src="/images/aboutmain.png"
+            alt=""
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+          />
+        </div>
+        <div className="relative z-10 container mx-auto px-4 flex flex-col items-center">
+          <div className="max-w-4xl md:max-w-5xl mx-auto text-center mb-10 md:mb-14">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               Наша миссия — сделать торговлю доступной каждому
             </h2>
-            <p className="text-lg text-gray-600 mb-16 md:mb-20 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg text-gray-600 max-w-3xl md:max-w-4xl mx-auto leading-relaxed">
               Мы создаём удобную платформу для торговли валютными парами и криптовалютами. Прозрачные условия, доходность до 89%, демо и реальный счёт — чтобы каждый мог уверенно торговать и приумножать капитал.
             </p>
           </div>
-          <div className="flex justify-center">
+          <div className="w-full max-w-5xl flex justify-center">
             <Image
-              src="/images/aboutmain.png"
-              alt="Торговля и финансы"
-              width={1200}
-              height={700}
-              className="w-full max-w-7xl h-auto object-contain"
+              src="/images/aboutmockup.png"
+              alt="Торговый терминал Comfortrade"
+              width={900}
+              height={600}
+              className="w-full max-w-2xl md:max-w-3xl lg:max-w-4xl h-auto object-contain drop-shadow-2xl"
             />
           </div>
         </div>
@@ -148,18 +165,29 @@ export default function AboutPage() {
       {/* Values Block */}
       <section className="py-16 md:py-24 bg-[#f7f7fc]">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-start">
-            {/* Left Column - Text Content */}
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                Ценности, которыми мы руководствуемся
-              </h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
-                Честность, прозрачность и забота о клиентах — основа нашей работы. Мы строим долгосрочные отношения с трейдерами.
-              </p>
-              <Link href="/reviews" className="inline-block btn-accent text-white px-8 py-4 rounded-lg font-medium transition-colors shadow-lg">
-                Читать отзывы
-              </Link>
+          <div className="grid md:grid-cols-2 gap-12 items-stretch">
+            {/* Left Column - Тёмный блок с текстом */}
+            <div className="relative rounded-2xl bg-[#0D1225] p-8 md:p-10 overflow-hidden flex flex-col">
+              <div className="absolute inset-0 pointer-events-none" aria-hidden>
+                <Image src="/images/frame.png" alt="" fill className="object-cover opacity-80" />
+              </div>
+              <div className="relative z-10 flex flex-col flex-1 min-h-0">
+                <div className="flex-1 space-y-6">
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
+                    Ценности,
+                    <br />
+                    которыми мы
+                    <br />
+                    руководствуемся
+                  </h2>
+                  <p className="text-lg text-[#BEC0CB] leading-relaxed max-w-md">
+                    Честность, прозрачность и забота о клиентах — основа нашей работы. Мы строим долгосрочные отношения с трейдерами.
+                  </p>
+                </div>
+                <Link href="/reviews" className="inline-block self-start mt-auto pt-6 bg-[#475DFB] hover:bg-[#3d52e8] text-white px-8 py-4 rounded-xl font-medium transition-colors shadow-lg">
+                  Читать отзывы
+                </Link>
+              </div>
             </div>
 
             {/* Right Column - Cards Grid */}
@@ -415,7 +443,7 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
               <a
-                href="https://www.instagram.com/comfotrade/"
+                href="https://www.instagram.com/comfortrade/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center justify-center w-14 h-14 rounded-xl bg-white border border-gray-200 hover:border-[#E4405F] hover:bg-gradient-to-br hover:from-[#833AB4] hover:via-[#FD1D1D] hover:to-[#FCAF45] transition-all shadow-md hover:shadow-lg transform hover:scale-110"
