@@ -71,7 +71,7 @@ export async function createApp() {
   });
 
   // CSRF hook for mutating methods (POST, PUT, PATCH, DELETE)
-  const CSRF_SKIP_PATHS = ['/api/auth/register', '/api/auth/login', '/api/auth/2fa'];
+  const CSRF_SKIP_PATHS = ['/api/auth/register', '/api/auth/login', '/api/auth/2fa', '/api/auth/logout'];
   app.addHook('onRequest', async (request, reply) => {
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return;
     if (request.url === '/health') return;

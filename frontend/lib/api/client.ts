@@ -45,10 +45,15 @@ export async function apiRequest<T>(
   };
 
   if (MUTATING_METHODS.includes(method) && typeof window !== 'undefined') {
-    try {
-      requestHeaders['csrf-token'] = await getCsrfToken();
-    } catch {
-      // CSRF fetch failed
+    // Logout не требует CSRF (в skip paths на бэке)
+    if (endpoint !== '/api/auth/logout') {
+      try {
+        requestHeaders['csrf-token'] = await getCsrfToken();
+      } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[API] CSRF token fetch failed:', e);
+        }
+      }
     }
   }
 

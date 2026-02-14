@@ -260,42 +260,26 @@ export function useWebSocket({ activeInstrumentRef, activeTimeframeRef, onPriceU
       };
 
       ws.onmessage = (event) => {
-        try {
-          // 🔥 FLOW WS-BINARY: Binary price tick [0x01][instrLen][instrument][price:f64][timestamp:f64]
-          if (event.data instanceof ArrayBuffer) {
-            const buf = event.data as ArrayBuffer;
-            // Minimum: 1 (type) + 1 (instrLen) = 2 bytes to read header
-            if (buf.byteLength < 2) return;
+        const processBinary = (buf: ArrayBuffer) => {
+          if (buf.byteLength < 2) return;
+          const view = new DataView(buf);
+          const msgType = view.getUint8(0);
+          if (msgType !== 0x01) return;
+          const instrLen = view.getUint8(1);
+          const expectedLen = 2 + instrLen + 16;
+          if (instrLen === 0 || buf.byteLength < expectedLen) return;
+          const instrBytes = new Uint8Array(buf, 2, instrLen);
+          let instrument = '';
+          for (let i = 0; i < instrLen; i++) instrument += String.fromCharCode(instrBytes[i]);
+          const price = view.getFloat64(2 + instrLen);
+          const timestamp = view.getFloat64(2 + instrLen + 8);
+          if (!Number.isFinite(price) || !Number.isFinite(timestamp) || price <= 0) return;
+          const activeId = activeInstrumentRefRef.current?.current;
+          if (activeId != null && instrument !== activeId) return;
+          if (onPriceUpdateRef.current) onPriceUpdateRef.current(price, timestamp);
+        };
 
-            const view = new DataView(buf);
-            const msgType = view.getUint8(0);
-            if (msgType === 0x01) {
-              const instrLen = view.getUint8(1);
-              // Validate: buffer must contain header + instrument + price(8) + timestamp(8)
-              const expectedLen = 2 + instrLen + 16;
-              if (instrLen === 0 || buf.byteLength < expectedLen) return;
-
-              // Decode ASCII instrument name
-              const instrBytes = new Uint8Array(buf, 2, instrLen);
-              let instrument = '';
-              for (let i = 0; i < instrLen; i++) instrument += String.fromCharCode(instrBytes[i]);
-
-              const price = view.getFloat64(2 + instrLen);
-              const timestamp = view.getFloat64(2 + instrLen + 8);
-
-              // Validate values — ignore corrupted data
-              if (!Number.isFinite(price) || !Number.isFinite(timestamp) || price <= 0) return;
-
-              const activeId = activeInstrumentRefRef.current?.current;
-              if (activeId != null && instrument !== activeId) return;
-              if (onPriceUpdateRef.current) {
-                onPriceUpdateRef.current(price, timestamp);
-              }
-            }
-            return;
-          }
-
-          const message = JSON.parse(event.data) as WsEvent;
+        const processMessage = (message: WsEvent) => {
 
           // FLOW WS-1.0: Обрабатываем ws:ready
           if (message.type === 'ws:ready') {
@@ -442,6 +426,30 @@ export function useWebSocket({ activeInstrumentRef, activeTimeframeRef, onPriceU
             });
             return;
           }
+        };
+
+        try {
+          // Blob: браузер может отдать binary frame как Blob (игнор binaryType в некоторых случаях)
+          if (event.data instanceof Blob) {
+            event.data.arrayBuffer().then((buf) => {
+              if (buf.byteLength >= 2 && new DataView(buf).getUint8(0) === 0x01) {
+                processBinary(buf);
+              } else {
+                try {
+                  const text = new TextDecoder().decode(buf);
+                  processMessage(JSON.parse(text) as WsEvent);
+                } catch {
+                  // ignore
+                }
+              }
+            }).catch(() => {});
+            return;
+          }
+          if (event.data instanceof ArrayBuffer) {
+            processBinary(event.data);
+            return;
+          }
+          processMessage(JSON.parse(event.data as string) as WsEvent);
         } catch (err) {
           console.error('[WebSocket] Failed to parse message:', err);
         }
