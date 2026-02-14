@@ -1,20 +1,32 @@
 /**
- * Simple API client - all requests with cookies
+ * Simple API client - all requests with cookies + CSRF for mutating
  */
+
+import { getCsrfToken } from './csrf';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 const REQUEST_TIMEOUT_MS = 15000; // 15 сек — чтобы не зависать при недоступном бэкенде
 
+const MUTATING_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
 export async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
   const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
 
-  // Устанавливаем Content-Type только если есть body
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };
-  
+
   if (options.body) {
     headers['Content-Type'] = 'application/json';
+  }
+
+  const method = (options.method || 'GET').toUpperCase();
+  if (MUTATING_METHODS.includes(method) && typeof window !== 'undefined') {
+    try {
+      headers['csrf-token'] = await getCsrfToken();
+    } catch {
+      // CSRF fetch failed — request may fail with 403
+    }
   }
 
   const controller = new AbortController();

@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { UserPlus, Wallet, TrendingUp } from 'lucide-react'
+import { UserPlus, Wallet, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react'
 import Footer from '@/components/Footer'
 import { SiteHeader } from '@/components/SiteHeader'
 
@@ -12,6 +12,7 @@ export default function StartPage() {
   const [showRegisterPanel, setShowRegisterPanel] = useState(false)
   const [panelMode, setPanelMode] = useState<'login' | 'register'>('register')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
+  const [educationSlide, setEducationSlide] = useState(0)
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400)
@@ -133,176 +134,192 @@ export default function StartPage() {
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Подробная инструкция */}
-      <section className="py-16 md:py-24 bg-[#f7f7fc]">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-12 md:mb-16">
-            Что нужно для старта
-          </h2>
-          
-          <div className="relative">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {/* Что нужно для старта — фон чуть шире контейнера, контент чуть уже */}
+        <div className="container mx-auto px-4 mt-16 md:mt-24">
+          <div className="-mx-6 md:-mx-12 lg:-mx-20 rounded-3xl overflow-hidden bg-[#061230] relative py-16 md:py-24">
+            <div className="absolute inset-0 opacity-85 rounded-3xl" style={{ backgroundImage: 'url(/images/small.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+            <div className="relative z-10 px-8 md:px-14 lg:px-20">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white text-center mb-8 md:mb-10">
+                Что нужно для старта
+              </h2>
+              
+              <div className="relative max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
               {/* Карточка 1 */}
-              <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+              <div className="bg-white rounded-2xl shadow-md p-5 py-8 border border-gray-100 min-h-[180px]">
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-3">
                   <span className="text-2xl font-bold text-[#3347ff]">1</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Регистрация</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Регистрация</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   Нажмите «Создать аккаунт» на главной странице. Введите email и придумайте пароль. Подтвердите согласие с условиями — и аккаунт готов.
                 </p>
               </div>
 
               {/* Карточка 2 */}
-              <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+              <div className="bg-white rounded-2xl shadow-md p-5 py-8 border border-gray-100 min-h-[180px]">
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-3">
                   <span className="text-2xl font-bold text-[#3347ff]">2</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Демо или реальный счёт</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Демо или реальный счёт</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   Демо-счёт — бесплатно и без риска. Попробуйте платформу с виртуальным балансом. Для реальной торговли пополните счёт удобным способом.
                 </p>
               </div>
 
               {/* Карточка 3 */}
-              <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+              <div className="bg-white rounded-2xl shadow-md p-5 py-8 border border-gray-100 min-h-[180px]">
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-3">
                   <span className="text-2xl font-bold text-[#3347ff]">3</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Выбор актива</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Выбор актива</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   Выберите валютную пару (EUR/USD, GBP/USD) или криптовалюту (BTC, ETH). Изучите график и определите направление движения цены.
                 </p>
               </div>
 
               {/* Карточка 4 */}
-              <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-4">
+              <div className="bg-white rounded-2xl shadow-md p-5 py-8 border border-gray-100 min-h-[180px]">
+                <div className="w-12 h-12 rounded-xl bg-[#3347ff]/10 flex items-center justify-center mb-3">
                   <span className="text-2xl font-bold text-[#3347ff]">4</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Первая сделка</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Первая сделка</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   Укажите сумму сделки и время экспирации. Выберите Call (рост) или Put (падение). Откройте сделку — результат известен сразу после истечения времени.
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-center">
-              <Link href="/terminal" className="btn-accent text-white px-8 py-4 rounded-lg font-medium transition-colors inline-block">
-                Начать торговать
-              </Link>
+                <div className="flex justify-center">
+                  <Link href="/terminal" className="bg-[#4A4AFB] hover:bg-[#3d3de8] text-white px-10 py-4 rounded-xl font-bold transition-colors inline-block">
+                    Начать торговать
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Education Section */}
-      <section className="py-16 md:py-24 bg-[#f7f7fc]">
+      <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Обучение для новичков и лучшие стратегии от экспертов
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
-              Мы подготовили комплексную программу обучения для начинающих трейдеров, а также собрали проверенные стратегии от опытных специалистов
-            </p>
-          </div>
+          <div className="grid md:grid-cols-[1fr_1.2fr] gap-12 lg:gap-16 items-start">
+            {/* Left — заголовок, описание, навигация */}
+            <div className="flex flex-col">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight text-left">
+                Обучение для новичков и лучшие стратегии от экспертов
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed mb-10 text-left max-w-xl">
+                Мы подготовили комплексную программу обучения для начинающих трейдеров, а также собрали проверенные стратегии от опытных специалистов
+              </p>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setEducationSlide(0)} className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${educationSlide === 0 ? 'bg-[#3347ff] text-white' : 'bg-[#e8e8f2] text-gray-900 hover:bg-[#e0e0ec]'}`} aria-label="Назад">
+                  <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+                </button>
+                <button type="button" onClick={() => setEducationSlide(1)} className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${educationSlide === 1 ? 'bg-[#3347ff] text-white' : 'bg-[#e8e8f2] text-gray-900 hover:bg-[#e0e0ec]'}`} aria-label="Вперёд">
+                  <ChevronRight className="w-6 h-6" strokeWidth={2} />
+                </button>
+              </div>
+            </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Right — слайдер карточек */}
+            <div className="overflow-hidden">
+              <div className="flex gap-6 transition-transform duration-500 ease-out" style={{ transform: `translateX(-${educationSlide * 50}%)` }}>
+                <div className="flex-shrink-0 w-[calc(100%-1.5rem)] min-w-0 md:w-[calc(85%-0.75rem)]">
             {/* Card 1 - For Beginners */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-shadow">
-              <div className="mb-6">
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 text-left h-full">
+              <div className="mb-4">
                 <svg className="w-8 h-8 text-[#3347ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
                 Обучение для новичков
               </h3>
-              <p className="text-gray-600 leading-relaxed mb-6">
+              <p className="text-gray-600 text-sm leading-relaxed mb-4">
                 Пошаговые уроки, которые помогут освоить основы торговли. От базовых понятий до первых успешных сделок.
               </p>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start gap-3">
+              <ul className="space-y-2 mb-5">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Основы торговли и платформы</span>
+                  <span>Основы торговли и платформы</span>
                 </li>
-                <li className="flex items-start gap-3">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Технический анализ и графики</span>
+                  <span>Технический анализ и графики</span>
                 </li>
-                <li className="flex items-start gap-3">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Управление рисками и капиталом</span>
+                  <span>Управление рисками и капиталом</span>
                 </li>
-                <li className="flex items-start gap-3">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Практические примеры и кейсы</span>
+                  <span>Практические примеры и кейсы</span>
                 </li>
               </ul>
-              <Link href="/education" className="inline-flex items-center gap-2 text-[#3347ff] font-semibold hover:text-[#2a3ae6] transition-colors">
+              <Link href="/education" className="inline-flex items-center gap-1.5 text-[#3347ff] font-semibold text-sm hover:text-[#2a3ae6] transition-colors">
                 Начать обучение
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRight className="w-5 h-5" />
               </Link>
             </div>
-
+                </div>
+                <div className="flex-shrink-0 w-[calc(100%-1.5rem)] min-w-0 md:w-[calc(85%-0.75rem)]">
             {/* Card 2 - Expert Strategies */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-shadow">
-              <div className="mb-6">
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 text-left h-full">
+              <div className="mb-4">
                 <svg className="w-8 h-8 text-[#3347ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
                 Стратегии от экспертов
               </h3>
-              <p className="text-gray-600 leading-relaxed mb-6">
-                Проверенные торговые стратегии от опытных трейдеров и аналитиков. Узнайте, как профессионалы достигают стабильной прибыли.
+              <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                Проверенные торговые стратегии трейдеров и аналитиков. Узнайте, как профессионалы достигают стабильной прибыли.
               </p>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start gap-3">
+              <ul className="space-y-2 mb-5">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Стратегии Call/Put и таймфреймы</span>
+                  <span>Стратегии Call/Put и таймфреймы</span>
                 </li>
-                <li className="flex items-start gap-3">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Скальпинг и внутридневная торговля</span>
+                  <span>Скальпинг и внутридневная торговля</span>
                 </li>
-                <li className="flex items-start gap-3">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Анализ рынка от профессионалов</span>
+                  <span>Анализ рынка от профессионалов</span>
                 </li>
-                <li className="flex items-start gap-3">
+                <li className="flex items-start gap-2 text-sm text-gray-600">
                   <svg className="w-5 h-5 text-[#3347ff] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Реальные примеры успешных сделок</span>
+                  <span>Реальные примеры успешных сделок</span>
                 </li>
               </ul>
-              <Link href="/education" className="inline-flex items-center gap-2 text-[#3347ff] font-semibold hover:text-[#2a3ae6] transition-colors">
+              <Link href="/education" className="inline-flex items-center gap-1.5 text-[#3347ff] font-semibold text-sm hover:text-[#2a3ae6] transition-colors">
                 Изучить стратегии
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRight className="w-5 h-5" />
               </Link>
+            </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

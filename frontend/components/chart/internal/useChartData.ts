@@ -462,6 +462,12 @@ export function useChartData({ onDataChange, timeframeMs: defaultTimeframeMs = 5
     // Пушим закрытую свечу в candlesRef
     candlesRef.current = [...candlesRef.current, normalizeCandle(closedLiveCandle)];
 
+    // 🔥 FIX #16: Ограничиваем количество свечей (удаляем старые слева)
+    const MAX_CANDLES = 3000;
+    if (candlesRef.current.length > MAX_CANDLES) {
+      candlesRef.current = candlesRef.current.slice(candlesRef.current.length - MAX_CANDLES);
+    }
+
     // Создаем НОВУЮ live-свечу
     // open = close предыдущей (закрытой)
     // startTime = normalizedEndTime (продолжаем нормализованную последовательность)

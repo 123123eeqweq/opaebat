@@ -12,6 +12,7 @@ import {
   lastNameSchema,
   avatarUrlSchema,
 } from '../../src/shared/validation/schemas.js';
+import { updateProfileSchema } from '../../src/modules/user/user.validation.js';
 
 describe('emailSchema', () => {
   it('should accept valid email', () => {
@@ -133,5 +134,25 @@ describe('avatarUrlSchema', () => {
 
   it('should reject path traversal', () => {
     expect(() => avatarUrlSchema.parse('/uploads/avatars/../../../etc/passwd')).toThrow();
+  });
+});
+
+describe('updateProfileSchema (country sanitization)', () => {
+  it('should strip HTML tags from country (XSS protection)', () => {
+    const result = updateProfileSchema.parse({ country: 'Ukraine <script>alert(1)</script>' });
+    // Tags removed; script content becomes harmless text
+    expect(result.country).toBe('Ukraine alert(1)');
+    expect(result.country).not.toContain('<');
+    expect(result.country).not.toContain('>');
+  });
+
+  it('should accept valid country', () => {
+    const result = updateProfileSchema.parse({ country: 'Ukraine' });
+    expect(result.country).toBe('Ukraine');
+  });
+
+  it('should accept null to clear country', () => {
+    const result = updateProfileSchema.parse({ country: null });
+    expect(result.country).toBeNull();
   });
 });

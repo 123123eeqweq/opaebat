@@ -6,6 +6,7 @@
  */
 
 export { renderBackground } from './renderBackground';
+export { renderInstrumentWatermark } from './renderInstrumentWatermark';
 export { renderGrid } from './renderGrid';
 export { renderPriceLine } from './renderPriceLine';
 export { renderPriceAxis } from './renderPriceAxis';

@@ -6,9 +6,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { authApi, ApiError } from '../api/client';
+import { parseValidationError } from '../api/validationError';
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
+    if (error.status === 400 && error.data) {
+      return parseValidationError(error.data);
+    }
     if (typeof error.data === 'object' && error.data !== null && 'message' in error.data) {
       const msg = (error.data as { message: unknown }).message;
       if (typeof msg === 'string') return msg;

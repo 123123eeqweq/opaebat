@@ -70,24 +70,21 @@ export function useCrosshair({
   getViewport,
   getTimeframeMs,
 }: UseCrosshairParams): UseCrosshairReturn {
-  // Хранение состояния через useRef (не useState!)
   const crosshairRef = useRef<CrosshairState | null>(null);
+  // 🔥 FIX #9: Ref для callbacks — handlers стабильны, всегда вызывают актуальные версии
+  const callbacksRef = useRef({ getViewport, getTimeframeMs });
+  callbacksRef.current = { getViewport, getTimeframeMs };
 
-  /**
-   * Получить текущее состояние crosshair
-   */
   const getCrosshair = (): CrosshairState | null => {
     return crosshairRef.current;
   };
 
-  /**
-   * Обработчик mouseMove - обновление позиции crosshair
-   */
   const handleMouseMove = (e: MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const viewport = getViewport();
+    const { getViewport: gvp, getTimeframeMs: gtf } = callbacksRef.current;
+    const viewport = gvp();
     if (!viewport) {
       crosshairRef.current = null;
       return;
@@ -117,15 +114,14 @@ export function useCrosshair({
       return;
     }
 
-    // Время под курсором; при включённом снэпе — к центру ближайшей свечи
     let time = mapXToTime(x, viewport, width);
-    const timeframeMs = getTimeframeMs?.();
+    const timeframeMs = gtf?.();
     if (timeframeMs != null && timeframeMs > 0) {
       time = snapTimeToCandleCenter(time, timeframeMs);
     }
 
     const price = mapYToPrice(y, viewport, height);
-    const snappedX = timeframeMs != null && timeframeMs > 0
+    const snappedX = (timeframeMs != null && timeframeMs > 0)
       ? timeToX(time, viewport, width)
       : x;
 
@@ -163,7 +159,7 @@ export function useCrosshair({
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [canvasRef, getViewport, getTimeframeMs]);
+  }, [canvasRef]);
 
   return {
     getCrosshair,

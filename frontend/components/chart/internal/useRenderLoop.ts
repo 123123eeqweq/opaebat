@@ -24,6 +24,7 @@ import { renderMarketClosedOverlay, type MarketStatus, type MarketCountdown } fr
 import { renderMarketAlternatives } from './render/renderMarketAlternatives';
 import { renderGrid } from './render/renderGrid';
 import { renderAxes } from './render/renderAxes';
+import { renderInstrumentWatermark } from './render/ui/renderInstrumentWatermark';
 import { getMarketCountdown } from './utils/marketCountdown';
 import type { Viewport } from './viewport.types';
 import type { Candle } from './chart.types';
@@ -109,6 +110,10 @@ interface UseRenderLoopParams {
   }>>;
   /** FLOW C-MARKET-ALTERNATIVES: получить индекс наведенной альтернативной пары */
   getMarketAlternativesHoveredIndex?: () => number | null;
+  /** ID инструмента для watermark (например "EURUSD_otc") */
+  instrument?: string;
+  /** Таймфрейм для watermark (например "5s") */
+  timeframe?: string;
 }
 
 export function useRenderLoop({
@@ -154,8 +159,106 @@ export function useRenderLoop({
     getTopAlternatives,
     marketAlternativesHitboxesRef,
     getMarketAlternativesHoveredIndex,
+    instrument,
+    timeframe,
 }: UseRenderLoopParams): void {
   const rafIdRef = useRef<number | null>(null);
+  // 🔥 FIX: Ref для params — RAF loop не перезапускается при каждом re-render.
+  // Функции (getViewport, getRenderCandles и т.д.) создаются заново каждый рендер → без ref
+  // каждый re-render перезапускал useEffect → teardown/rebuild RAF → frame drops.
+  const paramsRef = useRef<UseRenderLoopParams>({
+    canvasRef,
+    getViewport,
+    getRenderCandles,
+    getRenderLiveCandle,
+    getAnimatedCandle,
+    getLiveCandleForRender,
+    updateAnimator,
+    getFollowMode,
+    advanceFollowAnimation,
+    advanceYAnimation,
+    getTimeframeMs,
+    getCrosshair,
+    getOhlc,
+    updateOhlc,
+    getMode,
+    getIndicatorSeries,
+    indicatorConfigs,
+    getDrawings,
+    getHoveredDrawingId,
+    getSelectedDrawingId,
+    getVisibleOverlayIds,
+    getServerTimeText,
+    getServerTimeMs,
+    getDigits,
+    getPriceAlerts,
+    registerInteractionZone,
+    clearInteractionZones,
+    getExpirationTime,
+    getExpirationSeconds,
+    getTrades,
+    getPayoutPercent,
+    getTimeframeLabel,
+    getFormattedCountdown,
+    getHoverAction,
+    getArrowUpImg,
+    getArrowDownImg,
+    advancePanInertia,
+    getMarketStatus,
+    getNextMarketOpenAt,
+    getTopAlternatives,
+    marketAlternativesHitboxesRef,
+    getMarketAlternativesHoveredIndex,
+    instrument,
+    timeframe,
+  });
+  paramsRef.current = {
+    canvasRef,
+    getViewport,
+    getRenderCandles,
+    getRenderLiveCandle,
+    getAnimatedCandle,
+    getLiveCandleForRender,
+    updateAnimator,
+    getFollowMode,
+    advanceFollowAnimation,
+    advanceYAnimation,
+    getTimeframeMs,
+    getCrosshair,
+    getOhlc,
+    updateOhlc,
+    getMode,
+    getIndicatorSeries,
+    indicatorConfigs,
+    getDrawings,
+    getHoveredDrawingId,
+    getSelectedDrawingId,
+    getVisibleOverlayIds,
+    getServerTimeText,
+    getServerTimeMs,
+    getDigits,
+    getPriceAlerts,
+    registerInteractionZone,
+    clearInteractionZones,
+    getExpirationTime,
+    getExpirationSeconds,
+    getTrades,
+    getPayoutPercent,
+    getTimeframeLabel,
+    getFormattedCountdown,
+    getHoverAction,
+    getArrowUpImg,
+    getArrowDownImg,
+    advancePanInertia,
+    getMarketStatus,
+    getNextMarketOpenAt,
+    getTopAlternatives,
+    marketAlternativesHitboxesRef,
+    getMarketAlternativesHoveredIndex,
+    instrument,
+    timeframe,
+  };
+
   // FLOW E: плавная анимация вертикальной линии экспирации при смене expirationSeconds
   const expirationRenderTimeRef = useRef<number | null>(null);
   const expirationTargetTimeRef = useRef<number | null>(null);
@@ -175,27 +278,19 @@ export function useRenderLoop({
       return;
     }
 
-    // Render function
     const render = (now: number) => {
-      // FLOW G11: Обновляем аниматор каждый кадр
-      updateAnimator(now);
-      // 🔥 FLOW C-INERTIA: Pan inertia (до follow animation, так как они взаимоисключающие)
-      // Инвариант: pan inertia и follow mode не могут работать вместе
-      if (advancePanInertia && !getFollowMode()) {
-        advancePanInertia(now);
+      const p = paramsRef.current;
+      p.updateAnimator(now);
+      if (p.advancePanInertia && !p.getFollowMode()) {
+        p.advancePanInertia(now);
       }
-      // FLOW F1: Плавный сдвиг viewport в follow mode
-      if (getFollowMode()) {
-        advanceFollowAnimation(now);
+      if (p.getFollowMode()) {
+        p.advanceFollowAnimation(now);
       }
+      p.advanceYAnimation(now);
+      p.clearInteractionZones();
 
-      // 🔥 FLOW Y-SMOOTH: Плавная анимация Y-оси (всегда, независимо от режима)
-      advanceYAnimation(now);
-
-      // FLOW A2: очищаем interaction zones перед новым кадром
-      clearInteractionZones();
-
-      const viewport = getViewport();
+      const viewport = p.getViewport();
       
       // Если viewport === null → не рисовать
       if (!viewport) {
@@ -203,13 +298,11 @@ export function useRenderLoop({
         return;
       }
 
-      const candles = getRenderCandles();
-      // FLOW G11: Используем анимированную live-свечу вместо обычной
-      const animatedCandle = getAnimatedCandle();
-      // Live свеча с учётом анимации и режима (HA transform для animated)
-      const liveCandle = getLiveCandleForRender(animatedCandle);
-      const mode = getMode();
-      const digits = getDigits?.();
+      const candles = p.getRenderCandles();
+      const animatedCandle = p.getAnimatedCandle();
+      const liveCandle = p.getLiveCandleForRender(animatedCandle);
+      const mode = p.getMode();
+      const digits = p.getDigits?.();
 
       // Получаем CSS размеры canvas
       // ctx уже масштабирован через DPR в useCanvasInfrastructure,
@@ -254,13 +347,16 @@ export function useRenderLoop({
         backgroundImageUrlRef.current = null;
       }
 
+      // Watermark: полупрозрачное название инструмента по центру
+      renderInstrumentWatermark(ctx, width, height, p.instrument, p.timeframe);
+
       // FLOW C-MARKET-CLOSED: Проверяем статус рынка
-      const marketStatus = getMarketStatus?.() ?? 'OPEN';
+      const marketStatus = p.getMarketStatus?.() ?? 'OPEN';
       const marketOpen = marketStatus === 'OPEN';
 
       // FLOW O5: фильтр по видимым оверлеям (canvas только читает registry)
-      const visibleIds = getVisibleOverlayIds?.();
-      const allIndicators = getIndicatorSeries();
+      const visibleIds = p.getVisibleOverlayIds?.();
+      const allIndicators = p.getIndicatorSeries();
       const indicators = visibleIds
         ? allIndicators.filter((i) => {
             if (i.type === 'Stochastic') {
@@ -287,19 +383,19 @@ export function useRenderLoop({
           })
         : allIndicators;
       const hasRSI = indicators.some((i) => i.type === 'RSI') ||
-        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'RSI' && c.enabled));
+        (visibleIds == null && p.indicatorConfigs.some((c) => c.type === 'RSI' && c.enabled));
       const hasStochastic = indicators.some((i) => i.type === 'Stochastic') ||
-        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Stochastic' && c.enabled));
+        (visibleIds == null && p.indicatorConfigs.some((c) => c.type === 'Stochastic' && c.enabled));
       const hasMomentum = indicators.some((i) => i.type === 'Momentum') ||
-        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Momentum' && c.enabled));
+        (visibleIds == null && p.indicatorConfigs.some((c) => c.type === 'Momentum' && c.enabled));
       const hasAwesomeOscillator = indicators.some((i) => i.type === 'AwesomeOscillator') ||
-        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'AwesomeOscillator' && c.enabled));
+        (visibleIds == null && p.indicatorConfigs.some((c) => c.type === 'AwesomeOscillator' && c.enabled));
       const hasMACD = indicators.some((i) => i.type === 'MACD') ||
-        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'MACD' && c.enabled));
+        (visibleIds == null && p.indicatorConfigs.some((c) => c.type === 'MACD' && c.enabled));
       const hasATR = indicators.some((i) => i.type === 'ATR') ||
-        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ATR' && c.enabled));
+        (visibleIds == null && p.indicatorConfigs.some((c) => c.type === 'ATR' && c.enabled));
       const hasADX = indicators.some((i) => i.type === 'ADX') ||
-        (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ADX' && c.enabled));
+        (visibleIds == null && p.indicatorConfigs.some((c) => c.type === 'ADX' && c.enabled));
       const rsiHeight = hasRSI ? 120 : 0;
       const stochHeight = hasStochastic ? 120 : 0;
       const momentumHeight = hasMomentum ? 90 : 0;
@@ -317,7 +413,7 @@ export function useRenderLoop({
           viewport,
           width,
           height: mainHeight,
-          timeframeMs: getTimeframeMs(),
+          timeframeMs: p.getTimeframeMs(),
         });
 
         renderAxes({
@@ -330,8 +426,8 @@ export function useRenderLoop({
 
         // FLOW C-MARKET-COUNTDOWN: Вычисляем countdown если есть nextMarketOpenAt
         let countdown: MarketCountdown | undefined;
-        const nextMarketOpenAt = getNextMarketOpenAt?.();
-        const serverTimeMs = getServerTimeMs?.();
+        const nextMarketOpenAt = p.getNextMarketOpenAt?.();
+        const serverTimeMs = p.getServerTimeMs?.();
         
         if (nextMarketOpenAt && serverTimeMs) {
           countdown = getMarketCountdown(serverTimeMs, nextMarketOpenAt);
@@ -347,16 +443,16 @@ export function useRenderLoop({
         });
 
         // FLOW C-MARKET-ALTERNATIVES: Рисуем список альтернативных пар
-        const alternatives = getTopAlternatives?.() ?? [];
-        if (alternatives.length > 0 && marketAlternativesHitboxesRef) {
-          const hoveredIndex = getMarketAlternativesHoveredIndex?.() ?? null;
+        const alternatives = p.getTopAlternatives?.() ?? [];
+        if (alternatives.length > 0 && p.marketAlternativesHitboxesRef) {
+          const hoveredIndex = p.getMarketAlternativesHoveredIndex?.() ?? null;
           renderMarketAlternatives({
             ctx,
             width,
             startY: mainHeight / 2, // Список поднят выше (отступ от таймера сохраняется за счёт blockOffsetY)
             alternatives,
             hoveredIndex,
-            hitboxesRef: marketAlternativesHitboxesRef,
+            hitboxesRef: p.marketAlternativesHitboxesRef,
           });
         }
 
@@ -374,14 +470,14 @@ export function useRenderLoop({
         liveCandle,
         width,
         height: mainHeight,
-        timeframeMs: getTimeframeMs(),
+        timeframeMs: p.getTimeframeMs(),
         mode,
         digits,
       });
 
       // FLOW E: Expiration overlay — вертикальная пунктирная линия по server time с плавным смещением
       // Используем ту же логику что и на линейном графике (где все работает нормально)
-      const rawExpirationTimestamp = getExpirationTime?.();
+      const rawExpirationTimestamp = p.getExpirationTime?.();
       if (rawExpirationTimestamp != null && Number.isFinite(rawExpirationTimestamp) && viewport.timeEnd > viewport.timeStart) {
         const EXP_ANIM_DURATION_MS = 320;
         const PRICE_LABEL_AREA_WIDTH = 60; // Ширина области меток цены
@@ -490,9 +586,9 @@ export function useRenderLoop({
       }
 
       // FLOW BO-HOVER: Рисуем подсветку зоны при наведении на кнопки CALL/PUT
-      const hoverAction = getHoverAction?.();
+      const hoverAction = p.getHoverAction?.();
       if (hoverAction) {
-        const liveCandle = getLiveCandleForRender(animatedCandle);
+        const liveCandle = p.getLiveCandleForRender(animatedCandle);
         const currentPrice = liveCandle?.close;
         if (currentPrice != null && liveCandle) {
           // Конвертируем цену в Y координату
@@ -502,7 +598,7 @@ export function useRenderLoop({
             const priceY = mainHeight - (normalizedPrice * mainHeight);
             
             // FLOW BO-HOVER-ARROWS: Вычисляем X координату последней свечи (центр свечи)
-            const timeframeMs = getTimeframeMs();
+            const timeframeMs = p.getTimeframeMs();
             const candleCenterTime = liveCandle.startTime + timeframeMs / 2;
             const timeRange = viewport.timeEnd - viewport.timeStart;
             const lastDataPointX = timeRange > 0
@@ -515,8 +611,8 @@ export function useRenderLoop({
               priceY,
               width,
               height: mainHeight,
-              arrowUpImg: getArrowUpImg?.(),
-              arrowDownImg: getArrowDownImg?.(),
+              arrowUpImg: p.getArrowUpImg?.(),
+              arrowDownImg: p.getArrowDownImg?.(),
               lastDataPointX,
             });
           }
@@ -524,7 +620,7 @@ export function useRenderLoop({
       }
 
       // FLOW A4: Рисуем линии ценовых алертов (только в основной зоне)
-      const alerts = getPriceAlerts();
+      const alerts = p.getPriceAlerts();
       if (alerts.length > 0) {
         renderPriceAlerts({
           ctx,
@@ -540,7 +636,7 @@ export function useRenderLoop({
         renderIndicators({
           ctx,
           indicators,
-          indicatorConfigs,
+          indicatorConfigs: p.indicatorConfigs,
           viewport,
           width,
           height: mainHeight, // Основная высота для SMA/EMA
@@ -555,19 +651,19 @@ export function useRenderLoop({
       }
 
       // FLOW G7: Рисуем crosshair поверх индикаторов (только в основной зоне)
-      const crosshair = getCrosshair();
+      const crosshair = p.getCrosshair();
       renderCrosshair({
         ctx,
         crosshair,
         width,
         height: mainHeight,
-        registerInteractionZone,
+        registerInteractionZone: p.registerInteractionZone,
         digits,
       });
 
       // FLOW T-OVERLAY: Рисуем trades (сделки) - только видимые
-      if (getTrades) {
-        const allTrades = getTrades();
+      if (p.getTrades) {
+        const allTrades = p.getTrades();
         
         const visibleTradeIds = visibleIds || new Set<string>();
         const trades = visibleIds
@@ -575,13 +671,12 @@ export function useRenderLoop({
           : allTrades;
         
         // Получаем текущую цену из liveCandle для расчета прибыли
-        const liveCandle = getLiveCandleForRender(animatedCandle);
+        const liveCandle = p.getLiveCandleForRender(animatedCandle);
         const currentPrice = liveCandle?.close;
         
         if (trades.length > 0) {
-          // Получаем свечи и timeframe для вычисления центра свечи
-          const candles = getRenderCandles();
-          const timeframeMs = getTimeframeMs();
+          const candles = p.getRenderCandles();
+          const timeframeMs = p.getTimeframeMs();
           
           renderTrades({
             ctx,
@@ -594,13 +689,13 @@ export function useRenderLoop({
             candles,
             liveCandle,
             timeframeMs,
-            payoutPercent: getPayoutPercent?.() ?? 75,
+            payoutPercent: p.getPayoutPercent?.() ?? 75,
           });
         }
       }
 
       // FLOW O5: drawings только с visible overlay
-      const allDrawings = getDrawings();
+      const allDrawings = p.getDrawings();
       const drawings = visibleIds
         ? allDrawings.filter((d) => visibleIds.has(d.id))
         : allDrawings;
@@ -610,15 +705,15 @@ export function useRenderLoop({
         viewport,
         width,
         height: mainHeight, // Drawings только в основной зоне
-        hoveredDrawingId: getHoveredDrawingId(),
-        selectedDrawingId: getSelectedDrawingId(),
+        hoveredDrawingId: p.getHoveredDrawingId(),
+        selectedDrawingId: p.getSelectedDrawingId(),
       });
 
       // FLOW G8: Обновляем OHLC данные (синхронизировано с кадрами)
-      updateOhlc();
+      p.updateOhlc();
 
       // FLOW G8: Рисуем OHLC панель
-      const ohlc = getOhlc();
+      const ohlc = p.getOhlc();
       renderOhlcPanel({
         ctx,
         ohlc,
@@ -629,7 +724,7 @@ export function useRenderLoop({
 
 
       // FLOW T6/T7: серверное время — overlay сверху слева, под селектором, поверх всего, не скроллится
-      const timeText = getServerTimeText?.();
+      const timeText = p.getServerTimeText?.();
       if (timeText) {
         ctx.save();
         ctx.font = '12px sans-serif';
@@ -643,12 +738,11 @@ export function useRenderLoop({
       }
 
       // FLOW C4-C5: Рисуем countdown timer справа от лайв-свечи
-      if (liveCandle && getTimeframeLabel && getFormattedCountdown && settings.showCountdown) {
-        // Вычисляем ширину свечи (та же логика что в renderCandles)
+      if (liveCandle && p.getTimeframeLabel && p.getFormattedCountdown && settings.showCountdown) {
         const timeRange = viewport.timeEnd - viewport.timeStart;
         const CANDLE_GAP = 0.5;
         const MAX_CANDLE_PX = 200;
-        const rawWidth = timeRange > 0 ? (getTimeframeMs() / timeRange) * width : 0;
+        const rawWidth = timeRange > 0 ? (p.getTimeframeMs() / timeRange) * width : 0;
         const distanceBetweenCenters = rawWidth;
         const effectiveMaxWidth = Math.max(0, distanceBetweenCenters - CANDLE_GAP);
         const candleWidth = Math.min(MAX_CANDLE_PX, effectiveMaxWidth);
@@ -659,9 +753,9 @@ export function useRenderLoop({
           liveCandle,
           width,
           height: mainHeight,
-          timeframeMs: getTimeframeMs(),
-          timeframeLabel: getTimeframeLabel(),
-          remainingTime: getFormattedCountdown(),
+          timeframeMs: p.getTimeframeMs(),
+          timeframeLabel: p.getTimeframeLabel(),
+          remainingTime: p.getFormattedCountdown(),
           candleWidth,
         });
       }
@@ -685,5 +779,5 @@ export function useRenderLoop({
         rafIdRef.current = null;
       }
     };
-  }, [canvasRef, getViewport, getRenderCandles, getRenderLiveCandle, getAnimatedCandle, getLiveCandleForRender, updateAnimator, getFollowMode, advanceFollowAnimation, advanceYAnimation, getTimeframeMs, getCrosshair, getOhlc, updateOhlc, getMode, getIndicatorSeries, indicatorConfigs, getDrawings, getHoveredDrawingId, getSelectedDrawingId, getVisibleOverlayIds, getServerTimeText, getServerTimeMs, getDigits, getTrades, getPayoutPercent, getTimeframeLabel, getFormattedCountdown, getMarketStatus, getNextMarketOpenAt, getTopAlternatives, marketAlternativesHitboxesRef, getMarketAlternativesHoveredIndex, registerInteractionZone, clearInteractionZones]);
+  }, [canvasRef]); // paramsRef обновляется каждый рендер — RAF loop не перезапускается
 }

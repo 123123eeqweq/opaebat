@@ -48,7 +48,18 @@ export function useCanvasInfrastructure({ canvasRef }: UseCanvasInfrastructurePa
     ctxRef.current = ctx;
 
     // 2. Device Pixel Ratio handling
-    const dpr = window.devicePixelRatio || 1;
+    // 🔥 FIX: DPR читается при каждом resize, а не один раз при mount
+    // Если пользователь перетащит окно на монитор с другим DPI — canvas адаптируется
+    let currentDpr = window.devicePixelRatio || 1;
+
+    /**
+     * Получает актуальный DPR (может измениться при перемещении между мониторами)
+     */
+    const getDpr = (): number => {
+      const dpr = window.devicePixelRatio || 1;
+      currentDpr = dpr;
+      return dpr;
+    };
 
     /**
      * Обновляет размеры canvas с учетом DPR
@@ -59,6 +70,7 @@ export function useCanvasInfrastructure({ canvasRef }: UseCanvasInfrastructurePa
      * 3. Без явного CSS-размера браузер сам решает → прыжки при ресайзе
      */
     const updateCanvasSize = () => {
+      const dpr = getDpr();
       const rect = canvas.getBoundingClientRect();
       const displayWidth = Math.floor(rect.width);
       const displayHeight = Math.floor(rect.height);
@@ -98,6 +110,7 @@ export function useCanvasInfrastructure({ canvasRef }: UseCanvasInfrastructurePa
     const observerCallback = (entries: ResizeObserverEntry[]) => {
       const entry = entries[0];
       if (!entry) return;
+      const dpr = getDpr();
       const r = entry.contentRect;
       const displayWidth = Math.floor(r.width);
       const displayHeight = Math.floor(r.height);

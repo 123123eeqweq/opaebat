@@ -7,7 +7,6 @@ import type { WsEvent } from './WsEvents.js';
 import { WsClient } from './WsClient.js';
 import { logger } from '../logger.js';
 import { WS_HEARTBEAT_INTERVAL_MS } from '../../config/constants.js';
-import { wsConnectionsTotal, wsConnectionsActive } from '../../modules/metrics/metrics.js';
 
 export class WebSocketManager {
   private clients: Set<WsClient> = new Set();
@@ -19,8 +18,6 @@ export class WebSocketManager {
    */
   register(client: WsClient): void {
     this.clients.add(client);
-    wsConnectionsTotal.inc({ event: 'connect' });
-    wsConnectionsActive.inc();
 
     if (client.userId) {
       if (!this.userClients.has(client.userId)) {
@@ -37,8 +34,6 @@ export class WebSocketManager {
    */
   unregister(client: WsClient): void {
     this.clients.delete(client);
-    wsConnectionsTotal.inc({ event: 'disconnect' });
-    wsConnectionsActive.dec();
 
     if (client.userId) {
       const userClients = this.userClients.get(client.userId);
@@ -159,6 +154,59 @@ export class WebSocketManager {
   }
 
   /**
+   * 🔥 FLOW WS-TF: Broadcast candle event only to clients subscribed to this instrument AND timeframe.
+   * Clients without activeTimeframe (e.g. line chart) receive all candle events.
+   */
+  broadcastCandleToInstrument(instrument: string, timeframe: string, event: WsEvent): void {
+    const deadClients: WsClient[] = [];
+
+    for (const client of this.clients) {
+      if (!client.isAuthenticated || !client.subscriptions.has(instrument)) continue;
+      // Skip if client has a different activeTimeframe
+      if (client.activeTimeframe && client.activeTimeframe !== timeframe) continue;
+
+      try {
+        if (!client.isOpen()) {
+          deadClients.push(client);
+          continue;
+        }
+        client.send(event);
+      } catch (error) {
+        logger.error('Failed to send candle broadcast:', error);
+        deadClients.push(client);
+      }
+    }
+
+    deadClients.forEach((client) => this.unregister(client));
+  }
+
+  /**
+   * 🔥 FLOW WS-BINARY: Broadcast pre-serialized data to instrument subscribers.
+   * string → text frame, Buffer → binary frame.
+   * Serialize once, send to N subscribers (no per-client overhead).
+   */
+  broadcastRawToInstrument(instrument: string, raw: string | Buffer): void {
+    const deadClients: WsClient[] = [];
+
+    for (const client of this.clients) {
+      if (!client.isAuthenticated || !client.subscriptions.has(instrument)) continue;
+
+      try {
+        if (!client.isOpen()) {
+          deadClients.push(client);
+          continue;
+        }
+        client.sendRaw(raw);
+      } catch (error) {
+        logger.error('Failed to send raw broadcast to instrument:', error);
+        deadClients.push(client);
+      }
+    }
+
+    deadClients.forEach((client) => this.unregister(client));
+  }
+
+  /**
    * Get connected clients count
    */
   getClientCount(): number {
@@ -201,6 +249,27 @@ export class WebSocketManager {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
       logger.info('WebSocket heartbeat stopped');
+    }
+  }
+
+  /**
+   * Graceful shutdown: close all WebSocket connections
+   */
+  closeAll(): void {
+    this.stopHeartbeat();
+    const count = this.clients.size;
+    for (const client of this.clients) {
+      try {
+        client.send({ type: 'server:shutdown', data: { message: 'Server is shutting down' } });
+        client.close();
+      } catch (error) {
+        logger.debug('Error closing WS client:', error);
+      }
+    }
+    this.clients.clear();
+    this.userClients.clear();
+    if (count > 0) {
+      logger.info(`Closed ${count} WebSocket connection(s)`);
     }
   }
 }

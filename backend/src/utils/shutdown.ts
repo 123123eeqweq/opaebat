@@ -4,18 +4,28 @@
 
 import type { FastifyInstance } from 'fastify';
 import { shutdownAll } from '../bootstrap/index.js';
+import { getWebSocketManager } from '../modules/websocket/websocket.routes.js';
 import { logger } from '../shared/logger.js';
 
 export function setupGracefulShutdown(app: FastifyInstance): void {
+  let isShuttingDown = false;
+
   const shutdown = async (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
     logger.info(`Received ${signal}, starting graceful shutdown...`);
 
     try {
-      // Close Fastify server
-      await app.close();
+      // 1. Close all WebSocket connections (send shutdown message, then close)
+      const wsManager = getWebSocketManager();
+      wsManager.closeAll();
 
-      // Shutdown all systems (database, redis, etc.)
+      // 2. Shutdown event handlers, prices, trades, etc. (before app.close)
       await shutdownAll();
+
+      // 3. Close Fastify HTTP server
+      await app.close();
 
       logger.info('✅ Graceful shutdown completed');
       process.exit(0);

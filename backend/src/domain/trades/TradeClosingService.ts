@@ -82,25 +82,31 @@ export class TradeClosingService {
     // Calculate payout amount
     const payoutAmount = trade.calculatePayoutAmount();
 
-    // Update trade and balance in transaction
-    // Note: We'll handle transaction in repository if needed
-    // For now, update trade first, then balance
-
-    // Update trade
-    const updatedTrade = await this.tradeRepository.updateResult(trade.id, exitPrice, status, closedAt);
-
-    // Update balance based on result
+    // 🔥 FIX: Атомарная операция — обновление статуса + зачисление на баланс в одной транзакции.
+    // Раньше: updateResult → updateBalance (если updateBalance падает — сделка закрыта, но деньги не зачислены).
+    // Теперь: обе операции в $transaction — если одна падает, откатываются обе.
+    let balanceDelta = 0;
     if (status === TradeStatus.WIN) {
-      // WIN: Add payout amount (original amount + profit)
-      const totalReturn = trade.amount + payoutAmount;
-      await this.accountRepository.updateBalance(trade.accountId, totalReturn);
-      logger.info(`Trade ${trade.id} closed as WIN. Payout: ${totalReturn}`);
+      balanceDelta = trade.amount + payoutAmount;
     } else if (status === TradeStatus.TIE) {
-      // TIE: Return original amount (no profit, no loss)
-      await this.accountRepository.updateBalance(trade.accountId, trade.amount);
-      logger.info(`Trade ${trade.id} closed as TIE. Refund: ${trade.amount}`);
+      balanceDelta = trade.amount;
+    }
+    // LOSS: balanceDelta = 0 — ничего не зачисляем
+
+    const updatedTrade = await this.tradeRepository.closeWithBalanceCredit(
+      trade.id,
+      exitPrice,
+      status,
+      closedAt,
+      trade.accountId,
+      balanceDelta,
+    );
+
+    if (status === TradeStatus.WIN) {
+      logger.info(`Trade ${trade.id} closed as WIN. Payout: ${balanceDelta}`);
+    } else if (status === TradeStatus.TIE) {
+      logger.info(`Trade ${trade.id} closed as TIE. Refund: ${balanceDelta}`);
     } else {
-      // LOSS: amount already deducted, nothing to add
       logger.info(`Trade ${trade.id} closed as LOSS. Amount lost: ${trade.amount}`);
     }
 

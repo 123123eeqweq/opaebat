@@ -149,19 +149,104 @@ export class PrismaTradeRepository implements TradeRepository {
   ): Promise<Trade> {
     const prisma = getPrismaClient();
 
-    // Use transaction for atomicity
-    const trade = await prisma.$transaction(async (tx) => {
-      return tx.trade.update({
-        where: { id },
+    const trade = await prisma.trade.update({
+      where: { id },
+      data: {
+        exitPrice: new Prisma.Decimal(exitPrice),
+        status: status as 'OPEN' | 'WIN' | 'LOSS',
+        closedAt,
+      },
+    });
+
+    return this.toDomain(trade);
+  }
+
+  /**
+   * 🔥 Атомарное открытие сделки: списание баланса + создание trade в одной транзакции.
+   * Если create упадёт — баланс НЕ спишется. Если updateBalance упадёт — trade НЕ создастся.
+   */
+  async createWithBalanceDeduction(
+    tradeData: Omit<import('../../domain/trades/TradeTypes.js').Trade, 'id' | 'openedAt'>,
+    accountId: string,
+    amount: number,
+  ): Promise<import('../../domain/trades/TradeTypes.js').Trade> {
+    const prisma = getPrismaClient();
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Списываем баланс (atomic increment внутри транзакции)
+      await tx.account.update({
+        where: { id: accountId },
+        data: {
+          balance: {
+            decrement: new Prisma.Decimal(amount),
+          },
+        },
+      });
+
+      // 2. Создаём сделку
+      const trade = await tx.trade.create({
+        data: {
+          userId: tradeData.userId,
+          accountId: tradeData.accountId,
+          direction: tradeData.direction as 'CALL' | 'PUT',
+          instrument: tradeData.instrument,
+          amount: new Prisma.Decimal(tradeData.amount),
+          entryPrice: new Prisma.Decimal(tradeData.entryPrice),
+          exitPrice: tradeData.exitPrice !== null ? new Prisma.Decimal(tradeData.exitPrice) : null,
+          payout: new Prisma.Decimal(tradeData.payout),
+          status: tradeData.status as 'OPEN' | 'WIN' | 'LOSS',
+          expiresAt: tradeData.expiresAt,
+          closedAt: tradeData.closedAt,
+        },
+      });
+
+      return trade;
+    });
+
+    return this.toDomain(result);
+  }
+
+  /**
+   * 🔥 Атомарное закрытие сделки: обновление статуса + зачисление на баланс в одной транзакции.
+   * balanceDelta = 0 для LOSS (ничего не зачисляем), amount для TIE, amount + payout для WIN.
+   */
+  async closeWithBalanceCredit(
+    tradeId: string,
+    exitPrice: number,
+    status: TradeStatus,
+    closedAt: Date,
+    accountId: string,
+    balanceDelta: number,
+  ): Promise<import('../../domain/trades/TradeTypes.js').Trade> {
+    const prisma = getPrismaClient();
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Обновляем статус сделки
+      const trade = await tx.trade.update({
+        where: { id: tradeId },
         data: {
           exitPrice: new Prisma.Decimal(exitPrice),
           status: status as 'OPEN' | 'WIN' | 'LOSS',
           closedAt,
         },
       });
+
+      // 2. Зачисляем на баланс (только если есть что зачислять)
+      if (balanceDelta > 0) {
+        await tx.account.update({
+          where: { id: accountId },
+          data: {
+            balance: {
+              increment: new Prisma.Decimal(balanceDelta),
+            },
+          },
+        });
+      }
+
+      return trade;
     });
 
-    return this.toDomain(trade);
+    return this.toDomain(result);
   }
 
   private toDomain(trade: {

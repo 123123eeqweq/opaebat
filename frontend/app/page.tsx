@@ -81,8 +81,16 @@ function HomeContent() {
         setIsSubmitting(false)
         return
       }
-      if (password.length < 6) {
-        setError('Пароль должен быть не менее 6 символов')
+      if (password.length < 8) {
+        setError('Пароль должен быть не менее 8 символов')
+        setIsSubmitting(false)
+        return
+      }
+      const hasUpper = /[A-Z]/.test(password)
+      const hasLower = /[a-z]/.test(password)
+      const hasNumber = /\d/.test(password)
+      if (!hasUpper || !hasLower || !hasNumber) {
+        setError('Пароль: заглавная и строчная буква, цифра')
         setIsSubmitting(false)
         return
       }
@@ -956,10 +964,13 @@ function HomeContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Введите пароль"
                     required
-                    minLength={6}
+                    minLength={8}
                     disabled={isSubmitting}
                     className="panel-auth-input w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:shadow-none focus:border-white/10 focus:bg-white/[0.08] transition-all disabled:opacity-50"
                   />
+                  {panelMode === 'register' && (
+                    <p className="text-xs text-gray-500 ml-1">Минимум 8 символов, заглавная и строчная буква, цифра</p>
+                  )}
                 </div>
                 {panelMode === 'register' && (
                   <div className="space-y-2">
@@ -971,10 +982,15 @@ function HomeContent() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Подтвердите пароль"
                       required
-                      minLength={6}
+                      minLength={8}
                       disabled={isSubmitting}
                       className="panel-auth-input w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:shadow-none focus:border-white/10 focus:bg-white/[0.08] transition-all disabled:opacity-50"
                     />
+                  </div>
+                )}
+                {error && (
+                  <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+                    {error}
                   </div>
                 )}
                 {panelMode === 'login' && (

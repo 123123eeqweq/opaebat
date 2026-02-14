@@ -89,23 +89,26 @@ export class TradeService {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + input.expirationSeconds * 1000);
 
-    // Deduct amount from balance (atomic operation)
-    await this.accountRepository.updateBalance(input.accountId, -input.amount);
-
-    // Create trade
-    const trade = await this.tradeRepository.create({
-      userId: input.userId,
-      accountId: input.accountId,
-      direction: input.direction,
-      instrument: input.instrument, // ✅ Сохраняем instrument
-      amount: input.amount,
-      entryPrice,
-      exitPrice: null,
-      payout: PAYOUT_PERCENTAGE,
-      status: TradeStatus.OPEN,
-      expiresAt,
-      closedAt: null,
-    });
+    // 🔥 FIX: Атомарная операция — списание баланса + создание сделки в одной транзакции.
+    // Раньше: updateBalance → create (если create падает — деньги списаны, сделки нет).
+    // Теперь: обе операции в $transaction — если одна падает, откатываются обе.
+    const trade = await this.tradeRepository.createWithBalanceDeduction(
+      {
+        userId: input.userId,
+        accountId: input.accountId,
+        direction: input.direction,
+        instrument: input.instrument,
+        amount: input.amount,
+        entryPrice,
+        exitPrice: null,
+        payout: PAYOUT_PERCENTAGE,
+        status: TradeStatus.OPEN,
+        expiresAt,
+        closedAt: null,
+      },
+      input.accountId,
+      input.amount,
+    );
 
     return trade;
   }

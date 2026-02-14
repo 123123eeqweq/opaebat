@@ -68,6 +68,10 @@ export const RATE_LIMIT_MAX = 100;
 /** Rate limit: размер in-memory кэша */
 export const RATE_LIMIT_CACHE = 10000;
 
+/** Upload rate limits — защита от abuse */
+export const RATE_LIMIT_UPLOAD_MAX = 10;
+export const RATE_LIMIT_UPLOAD_WINDOW = '1 hour';
+
 /** Auth rate limits — защита от brute force */
 export const RATE_LIMIT_AUTH_LOGIN_MAX = 5;
 export const RATE_LIMIT_AUTH_LOGIN_WINDOW = '15 minutes';
@@ -85,8 +89,8 @@ export const LINE_CHART_HISTORY_LIMIT = 300;
 /** WebSocket: heartbeat interval (ms) - ping clients for keep-alive */
 export const WS_HEARTBEAT_INTERVAL_MS = 30000;
 
-/** WebSocket: max messages per client per minute (rate limit) */
-export const WS_RATE_LIMIT_MAX = 120;
+/** WebSocket: max messages per client per second (rate limit — защита от спама) */
+export const WS_RATE_LIMIT_MAX = 100;
 
-/** WebSocket: rate limit window (ms) */
-export const WS_RATE_LIMIT_WINDOW_MS = 60000;
+/** WebSocket: rate limit window (ms) — 1 sec */
+export const WS_RATE_LIMIT_WINDOW_MS = 1000;

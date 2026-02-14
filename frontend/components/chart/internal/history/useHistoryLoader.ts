@@ -50,6 +50,9 @@ export function useHistoryLoader({
   const isLoadingRef = useRef<boolean>(false);
   const hasMoreRef = useRef<boolean>(true);
   const loadedRangesRef = useRef<Set<string>>(new Set());
+  // 🔥 FIX #20: Debounce — не более 1 запроса в 300ms при быстром скролле
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingViewportRef = useRef<Viewport | null>(null);
 
   /** FLOW P: всегда брать текущий инструмент при запросе — колбэк pan может быть из старого рендера */
   const assetRef = useRef(asset);
@@ -66,10 +69,9 @@ export function useHistoryLoader({
   };
 
   /**
-   * Проверяет, нужно ли загрузить больше истории
-   * Вызывается после pan
+   * Внутренняя реализация загрузки истории
    */
-  const maybeLoadMore = async (viewport: Viewport): Promise<void> => {
+  const doLoadMore = async (viewport: Viewport): Promise<void> => {
     // Если уже загружается или нет больше данных
     if (isLoadingRef.current || !hasMoreRef.current) {
       return;
@@ -149,14 +151,43 @@ export function useHistoryLoader({
     } catch (error) {
       console.error('Failed to load history:', error);
       isLoadingRef.current = false;
+      // 🔥 FIX: Удаляем rangeKey при ошибке — иначе повторная загрузка заблокирована навсегда
+      loadedRangesRef.current.delete(rangeKey);
       // Не помечаем hasMore = false, чтобы можно было повторить
     }
+  };
+
+  /**
+   * 🔥 FIX #20: Debounced wrapper — при быстром скролле откладывает запрос на 300ms
+   * Сразу загружает если не было запросов недавно, иначе debounce
+   */
+  const DEBOUNCE_MS = 300;
+  const maybeLoadMore = (viewport: Viewport): void => {
+    pendingViewportRef.current = viewport;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+      const vp = pendingViewportRef.current;
+      if (vp) {
+        pendingViewportRef.current = null;
+        doLoadMore(vp);
+      }
+    }, DEBOUNCE_MS);
   };
 
   const reset = (): void => {
     loadedRangesRef.current = new Set();
     hasMoreRef.current = true;
     isLoadingRef.current = false;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    pendingViewportRef.current = null;
   };
 
   return {

@@ -18,6 +18,9 @@ export interface ChartSettings {
   // Сетка
   showGrid: boolean; // Показывать ли сетку на фоне
   
+  // Watermark (название инструмента + таймфрейм по центру графика)
+  showWatermark: boolean; // Показывать ли полупрозрачное название пары на фоне
+  
   // Часовой пояс
   timezoneOffset: number; // Смещение от UTC в часах (по умолчанию +2)
 }
@@ -29,6 +32,7 @@ const DEFAULT_SETTINGS: ChartSettings = {
   backgroundOpacity: 0.3,
   showCountdown: true,
   showGrid: true,
+  showWatermark: true,
   timezoneOffset: 2, // UTC+2 по умолчанию
 };
 

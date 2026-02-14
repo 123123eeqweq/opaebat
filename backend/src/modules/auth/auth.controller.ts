@@ -35,8 +35,10 @@ export class AuthController {
       // Set cookie
       setSessionCookie(reply, result.sessionToken);
 
+      const csrfToken = reply.generateCsrf();
       return reply.status(201).send({
         user: result.user,
+        csrfToken,
       });
     } catch (error) {
       if (error instanceof UserAlreadyExistsError) {
@@ -80,8 +82,10 @@ export class AuthController {
       const authResult = result as AuthResult;
       setSessionCookie(reply, authResult.sessionToken);
 
+      const csrfToken = reply.generateCsrf();
       return reply.send({
         user: authResult.user,
+        csrfToken,
       });
     } catch (error) {
       if (error instanceof InvalidCredentialsError) {
@@ -135,8 +139,10 @@ export class AuthController {
       // Set cookie
       setSessionCookie(reply, result.sessionToken);
 
+      const csrfToken = reply.generateCsrf();
       return reply.send({
         user: result.user,
+        csrfToken,
       });
     } catch (error) {
       if (error instanceof InvalidCredentialsError || error instanceof InvalidSessionError) {

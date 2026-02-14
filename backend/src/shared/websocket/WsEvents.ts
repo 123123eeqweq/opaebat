@@ -17,6 +17,7 @@ export type WsEvent =
   | { type: 'trade:close'; data: TradeDTO & { result: 'WIN' | 'LOSS' | 'TIE' } }
   | { type: 'trade:countdown'; data: { tradeId: string; secondsLeft: number } }
   | { type: 'server:time'; data: { timestamp: number; rateLimited?: boolean } }
+  | { type: 'server:shutdown'; data: { message: string } }
   // FLOW A-ACCOUNT: Account snapshot event
   | { type: 'account.snapshot'; payload: { accountId: string; type: 'REAL' | 'DEMO'; balance: number; currency: 'USD' | 'RUB' | 'UAH'; updatedAt: number } }
   // FLOW WS-1: Handshake events
@@ -30,5 +31,10 @@ export interface WsClientMessage {
    * Для subscribe: идентификатор инструмента (EURUSD, BTCUSD, …)
    */
   instrument?: string;
+  /**
+   * 🔥 FLOW WS-TF: Для subscribe — активный таймфрейм ('5s', '1m', …)
+   * Сервер отправляет candle:close и snapshot только для этого таймфрейма
+   */
+  timeframe?: string;
   data?: unknown;
 }

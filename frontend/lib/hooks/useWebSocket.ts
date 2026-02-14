@@ -65,6 +65,8 @@ export interface TradeClosePayload {
 
 interface UseWebSocketParams {
   activeInstrumentRef?: React.MutableRefObject<string>;
+  /** 🔥 FLOW WS-TF: Активный таймфрейм — сервер фильтрует candle:close и snapshot */
+  activeTimeframeRef?: React.MutableRefObject<string>;
   onPriceUpdate?: (price: number, timestamp: number) => void;
   onCandleClose?: (candle: any, timeframe: string) => void;
   /** FLOW CANDLE-SNAPSHOT: Снапшот активных свечей при подписке (для восстановления live-свечи) */
@@ -78,7 +80,7 @@ interface UseWebSocketParams {
   enabled?: boolean;
 }
 
-export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose, onCandleSnapshot, onServerTime, onTradeOpen, onTradeClose, enabled = true }: UseWebSocketParams) {
+export function useWebSocket({ activeInstrumentRef, activeTimeframeRef, onPriceUpdate, onCandleClose, onCandleSnapshot, onServerTime, onTradeOpen, onTradeClose, enabled = true }: UseWebSocketParams) {
   const { isAuthenticated } = useAuth();
   
   // FLOW WS-1.2: Состояние WebSocket
@@ -104,7 +106,11 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
   const onTradeOpenRef = useRef(onTradeOpen);
   const onTradeCloseRef = useRef(onTradeClose);
   const activeInstrumentRefRef = useRef(activeInstrumentRef);
+  const activeTimeframeRefRef = useRef(activeTimeframeRef); // 🔥 FLOW WS-TF
   const subscribedInstrumentRef = useRef<string | null>(null);
+  const subscribedTimeframeRef = useRef<string | null>(null); // 🔥 FLOW WS-TF
+  // 🔥 FIX: Pending subscribe — блокирует дубли пока ждём подтверждение от сервера
+  const pendingSubscribeRef = useRef<{ instrument: string; timeframe: string | null } | null>(null);
   const wsStateRef = useRef<WSState>('idle'); // Ref для текущего состояния
   const subscribeToInstrumentRef = useRef<((instrument: string) => void) | null>(null);
 
@@ -116,7 +122,8 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
     onTradeOpenRef.current = onTradeOpen;
     onTradeCloseRef.current = onTradeClose;
     activeInstrumentRefRef.current = activeInstrumentRef;
-  }, [onPriceUpdate, onCandleClose, onCandleSnapshot, onServerTime, onTradeOpen, onTradeClose, activeInstrumentRef]);
+    activeTimeframeRefRef.current = activeTimeframeRef;
+  }, [onPriceUpdate, onCandleClose, onCandleSnapshot, onServerTime, onTradeOpen, onTradeClose, activeInstrumentRef, activeTimeframeRef]);
 
   /**
    * FLOW WS-1.4: Подписка на инструмент (только когда state === 'ready')
@@ -132,12 +139,22 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
       return;
     }
 
-    if (subscribedInstrumentRef.current === instrument) {
-      return; // Уже подписаны
+    // 🔥 FLOW WS-TF: Проверяем и инструмент, и таймфрейм — ре-подписка нужна при смене любого из них
+    const currentTimeframe = activeTimeframeRefRef.current?.current ?? null;
+    const sameInstrument = subscribedInstrumentRef.current === instrument;
+    const sameTimeframe = subscribedTimeframeRef.current === currentTimeframe;
+    if (sameInstrument && sameTimeframe) {
+      return; // Уже подписаны с тем же инструментом и таймфреймом
     }
 
-    // FLOW WS-1.5: Отписываемся от старого инструмента
-    if (subscribedInstrumentRef.current) {
+    // 🔥 FIX: Если уже ждём подтверждение на тот же инструмент+таймфрейм — не дублируем
+    const pending = pendingSubscribeRef.current;
+    if (pending && pending.instrument === instrument && pending.timeframe === currentTimeframe) {
+      return;
+    }
+
+    // FLOW WS-1.5: Отписываемся от старого инструмента (если инструмент другой)
+    if (subscribedInstrumentRef.current && !sameInstrument) {
       const unsubscribeMsg = JSON.stringify({ 
         type: 'unsubscribe', 
         instrument: subscribedInstrumentRef.current 
@@ -149,18 +166,21 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
       }
     }
 
-    // Подписываемся на новый инструмент
+    // Подписываемся на новый инструмент (или переподписываемся с новым таймфреймом)
+    // 🔥 FLOW WS-TF: Включаем активный таймфрейм — сервер будет фильтровать candle:close и snapshot
     const subscribeMsg = JSON.stringify({ 
       type: 'subscribe', 
-      instrument 
+      instrument,
+      ...(currentTimeframe ? { timeframe: currentTimeframe } : {}),
     });
     
     if (instrument === 'AUDCHF') {
-      console.log(`[AUDCHF] [WebSocket] Subscribing to:`, instrument);
+      console.log(`[AUDCHF] [WebSocket] Subscribing to:`, instrument, 'tf:', currentTimeframe);
     }
     
     ws.send(subscribeMsg);
-    subscribedInstrumentRef.current = instrument;
+    // 🔥 FIX: Не ставим subscribedRef сразу — ждём подтверждение 'subscribed' от сервера
+    pendingSubscribeRef.current = { instrument, timeframe: currentTimeframe };
   }, []); // Убрали wsState из зависимостей
   
   // Сохраняем функцию в ref для использования в обработчиках
@@ -212,6 +232,7 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
 
     try {
       const ws = new WebSocket(wsUrl);
+      ws.binaryType = 'arraybuffer'; // 🔥 FLOW WS-BINARY: binary frames → ArrayBuffer (not Blob)
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -238,6 +259,40 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
 
       ws.onmessage = (event) => {
         try {
+          // 🔥 FLOW WS-BINARY: Binary price tick [0x01][instrLen][instrument][price:f64][timestamp:f64]
+          if (event.data instanceof ArrayBuffer) {
+            const buf = event.data as ArrayBuffer;
+            // Minimum: 1 (type) + 1 (instrLen) = 2 bytes to read header
+            if (buf.byteLength < 2) return;
+
+            const view = new DataView(buf);
+            const msgType = view.getUint8(0);
+            if (msgType === 0x01) {
+              const instrLen = view.getUint8(1);
+              // Validate: buffer must contain header + instrument + price(8) + timestamp(8)
+              const expectedLen = 2 + instrLen + 16;
+              if (instrLen === 0 || buf.byteLength < expectedLen) return;
+
+              // Decode ASCII instrument name
+              const instrBytes = new Uint8Array(buf, 2, instrLen);
+              let instrument = '';
+              for (let i = 0; i < instrLen; i++) instrument += String.fromCharCode(instrBytes[i]);
+
+              const price = view.getFloat64(2 + instrLen);
+              const timestamp = view.getFloat64(2 + instrLen + 8);
+
+              // Validate values — ignore corrupted data
+              if (!Number.isFinite(price) || !Number.isFinite(timestamp) || price <= 0) return;
+
+              const activeId = activeInstrumentRefRef.current?.current;
+              if (activeId != null && instrument !== activeId) return;
+              if (onPriceUpdateRef.current) {
+                onPriceUpdateRef.current(price, timestamp);
+              }
+            }
+            return;
+          }
+
           const message = JSON.parse(event.data) as WsEvent;
 
           // FLOW WS-1.0: Обрабатываем ws:ready
@@ -259,6 +314,13 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
 
           // FLOW WS-1.4: Обрабатываем подтверждение подписки
           if (message.type === 'subscribed') {
+            // 🔥 FIX: Только при подтверждении сервера ставим subscribedRefs
+            const pending = pendingSubscribeRef.current;
+            if (pending && pending.instrument === message.instrument) {
+              subscribedInstrumentRef.current = pending.instrument;
+              subscribedTimeframeRef.current = pending.timeframe;
+              pendingSubscribeRef.current = null;
+            }
             setWsState('subscribed');
             if (message.instrument === 'AUDCHF') {
               console.log(`[AUDCHF] [WebSocket] Subscribed confirmed for:`, message.instrument);
@@ -269,6 +331,8 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
           if (message.type === 'unsubscribed') {
             if (message.instrument === subscribedInstrumentRef.current) {
               subscribedInstrumentRef.current = null;
+              subscribedTimeframeRef.current = null; // 🔥 FIX: Очищаем таймфрейм вместе с инструментом
+              pendingSubscribeRef.current = null; // Очищаем pending тоже
               setWsState('ready'); // Возвращаемся в ready после отписки
             }
             if (message.instrument === 'AUDCHF') {
@@ -288,7 +352,6 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
           const activeId = activeInstrumentRefRef.current?.current;
           if (
             (message.type === 'price:update' ||
-              message.type === 'candle:update' ||
               message.type === 'candle:close' ||
               message.type === 'candle:snapshot') &&
             activeId != null &&
@@ -363,6 +426,12 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
             return;
           }
 
+          // Обработка error (например rate limit)
+          if (message.type === 'error' && message.message) {
+            console.warn('[WebSocket] Server error:', message.message);
+            return;
+          }
+
           // FLOW A-ACCOUNT: Обработка account.snapshot
           if (message.type === 'account.snapshot') {
             // Импортируем store динамически чтобы избежать циклических зависимостей
@@ -395,6 +464,8 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
         setWsState('closed');
         wsRef.current = null;
         subscribedInstrumentRef.current = null;
+        subscribedTimeframeRef.current = null;
+        pendingSubscribeRef.current = null;
         sessionIdRef.current = null;
 
         // Переподключение (только если не было явного закрытия)
@@ -429,7 +500,15 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
 
       // FLOW WS-1.6: Fallback - переподключение если WS не готов
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        // Не переподключаемся если уже идет подключение или закрыто намеренно
+        // 🔥 FIX: Если все попытки исчерпаны и state === 'closed' — сбрасываем и пробуем снова
+        // Это гарантирует что пользователь не останется без данных навсегда
+        if (currentState === 'closed' && reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttemptsRef.current = 0; // Сброс — даём новый цикл попыток
+          connect();
+          return;
+        }
+
+        // Не переподключаемся если уже идет подключение
         if (!isConnectingRef.current && currentState !== 'connecting' && currentState !== 'closed') {
           if (currentInstrument === 'AUDCHF') {
             console.log('[AUDCHF] [WebSocket] Polling: WebSocket not ready, reconnecting...');
@@ -441,12 +520,20 @@ export function useWebSocket({ activeInstrumentRef, onPriceUpdate, onCandleClose
 
       // FLOW WS-1.4: Если WS готов - проверяем нужно ли подписаться/переподписаться
       if ((currentState === 'ready' || currentState === 'subscribed') && currentInstrument) {
-        // Если инструмент изменился или еще не подписаны
-        if (subscribedInstrumentRef.current !== currentInstrument && subscribeToInstrumentRef.current) {
+        const currentTimeframe = activeTimeframeRefRef.current?.current ?? null;
+        // 🔥 FLOW WS-TF: Ре-подписка если инструмент ИЛИ таймфрейм изменился
+        const instrumentChanged = subscribedInstrumentRef.current !== currentInstrument;
+        const timeframeChanged = currentTimeframe !== null && subscribedTimeframeRef.current !== currentTimeframe;
+
+        // 🔥 FIX: Не дублируем если уже ждём подтверждение на тот же инструмент+таймфрейм
+        const pending = pendingSubscribeRef.current;
+        const alreadyPending = pending && pending.instrument === currentInstrument && pending.timeframe === currentTimeframe;
+
+        if ((instrumentChanged || timeframeChanged) && !alreadyPending && subscribeToInstrumentRef.current) {
           subscribeToInstrumentRef.current(currentInstrument);
         }
       }
-    }, 1000); // Проверяем каждую секунду (легкий polling для ref)
+    }, 250); // 🔥 FIX #19: 250ms — быстрая реакция на смену инструмента/таймфрейма (было 1000ms)
 
     return () => {
       clearInterval(interval);

@@ -15,6 +15,10 @@ export class WsClient {
    */
   public subscriptions = new Set<string>();
   /**
+   * 🔥 FLOW WS-TF: Активный таймфрейм клиента (для фильтрации candle:close и snapshot)
+   */
+  public activeTimeframe: string | null = null;
+  /**
    * FLOW WS-1: Session ID для отслеживания соединения
    */
   public sessionId: string;
@@ -56,6 +60,19 @@ export class WsClient {
       this.socket.send(JSON.stringify(event));
     } catch (error) {
       logger.error('Failed to send WS event:', error);
+    }
+  }
+
+  /**
+   * 🔥 FLOW WS-BINARY: Send pre-serialized data (string → text frame, Buffer → binary frame)
+   * Used for high-frequency messages like price ticks
+   */
+  sendRaw(data: string | Buffer): void {
+    try {
+      if (!this.socket) return;
+      this.socket.send(data);
+    } catch (error) {
+      logger.error('Failed to send raw WS data:', error);
     }
   }
 

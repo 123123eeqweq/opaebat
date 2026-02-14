@@ -2238,6 +2238,7 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
       backgroundOpacity: 0.3,
       showCountdown: true,
       showGrid: true,
+      showWatermark: true,
       timezoneOffset: 2,
     };
     setSettings(defaultSettings);
@@ -2398,6 +2399,24 @@ function ChartSettingsModal({ onClose }: { onClose: () => void }) {
                   <span
                     className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
                       settings.showGrid ? 'translate-x-6 left-0.5' : 'translate-x-0 left-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/5 md:hover:bg-white/8 transition-colors">
+                <span className="text-xs text-gray-300">Название пары на фоне</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.showWatermark}
+                  onClick={() => setSettings(prev => ({ ...prev, showWatermark: !prev.showWatermark }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${
+                    settings.showWatermark ? 'bg-[#3347ff]' : 'bg-white/20'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                      settings.showWatermark ? 'translate-x-6 left-0.5' : 'translate-x-0 left-0.5'
                     }`}
                   />
                 </button>

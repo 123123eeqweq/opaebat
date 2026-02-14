@@ -27,48 +27,28 @@ export async function bootstrapWebSocketEvents(
     const eventBus = manager.getEventBus(instrumentId);
     if (!eventBus) continue;
 
+    // 🔥 FLOW WS-BINARY: Pre-compute instrument header (constant per instrument)
+    // Binary format: [0x01][instrLen:1][instrument:ASCII][price:Float64BE][timestamp:Float64BE]
+    // Example: BTCUSD → 1 + 1 + 6 + 8 + 8 = 24 bytes (was 112 bytes JSON)
+    const instrBuf = Buffer.from(instrumentId, 'ascii');
+    const headerSize = 2 + instrBuf.length;
+    const tickBufSize = headerSize + 16; // + price(8) + timestamp(8)
+
     const unsubTick = eventBus.on('price_tick', (event) => {
       const tick = event.data as { price: number; timestamp: number };
-      // FLOW WS-SUBSCRIBE: шлём только клиентам, подписанным на instrumentId
-      wsManager.broadcastToInstrument(instrumentId, {
-        instrument: instrumentId,
-        type: 'price:update',
-        data: {
-          asset: instrumentId,
-          price: tick.price,
-          timestamp: tick.timestamp,
-        },
-      });
+      const buf = Buffer.allocUnsafe(tickBufSize);
+      buf[0] = 0x01; // message type: price tick
+      buf[1] = instrBuf.length;
+      instrBuf.copy(buf, 2);
+      buf.writeDoubleBE(tick.price, headerSize);
+      buf.writeDoubleBE(tick.timestamp, headerSize + 8);
+      wsManager.broadcastRawToInstrument(instrumentId, buf);
     });
     unsubscribeHandlers.push(unsubTick);
 
-    const unsubCandleUpdate = eventBus.on('candle_updated', (event) => {
-      const candle = event.data as {
-        open: number;
-        high: number;
-        low: number;
-        close: number;
-        timestamp: number;
-        timeframe: string;
-      };
-      // FLOW WS-SUBSCRIBE: шлём только клиентам, подписанным на instrumentId
-      wsManager.broadcastToInstrument(instrumentId, {
-        instrument: instrumentId,
-        type: 'candle:update',
-        data: {
-          timeframe: candle.timeframe,
-          candle: {
-            open: candle.open,
-            high: candle.high,
-            low: candle.low,
-            close: candle.close,
-            timestamp: candle.timestamp,
-            timeframe: candle.timeframe,
-          },
-        },
-      });
-    });
-    unsubscribeHandlers.push(unsubCandleUpdate);
+    // 🔥 candle:update НЕ отправляется — фронтенд его не обрабатывает.
+    // Живая свеча обновляется через price:update на стороне клиента.
+    // Это убирает ~50% мусорного WS-трафика (candle:update шёл на каждый тик).
 
     const unsubCandleClose = eventBus.on('candle_closed', (event) => {
       const candle = event.data as {
@@ -79,8 +59,8 @@ export async function bootstrapWebSocketEvents(
         timestamp: number;
         timeframe: string;
       };
-      // FLOW WS-SUBSCRIBE: шлём только клиентам, подписанным на instrumentId
-      wsManager.broadcastToInstrument(instrumentId, {
+      // 🔥 FLOW WS-TF: Шлём candle:close только клиентам с matching таймфреймом
+      wsManager.broadcastCandleToInstrument(instrumentId, candle.timeframe, {
         instrument: instrumentId,
         type: 'candle:close',
         data: {

@@ -27,6 +27,7 @@ const LIVE_LABEL_COLOR = '#10b981'; // Зелёный для LIVE
  * Форматирует цену: по digits инструмента или 5 по умолчанию (forex).
  */
 function formatPrice(price: number, digits?: number): string {
+  if (!Number.isFinite(price)) return '—';
   return price.toFixed(digits ?? 5);
 }
 

@@ -6,7 +6,7 @@
 import type { FastifyInstance } from 'fastify';
 import { InstrumentsController } from './instruments.controller.js';
 import { getInstrumentsSchema, updatePayoutSchema } from './instruments.schema.js';
-// TODO: Добавить requireAuth для updatePayout когда будет админка
+import { requireAuth, requireAdmin } from '../auth/auth.middleware.js';
 
 export async function registerInstrumentsRoutes(app: FastifyInstance) {
   const instrumentsController = new InstrumentsController();
@@ -18,11 +18,10 @@ export async function registerInstrumentsRoutes(app: FastifyInstance) {
     (request, reply) => instrumentsController.getInstruments(request, reply)
   );
 
-  // PATCH /api/instruments/:id/payout — обновить доходность (для админки)
+  // PATCH /api/instruments/:id/payout — обновить доходность (только для админов)
   app.patch(
     '/api/instruments/:id/payout',
-    { schema: updatePayoutSchema },
-    // TODO: Добавить requireAuth когда будет админка
+    { schema: updatePayoutSchema, preHandler: [requireAuth, requireAdmin] },
     (request, reply) => instrumentsController.updatePayout(request as any, reply)
   );
 }

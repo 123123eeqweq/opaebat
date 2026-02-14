@@ -55,6 +55,67 @@ export function panViewportTime({
   };
 }
 
+// ==========================================
+// 🔥 FLOW PAN-CLAMP: Ограничение viewport по данным
+// ==========================================
+
+interface ClampToDataBoundsParams {
+  timeStart: number;
+  timeEnd: number;
+  dataTimeMin: number;
+  dataTimeMax: number;
+  /** Минимальная доля viewport, которая должна пересекаться с данными (0..1). Default: 0.1 (10%) */
+  overlapRatio?: number;
+}
+
+interface ClampResult {
+  timeStart: number;
+  timeEnd: number;
+  /** true если viewport был clamped (достиг границы) */
+  clamped: boolean;
+}
+
+/**
+ * Ограничивает viewport так, чтобы хотя бы overlapRatio (10%) ширины viewport
+ * пересекалось с диапазоном данных [dataTimeMin, dataTimeMax].
+ * 
+ * Предотвращает "уезжание" графика за пределы видимости.
+ * 
+ * Чистая функция, БЕЗ side-effects.
+ */
+export function clampToDataBounds({
+  timeStart,
+  timeEnd,
+  dataTimeMin,
+  dataTimeMax,
+  overlapRatio = 0.1,
+}: ClampToDataBoundsParams): ClampResult {
+  const viewportWidth = timeEnd - timeStart;
+  const margin = viewportWidth * overlapRatio;
+
+  let clampedStart = timeStart;
+  let clampedEnd = timeEnd;
+  let clamped = false;
+
+  // Не дать viewport уехать слишком далеко вправо (в будущее)
+  // timeStart не должен быть больше, чем dataTimeMax - margin
+  if (clampedStart > dataTimeMax - margin) {
+    clampedStart = dataTimeMax - margin;
+    clampedEnd = clampedStart + viewportWidth;
+    clamped = true;
+  }
+
+  // Не дать viewport уехать слишком далеко влево (в прошлое)
+  // timeEnd не должен быть меньше, чем dataTimeMin + margin
+  if (clampedEnd < dataTimeMin + margin) {
+    clampedEnd = dataTimeMin + margin;
+    clampedStart = clampedEnd - viewportWidth;
+    clamped = true;
+  }
+
+  return { timeStart: clampedStart, timeEnd: clampedEnd, clamped };
+}
+
 /**
  * Масштабирует viewport по времени (zoom)
  * 

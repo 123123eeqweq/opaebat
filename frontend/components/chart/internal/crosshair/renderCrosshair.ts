@@ -53,6 +53,7 @@ function formatTime(ts: number): string {
  * Форматирует цену: по digits инструмента или 2 по умолчанию.
  */
 function formatPrice(price: number, digits?: number): string {
+  if (!Number.isFinite(price)) return '—';
   return price.toFixed(digits ?? 2);
 }
 
@@ -157,6 +158,9 @@ export function renderCrosshair({
   const backgroundCenter = backgroundTop + priceLabelHeight / 2;
 
   // Фон для метки цены - закрывает всю область меток цены
+  // 🔥 FIX: beginPath() обязателен перед roundRect, иначе path от горизонтальной линии
+  // кроссхейра остаётся активным → fill() заливает и линию и прямоугольник
+  ctx.beginPath();
   ctx.fillStyle = LABEL_BG_COLOR;
   ctx.roundRect(
     width - PRICE_LABEL_AREA_WIDTH,

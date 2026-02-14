@@ -63,6 +63,7 @@ function formatTime(timestamp: number): string {
  * Форматирует цену: по digits инструмента или по величине (fallback).
  */
 function formatPrice(price: number, digits?: number): string {
+  if (!Number.isFinite(price)) return '—';
   if (digits != null) return price.toFixed(digits);
   const decimals = price >= 1000 ? 0 : price >= 100 ? 1 : price >= 10 ? 2 : 3;
   return price.toFixed(decimals);
@@ -145,11 +146,14 @@ export function renderAxes({
 
     ctx.fillStyle = LABEL_COLOR;
     ctx.textBaseline = 'alphabetic';
-    for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
+    const MAX_AXIS_LABELS = 100;
+    let labelCount = 0;
+    for (let time = startTime; time <= viewport.timeEnd && labelCount < MAX_AXIS_LABELS; time += timeStep) {
+      if (timeStep <= 0) break;
+      labelCount++;
       const x = timeToX(time, viewport, width);
       if (x >= 0 && x <= width) {
-        const label = formatTime(time);
-        ctx.fillText(label, x, height - LABEL_PADDING);
+        ctx.fillText(formatTime(time), x, height - LABEL_PADDING);
       }
     }
   }
@@ -164,12 +168,14 @@ export function renderAxes({
     ctx.textBaseline = 'middle';
     // Центр области меток цены: правая граница минус половина ширины области
     const priceLabelCenterX = width - PRICE_LABEL_BG_WIDTH / 2;
-    for (let price = startPrice; price <= viewport.priceMax; price += priceStep) {
+    const MAX_AXIS_LABELS = 100;
+    let labelCount = 0;
+    for (let price = startPrice; price <= viewport.priceMax && labelCount < MAX_AXIS_LABELS; price += priceStep) {
+      if (priceStep <= 0) break;
+      labelCount++;
       const y = priceToY(price, viewport, height);
       if (y >= 0 && y <= height) {
-        const label = formatPrice(price, digits);
-        // Позиционируем по центру области меток цены
-        ctx.fillText(label, priceLabelCenterX, y);
+        ctx.fillText(formatPrice(price, digits), priceLabelCenterX, y);
       }
     }
   }

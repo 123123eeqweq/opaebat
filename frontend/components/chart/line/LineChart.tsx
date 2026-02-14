@@ -84,6 +84,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
       enabled: true,
       digits,
       payoutPercent,
+      instrument,
       drawingMode,
       indicatorConfigs,
       overlayRegistry,
@@ -229,14 +230,14 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
       // Инвертируем: вверх (deltaY < 0) = увеличение (zoom in), вниз (deltaY > 0) = уменьшение (zoom out)
       // factor > 1 = уменьшить окно (больше масштаб), factor < 1 = увеличить окно (меньше масштаб)
       const delta = e.deltaY < 0 ? 1.1 : 0.9; // Инвертировано: вверх = 1.1 (zoom in), вниз = 0.9 (zoom out)
-      lineChart.zoom(delta);
+      lineChartForEventsRef.current.zoom(delta);
     };
 
     const handleDoubleClick = () => {
       // 🔥 FLOW C-INERTIA: Прерываем инерцию при включении follow
       panInertiaRefs.activeRef.current = false;
       panInertiaRefs.velocityRef.current = 0;
-      lineChart.resetFollow();
+      lineChartForEventsRef.current.resetFollow();
     };
 
     // Обработка pan (перетаскивание мышью) - используем нативные события как в свечном графике
@@ -257,6 +258,10 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
     };
     const getTouchCenterX = (t1: Touch, t2: Touch) => (t1.clientX + t2.clientX) / 2;
 
+    // 🔥 FIX #10: Используем ref для lineChart в event handlers — избегаем пересоздания listeners каждый рендер
+    const lineChartForEventsRef = useRef(lineChart);
+    lineChartForEventsRef.current = lineChart;
+
     useEffect(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -266,7 +271,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
         if (e.button !== 0) return;
         
         // FLOW G16: Не начинаем pan, если идет редактирование drawing
-        if (lineChart.getIsEditingDrawing()) {
+        if (lineChartForEventsRef.current.getIsEditingDrawing()) {
           return;
         }
         
@@ -285,7 +290,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
         if (!isPanningRef.current || lastPanXRef.current === null) return;
 
         // FLOW G16: Прерываем pan, если началось редактирование drawing
-        if (lineChart.getIsEditingDrawing()) {
+        if (lineChartForEventsRef.current.getIsEditingDrawing()) {
           isPanningRef.current = false;
           lastPanXRef.current = null;
           return;
@@ -312,7 +317,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
 
         lastMoveTimeRef.current = now;
 
-        const viewport = lineChart.getViewport();
+        const viewport = lineChartForEventsRef.current.getViewport();
         const timeRange = viewport.timeEnd - viewport.timeStart;
         const width = canvas.getBoundingClientRect().width;
         
@@ -320,7 +325,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
         const pixelsPerMs = width / timeRange;
         const deltaMs = -deltaX / pixelsPerMs; // Инвертируем для интуитивного pan
 
-        lineChart.pan(deltaMs);
+        lineChartForEventsRef.current.pan(deltaMs);
         lastPanXRef.current = currentX;
       };
 
@@ -330,14 +335,14 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
         if (Math.abs(velocity) > 0.05) {
           // Порог 0.05 px/ms ≈ правильный UX-порог (ниже — незаметно)
           panInertiaRefs.activeRef.current = true;
-          lineChart.setAutoFollow(false); // Выключаем auto-follow при инерции
+          lineChartForEventsRef.current.setAutoFollow(false); // Выключаем auto-follow при инерции
           // Return-to-follow будет запланирован когда инерция остановится
         } else {
           // Если скорость слишком мала, останавливаем инерцию
           panInertiaRefs.activeRef.current = false;
           panInertiaRefs.velocityRef.current = 0;
           // 🔥 FLOW RETURN-TO-FOLLOW: Планируем возврат сразу (нет инерции)
-          lineChart.scheduleReturnToFollow();
+          lineChartForEventsRef.current.scheduleReturnToFollow();
         }
 
         isPanningRef.current = false;
@@ -351,7 +356,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
 
       // 🔥 FLOW TOUCH-CHART: Touch handlers (1 finger = pan, 2 fingers = pinch zoom)
       const handleTouchStart = (e: TouchEvent) => {
-        if (lineChart.getIsEditingDrawing()) return;
+        if (lineChartForEventsRef.current.getIsEditingDrawing()) return;
         e.preventDefault();
 
         if (e.touches.length === 1) {
@@ -359,7 +364,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
           const rect = canvas.getBoundingClientRect();
           const x = e.touches[0].clientX - rect.left;
           const y = e.touches[0].clientY - rect.top;
-          if (lineChart.getIsPointOnDrawing?.(x, y)) return;
+          if (lineChartForEventsRef.current.getIsPointOnDrawing?.(x, y)) return;
 
           touchModeRef.current = 'pan';
           touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -383,7 +388,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
 
         const rect = canvasEl.getBoundingClientRect();
         const width = rect.width;
-        const viewport = lineChart.getViewport();
+        const viewport = lineChartForEventsRef.current.getViewport();
         const timeRange = viewport.timeEnd - viewport.timeStart;
         const pxPerMs = width / timeRange;
 
@@ -394,7 +399,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
 
           const dx = t.clientX - start.x;
           const deltaMs = -dx / pxPerMs;
-          lineChart.pan(deltaMs);
+          lineChartForEventsRef.current.pan(deltaMs);
 
           touchStartRef.current = { x: t.clientX, y: t.clientY };
         } else if (touchModeRef.current === 'pinch' && e.touches.length === 2) {
@@ -404,7 +409,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
 
           const newDistance = getTouchDistance(t1, t2);
           const zoomFactor = newDistance / pinch.distance;
-          lineChart.zoom(zoomFactor);
+          lineChartForEventsRef.current.zoom(zoomFactor);
 
           pinchStartRef.current = {
             distance: newDistance,
@@ -415,7 +420,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
 
       const handleTouchEnd = () => {
         if (touchModeRef.current === 'pan') {
-          lineChart.scheduleReturnToFollow();
+          lineChartForEventsRef.current.scheduleReturnToFollow();
         }
         touchModeRef.current = 'none';
         touchStartRef.current = null;
@@ -444,7 +449,7 @@ export const LineChart = forwardRef<LineChartRef, LineChartProps>(
         canvas.removeEventListener('touchend', handleTouchEnd);
         canvas.removeEventListener('touchcancel', handleTouchEnd);
       };
-    }, [lineChart, panInertiaRefs]);
+    }, [panInertiaRefs]); // 🔥 FIX #10: lineChart убран — используем ref
 
     return (
       <canvas

@@ -1,15 +1,19 @@
 /**
- * API client with cookie-based auth
+ * API client with cookie-based auth + CSRF
  */
+
+import { getCsrfToken, setCsrfToken, clearCsrfToken } from './csrf';
 
 // Пустая строка = same-origin (через Next.js rewrites), иначе кросс-домен (cookies не работают)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   body?: unknown;
   headers?: Record<string, string>;
 };
+
+const MUTATING_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
 export class ApiError extends Error {
   constructor(
@@ -35,21 +39,30 @@ export async function apiRequest<T>(
 
   const url = `${API_BASE_URL}${endpoint}`;
 
+  const requestHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...headers,
+  };
+
+  if (MUTATING_METHODS.includes(method) && typeof window !== 'undefined') {
+    try {
+      requestHeaders['csrf-token'] = await getCsrfToken();
+    } catch {
+      // CSRF fetch failed
+    }
+  }
+
   // Debug logging in development (только на клиенте)
   if (process.env.NODE_ENV === 'development') {
     console.log(`[API] ${method} ${url}`);
   }
 
-  // Добавляем таймаут для fetch, чтобы не зависать вечно
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 сек — 3 сек было слишком мало, запросы отменялись
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   const config: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: requestHeaders,
     credentials: 'include', // Include cookies
     signal: controller.signal,
   };
@@ -69,6 +82,9 @@ export async function apiRequest<T>(
         errorData = await response.json();
       } catch {
         errorData = { error: response.statusText };
+      }
+      if (process.env.NODE_ENV === 'development' && response.status === 400) {
+        console.warn('[API] 400 Bad Request:', errorData);
       }
       throw new ApiError(response.status, errorData);
     }
@@ -98,30 +114,41 @@ export async function apiRequest<T>(
 
 // Auth endpoints
 export const authApi = {
-  register: (email: string, password: string) =>
-    apiRequest<{ user: { id: string; email: string } }>('/api/auth/register', {
+  register: async (email: string, password: string) => {
+    const res = await apiRequest<{ user: { id: string; email: string }; csrfToken?: string }>('/api/auth/register', {
       method: 'POST',
       body: { email, password },
-    }),
+    });
+    if (res.csrfToken) setCsrfToken(res.csrfToken);
+    return res;
+  },
 
-  login: (email: string, password: string) =>
-    apiRequest<{ user?: { id: string; email: string }; requires2FA?: boolean; tempToken?: string }>('/api/auth/login', {
+  login: async (email: string, password: string) => {
+    const res = await apiRequest<{ user?: { id: string; email: string }; requires2FA?: boolean; tempToken?: string; csrfToken?: string }>('/api/auth/login', {
       method: 'POST',
       body: { email, password },
-    }),
+    });
+    if (res.csrfToken) setCsrfToken(res.csrfToken);
+    return res;
+  },
 
-  // 🔥 FLOW S3: Verify 2FA code and complete login
-  verify2FA: (tempToken: string, code: string) =>
-    apiRequest<{ user: { id: string; email: string } }>('/api/auth/2fa', {
+  verify2FA: async (tempToken: string, code: string) => {
+    const res = await apiRequest<{ user: { id: string; email: string }; csrfToken?: string }>('/api/auth/2fa', {
       method: 'POST',
       body: { tempToken, code },
-    }),
+    });
+    if (res.csrfToken) setCsrfToken(res.csrfToken);
+    return res;
+  },
 
-  logout: () =>
-    apiRequest<{ message: string }>('/api/auth/logout', {
+  logout: async () => {
+    const res = await apiRequest<{ message: string }>('/api/auth/logout', {
       method: 'POST',
       body: {},
-    }),
+    });
+    clearCsrfToken();
+    return res;
+  },
 
   me: () =>
     apiRequest<{ user: { id: string; email: string } }>('/api/auth/me'),

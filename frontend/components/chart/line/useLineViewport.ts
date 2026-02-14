@@ -13,9 +13,15 @@
 import { useRef } from 'react';
 import type { LineViewport } from './lineTypes';
 import type { TimePriceViewport } from '../internal/render/ui/viewport.types';
+import { clampToDataBounds } from '../internal/interactions/math';
 
-const DEFAULT_WINDOW_MS = 60_000; // 60 секунд по умолчанию
+/** Начальная ширина временного окна линейного графика (экспортируется для useLineChart) */
+export const DEFAULT_WINDOW_MS = 420_000; // 420 секунд (7 минут) по умолчанию
 const RIGHT_PADDING_RATIO = 0.30; // 30% свободного места справа
+
+// 🔥 Лимиты масштабирования — viewport не может быть сильно меньше или больше дефолтного
+const MIN_WINDOW_MS = DEFAULT_WINDOW_MS * 0.5;  // ~3.5 мин — максимальный zoom in
+const MAX_WINDOW_MS = DEFAULT_WINDOW_MS * 1.5;  // ~10.5 мин — максимальный zoom out
 
 // 🔥 FLOW SMOOTH-FOLLOW: Плавная анимация follow mode
 const FOLLOW_ANIMATION_DURATION_MS = 320;
@@ -33,6 +39,9 @@ export function useLineViewport() {
   
   // Кэш для priceMin/priceMax (обновляется извне)
   const priceRangeRef = useRef<{ min: number; max: number } | null>(null);
+
+  // 🔥 FLOW PAN-CLAMP: Границы данных для ограничения pan (обновляется извне)
+  const dataBoundsRef = useRef<{ timeMin: number; timeMax: number } | null>(null);
 
   // 🔥 FLOW SMOOTH-FOLLOW: Состояние анимации
   const followAnimationRef = useRef<{
@@ -114,22 +123,60 @@ export function useLineViewport() {
   function zoom(factor: number): void {
     const vp = viewportRef.current;
     const center = (vp.timeStart + vp.timeEnd) / 2;
-    const half = (vp.timeEnd - vp.timeStart) / 2 / factor;
+    let newWindowMs = (vp.timeEnd - vp.timeStart) / factor;
 
-    vp.timeStart = center - half;
-    vp.timeEnd = center + half;
+    // 🔥 Лимиты масштабирования — не дать уйти за пределы разумного
+    newWindowMs = Math.max(MIN_WINDOW_MS, Math.min(MAX_WINDOW_MS, newWindowMs));
+
+    const half = newWindowMs / 2;
+    let newTimeStart = center - half;
+    let newTimeEnd = center + half;
+
+    // 🔥 FIX: Кламп по данным после zoom (аналогично pan)
+    const bounds = dataBoundsRef.current;
+    if (bounds) {
+      const clamped = clampToDataBounds({
+        timeStart: newTimeStart,
+        timeEnd: newTimeEnd,
+        dataTimeMin: bounds.timeMin,
+        dataTimeMax: bounds.timeMax,
+      });
+      newTimeStart = clamped.timeStart;
+      newTimeEnd = clamped.timeEnd;
+    }
+
+    vp.timeStart = newTimeStart;
+    vp.timeEnd = newTimeEnd;
     vp.autoFollow = false; // После zoom отключаем auto-follow
   }
 
   /**
    * Pan: сдвинуть окно влево/вправо
+   * 🔥 FLOW PAN-CLAMP: Ограничено — минимум 10% viewport пересекается с данными
    * @param deltaMs положительное = вправо (будущее), отрицательное = влево (прошлое)
    */
   function pan(deltaMs: number): void {
     const vp = viewportRef.current;
     vp.autoFollow = false; // После pan отключаем auto-follow
-    vp.timeStart += deltaMs;
-    vp.timeEnd += deltaMs;
+
+    let newTimeStart = vp.timeStart + deltaMs;
+    let newTimeEnd = vp.timeEnd + deltaMs;
+
+    // 🔥 FLOW PAN-CLAMP: Ограничиваем pan по границам данных
+    const bounds = dataBoundsRef.current;
+    if (bounds) {
+      const clamped = clampToDataBounds({
+        timeStart: newTimeStart,
+        timeEnd: newTimeEnd,
+        dataTimeMin: bounds.timeMin,
+        dataTimeMax: bounds.timeMax,
+      });
+      newTimeStart = clamped.timeStart;
+      newTimeEnd = clamped.timeEnd;
+    }
+
+    vp.timeStart = newTimeStart;
+    vp.timeEnd = newTimeEnd;
   }
 
   /**
@@ -186,6 +233,14 @@ export function useLineViewport() {
   }
 
   /**
+   * 🔥 FLOW PAN-CLAMP: Обновить границы данных (вызывается извне при изменении данных)
+   * Используется для ограничения pan — viewport не может уехать за пределы данных
+   */
+  function setDataBounds(timeMin: number, timeMax: number): void {
+    dataBoundsRef.current = { timeMin, timeMax };
+  }
+
+  /**
    * Получить TimePriceViewport для UI-рендеринга
    */
   function getTimePriceViewport(): TimePriceViewport | null {
@@ -215,5 +270,6 @@ export function useLineViewport() {
     getWindowMs,
     updatePriceRange,
     getTimePriceViewport,
+    setDataBounds, // 🔥 FLOW PAN-CLAMP
   };
 }

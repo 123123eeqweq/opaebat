@@ -53,8 +53,11 @@ function renderAreaFill(
   const firstPoint = points[0];
   const lastPoint = points[points.length - 1];
 
-  // Находим самую верхнюю точку линии (минимальная Y в canvas координатах)
-  const minY = Math.min(...points.map(p => p.y));
+  // 🔥 FIX #17: Не используем Math.min(...arr) — при большом массиве превысим лимит аргументов
+  let minY = points[0].y;
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].y < minY) minY = points[i].y;
+  }
   const topY = Math.max(0, Math.min(minY, height));
 
   // Создаем градиент (от верхней точки линии до низа viewport)
@@ -179,8 +182,12 @@ export function calculatePriceRange(
     return { min: 0, max: 1 };
   }
 
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
+  let min = prices[0];
+  let max = prices[0];
+  for (let i = 1; i < prices.length; i++) {
+    if (prices[i] < min) min = prices[i];
+    if (prices[i] > max) max = prices[i];
+  }
 
   // Добавляем небольшой отступ для визуализации
   const padding = (max - min) * 0.1 || 1;

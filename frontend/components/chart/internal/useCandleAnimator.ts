@@ -107,6 +107,9 @@ export function useCandleAnimator({
    * Правило: первый тик после закрытия свечи анимируется от close предыдущей свечи (live.open).
    */
   const onPriceUpdate = (price: number): void => {
+    // 🔥 FIX #15: Игнорируем NaN/Infinity — предотвращаем «пустой canvas» при сетевом сбое
+    if (!Number.isFinite(price)) return;
+
     ensureInitialized();
     const animated = animatedRef.current;
     const live = getLiveCandle();
@@ -180,6 +183,9 @@ export function useCandleAnimator({
 
       const eased = ease(progress);
       const value = lerp(anim.from, anim.to, eased);
+
+      // 🔥 FIX #15: Защита от NaN пробивающегося через lerp
+      if (!Number.isFinite(value)) return;
 
       animated.close = value;
 

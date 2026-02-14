@@ -119,8 +119,12 @@ export function renderGrid({
     const startTime = Math.ceil(viewport.timeStart / timeStep) * timeStep;
 
     ctx.beginPath();
-    const gridHeight = height - TIME_LABEL_HEIGHT; // Оставляем место для меток времени
-    for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
+    const gridHeight = height - TIME_LABEL_HEIGHT;
+    const MAX_GRID_LINES = 500;
+    let lineCount = 0;
+    for (let time = startTime; time <= viewport.timeEnd && lineCount < MAX_GRID_LINES; time += timeStep) {
+      if (timeStep <= 0) break;
+      lineCount++;
       const x = timeToX(time, viewport, width);
       if (x >= 0 && x <= width) {
         ctx.moveTo(x, 0);
@@ -136,9 +140,13 @@ export function renderGrid({
     const startPrice = Math.ceil(viewport.priceMin / priceStep) * priceStep;
 
     ctx.beginPath();
-    const gridWidth = width - PRICE_LABEL_WIDTH; // Оставляем место для меток цены справа
-    const gridHeight = height - TIME_LABEL_HEIGHT; // Оставляем место для меток времени внизу
-    for (let price = startPrice; price <= viewport.priceMax; price += priceStep) {
+    const gridWidth = width - PRICE_LABEL_WIDTH;
+    const gridHeight = height - TIME_LABEL_HEIGHT;
+    const MAX_GRID_LINES = 500;
+    let lineCount = 0;
+    for (let price = startPrice; price <= viewport.priceMax && lineCount < MAX_GRID_LINES; price += priceStep) {
+      if (priceStep <= 0) break;
+      lineCount++;
       const y = priceToY(price, viewport, height);
       if (y >= 0 && y <= gridHeight) {
         ctx.moveTo(0, y);
@@ -184,7 +192,11 @@ export function renderVerticalGridOnly({
   const startTime = Math.ceil(viewport.timeStart / timeStep) * timeStep;
 
   ctx.beginPath();
-  for (let time = startTime; time <= viewport.timeEnd; time += timeStep) {
+  const MAX_GRID_LINES = 500;
+  let lineCount = 0;
+  for (let time = startTime; time <= viewport.timeEnd && lineCount < MAX_GRID_LINES; time += timeStep) {
+    if (timeStep <= 0) break;
+    lineCount++;
     const x = timeToX(time, viewport, width);
     if (x >= 0 && x <= width) {
       ctx.moveTo(x, fromY);

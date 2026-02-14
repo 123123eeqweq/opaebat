@@ -33,6 +33,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   const authService = new AuthService(userRepository, sessionRepository, accountService);
   const authController = new AuthController(authService);
 
+  // GET /api/auth/csrf — получить CSRF токен (клиент должен вызвать перед login/register и мутирующими запросами)
+  app.get('/api/auth/csrf', async (_request, reply) => {
+    const token = reply.generateCsrf();
+    return { csrfToken: token };
+  });
+
   // Register routes with stricter rate limits + Zod validation
   app.post('/api/auth/register', {
     schema: registerSchema,
@@ -65,7 +71,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   }, (request, reply) => authController.me(request, reply));
 
   // 🔥 FLOW S3: POST /api/auth/2fa — 2FA code brute force protection
-  app.post('/auth/2fa', {
+  app.post('/api/auth/2fa', {
     preHandler: [validateBody(verify2FASchema)],
     config: {
       rateLimit: {

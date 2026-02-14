@@ -135,6 +135,49 @@ export function useChartInteractions({
   getMarketStatus,
   scheduleReturnToFollow,
 }: UseChartInteractionsParams): UseChartInteractionsReturn {
+  // 🔥 FIX: Ref для актуальных callbacks — handlers стабильны, но всегда вызывают последние версии.
+  // Без этого при смене инструмента/таймфрейма handlers используют stale closure (eslint-disable скрывал).
+  const handlersRef = useRef({
+    updateViewport,
+    onViewportChange,
+    getIsEditingDrawing,
+    getDrawingEditState,
+    getHoveredDrawingMode,
+    getIsPointOnDrawing,
+    setFollowMode,
+    beginYScaleDrag,
+    updateYScaleDrag,
+    endYScaleDrag,
+    getInteractionZones,
+    addPriceAlert,
+    onAlternativeClick,
+    onAlternativeHover,
+    resetYScale,
+    getMarketStatus,
+    scheduleReturnToFollow,
+    marketAlternativesHitboxesRef,
+  });
+  handlersRef.current = {
+    updateViewport,
+    onViewportChange,
+    getIsEditingDrawing,
+    getDrawingEditState,
+    getHoveredDrawingMode,
+    getIsPointOnDrawing,
+    setFollowMode,
+    beginYScaleDrag,
+    updateYScaleDrag,
+    endYScaleDrag,
+    getInteractionZones,
+    addPriceAlert,
+    onAlternativeClick,
+    onAlternativeHover,
+    resetYScale,
+    getMarketStatus,
+    scheduleReturnToFollow,
+    marketAlternativesHitboxesRef,
+  };
+
   const interactionStateRef = useRef<InteractionState>({
     isDragging: false,
     lastX: null,
@@ -156,18 +199,18 @@ export function useChartInteractions({
    * Обработчик mouseDown - начало pan или Y-scale drag
    */
   const handleMouseDown = (e: MouseEvent) => {
-    if (e.button !== 0) return; // Только левая кнопка
-
+    if (e.button !== 0) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const h = handlersRef.current;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // FLOW C-MARKET-ALTERNATIVES: Проверяем клик по альтернативным парам (до проверки market closed — клики по списку должны работать)
-    if (marketAlternativesHitboxesRef && onAlternativeClick) {
-      const hitboxes = marketAlternativesHitboxesRef.current;
+    // FLOW C-MARKET-ALTERNATIVES: Проверяем клик по альтернативным парам
+    if (h.marketAlternativesHitboxesRef && h.onAlternativeClick) {
+      const hitboxes = h.marketAlternativesHitboxesRef.current;
       for (const box of hitboxes) {
         if (
           x >= box.x &&
@@ -175,14 +218,14 @@ export function useChartInteractions({
           y >= box.y &&
           y <= box.y + box.height
         ) {
-          onAlternativeClick(box.instrumentId);
+          h.onAlternativeClick(box.instrumentId);
           return;
         }
       }
     }
 
     // FLOW C-MARKET-CLOSED: когда рынок закрыт, не начинаем pan (но клики по альтернативным парам уже обработаны выше)
-    if (getMarketStatus && getMarketStatus() !== 'OPEN') return;
+    if (h.getMarketStatus && h.getMarketStatus() !== 'OPEN') return;
 
     // 🔥 FLOW C-INERTIA: Сбрасываем инерцию при новом взаимодействии
     inertiaActiveRef.current = false;
@@ -190,15 +233,13 @@ export function useChartInteractions({
     lastMoveTimeRef.current = null;
 
     // FLOW G16: Если идет редактирование drawing, не начинаем pan
-    if (getIsEditingDrawing && getIsEditingDrawing()) {
-      return;
-    }
+    if (h.getIsEditingDrawing?.()) return;
 
     const viewport = viewportRef.current;
     if (!viewport) return;
 
     // FLOW A3: Проверяем hit‑зоны (например, "+" для price alert)
-    const zones = getInteractionZones ? getInteractionZones() : [];
+    const zones = h.getInteractionZones?.() ?? [];
     if (zones.length > 0) {
       for (const zone of zones) {
         if (
@@ -207,10 +248,9 @@ export function useChartInteractions({
           y >= zone.y &&
           y <= zone.y + zone.height
         ) {
-          if (zone.type === 'add-alert' && addPriceAlert) {
-            addPriceAlert(zone.price);
+          if (zone.type === 'add-alert' && h.addPriceAlert) {
+            h.addPriceAlert(zone.price);
           }
-          // Не начинаем pan / Y-scale при клике по зоне
           return;
         }
       }
@@ -218,12 +258,10 @@ export function useChartInteractions({
 
     // 🔥 FLOW Y1: Проверяем, находится ли мышь над правой осью цены
     if (isMouseOnPriceAxis(e.clientX, canvas)) {
-      // 🔥 FLOW C-INERTIA: Прерываем инерцию при начале Y-scale drag
       inertiaActiveRef.current = false;
       panVelocityPxPerMsRef.current = 0;
-      // Начинаем Y-scale drag
       yDragStateRef.current = true;
-      beginYScaleDrag?.(y);
+      h.beginYScaleDrag?.(y);
       return;
     }
 
@@ -240,6 +278,7 @@ export function useChartInteractions({
   const handleMouseMove = (e: MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const h = handlersRef.current;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -253,16 +292,14 @@ export function useChartInteractions({
 
     // FLOW C-MARKET-ALTERNATIVES: Обрабатываем hover по альтернативным парам
     let isHoveringAlternatives = false;
-    if (onAlternativeHover && !interactionStateRef.current.isDragging && !yDragStateRef.current && isOverCanvas) {
-      const hoveredIndex = onAlternativeHover(x, y);
-      isHoveringAlternatives = hoveredIndex !== null;
+    if (h.onAlternativeHover && !interactionStateRef.current.isDragging && !yDragStateRef.current && isOverCanvas) {
+      isHoveringAlternatives = h.onAlternativeHover(x, y) !== null;
     }
 
-    // FLOW G16: Курсор при редактировании/наведении на drawings; иначе ось Y
-    // FLOW C-MARKET-ALTERNATIVES: Проверяем hover по альтернативным парам только если не наведено на drawings
+    // FLOW G16: Курсор при редактировании/наведении на drawings
     if (isOverCanvas) {
       const drawingMode =
-        (getIsEditingDrawing?.() && getDrawingEditState?.()?.mode) ?? getHoveredDrawingMode?.() ?? null;
+        (h.getIsEditingDrawing?.() && h.getDrawingEditState?.()?.mode) ?? h.getHoveredDrawingMode?.() ?? null;
       if (drawingMode === 'move' || drawingMode === 'resize-start' || drawingMode === 'resize-end') {
         canvas.style.cursor = 'move';
       } else if (drawingMode === 'resize-offset') {
@@ -284,17 +321,14 @@ export function useChartInteractions({
 
     // 🔥 FLOW Y1: Если идет Y-scale drag
     if (yDragStateRef.current) {
-      updateYScaleDrag?.(y);
+      h.updateYScaleDrag?.(y);
       return;
     }
 
     const state = interactionStateRef.current;
     if (!state.isDragging || state.lastX === null) return;
 
-    // FLOW G16: Если идет редактирование drawing, не обрабатываем pan
-    if (getIsEditingDrawing && getIsEditingDrawing()) {
-      return;
-    }
+    if (h.getIsEditingDrawing?.()) return;
 
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -327,15 +361,9 @@ export function useChartInteractions({
       pixelsPerMs,
     });
 
-    // 🔥 FLOW F1: Выключаем follow mode при pan
-    setFollowMode?.(false);
-
-    // Обновляем viewport (Y пересчитается через auto-fit в updateViewport)
-    updateViewport(newViewport);
-
-    // Вызываем callback для загрузки истории (FLOW G6)
-    onViewportChange?.(newViewport);
-
+    h.setFollowMode?.(false);
+    h.updateViewport(newViewport);
+    h.onViewportChange?.(newViewport);
     interactionStateRef.current.lastX = currentX;
   };
 
@@ -343,30 +371,24 @@ export function useChartInteractions({
    * Обработчик mouseUp - конец pan или Y-scale drag
    */
   const handleMouseUp = () => {
-    // 🔥 FLOW Y1: Если идет Y-scale drag, завершаем его и сбрасываем курсор
+    const h = handlersRef.current;
     if (yDragStateRef.current) {
       yDragStateRef.current = false;
-      endYScaleDrag?.();
+      h.endYScaleDrag?.();
       const canvas = canvasRef.current;
       if (canvas) canvas.style.cursor = 'default';
       return;
     }
 
-    // 🔥 FLOW C-INERTIA: Запускаем инерцию, если скорость выше порога
     const velocity = panVelocityPxPerMsRef.current;
     if (Math.abs(velocity) > 0.05) {
-      // Порог 0.05 px/ms ≈ правильный UX-порог (ниже — незаметно)
       inertiaActiveRef.current = true;
-      setFollowMode?.(false);
+      h.setFollowMode?.(false);
     } else {
-      // Если скорость слишком мала, останавливаем инерцию
       inertiaActiveRef.current = false;
       panVelocityPxPerMsRef.current = 0;
     }
-    
-    // 🔥 FLOW RETURN-TO-FOLLOW: ВСЕГДА планируем возврат после pan
-    // Если инерция активна — таймер подождёт, потом включит follow mode и остановит инерцию
-    scheduleReturnToFollow?.();
+    h.scheduleReturnToFollow?.();
 
     interactionStateRef.current = {
       ...interactionStateRef.current,
@@ -380,9 +402,8 @@ export function useChartInteractions({
    */
   const handleWheel = (e: WheelEvent) => {
     e.preventDefault();
-
-    // FLOW C-MARKET-CLOSED: когда рынок закрыт, не делаем zoom
-    if (getMarketStatus && getMarketStatus() !== 'OPEN') return;
+    const h = handlersRef.current;
+    if (h.getMarketStatus?.() !== 'OPEN') return;
 
     // 🔥 FLOW C-INERTIA: Прерываем инерцию при zoom
     inertiaActiveRef.current = false;
@@ -414,16 +435,9 @@ export function useChartInteractions({
       timeframeMs,
     });
 
-    // 🔥 FLOW F1: Выключаем follow mode при zoom
-    setFollowMode?.(false);
-
-    // Обновляем viewport (Y пересчитается через auto-fit в updateViewport)
-    updateViewport(newViewport);
-
-    // Вызываем callback для загрузки истории (FLOW G6)
-    onViewportChange?.(newViewport);
-
-    // 🔥 Zoom НЕ триггерит автовозврат — пользователь сам выбирает масштаб
+    h.setFollowMode?.(false);
+    h.updateViewport(newViewport);
+    h.onViewportChange?.(newViewport);
   };
 
   const handleMouseLeave = () => {
@@ -436,16 +450,13 @@ export function useChartInteractions({
    */
   const handleDoubleClick = (e: MouseEvent) => {
     const canvas = canvasRef.current;
+    const resetYScale = handlersRef.current.resetYScale;
     if (!canvas || !resetYScale) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const width = canvas.clientWidth || rect.width;
-
-    // Константа для области меток цены (как в renderAxes.ts)
     const PRICE_LABEL_BG_WIDTH = 60;
-
-    // Проверяем, что клик был в области меток цены (справа)
     if (x >= width - PRICE_LABEL_BG_WIDTH) {
       resetYScale();
     }
@@ -461,17 +472,17 @@ export function useChartInteractions({
 
   const handleTouchStart = (e: TouchEvent) => {
     e.preventDefault();
-    if (getMarketStatus && getMarketStatus() !== 'OPEN') return;
-    if (getIsEditingDrawing?.()) return;
+    const h = handlersRef.current;
+    if (h.getMarketStatus?.() !== 'OPEN') return;
+    if (h.getIsEditingDrawing?.()) return;
 
     if (e.touches.length === 1) {
-      // FLOW G16-TOUCH: если touch на drawing — не начинаем pan (drawing edit обработает)
       const canvasEl = canvasRef.current;
       const rect = canvasEl?.getBoundingClientRect();
-      if (rect && getIsPointOnDrawing) {
+      if (rect && h.getIsPointOnDrawing) {
         const x = e.touches[0].clientX - rect.left;
         const y = e.touches[0].clientY - rect.top;
-        if (getIsPointOnDrawing(x, y)) return;
+        if (h.getIsPointOnDrawing(x, y)) return;
       }
       touchModeRef.current = 'pan';
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -523,9 +534,10 @@ export function useChartInteractions({
         pixelsPerMs,
       });
 
-      setFollowMode?.(false);
-      updateViewport(newViewport);
-      onViewportChange?.(newViewport);
+      const h = handlersRef.current;
+      h.setFollowMode?.(false);
+      h.updateViewport(newViewport);
+      h.onViewportChange?.(newViewport);
 
       touchStartRef.current = { x: t.clientX, y: t.clientY };
     } else if (touchModeRef.current === 'pinch' && e.touches.length === 2) {
@@ -547,9 +559,10 @@ export function useChartInteractions({
         timeframeMs,
       });
 
-      setFollowMode?.(false);
-      updateViewport(newViewport);
-      onViewportChange?.(newViewport);
+      const h = handlersRef.current;
+      h.setFollowMode?.(false);
+      h.updateViewport(newViewport);
+      h.onViewportChange?.(newViewport);
 
       pinchStartRef.current = {
         distance: newDistance,
@@ -560,16 +573,16 @@ export function useChartInteractions({
 
   const handleTouchEnd = () => {
     if (touchModeRef.current === 'pan') {
-      // 🔥 FLOW C-INERTIA: Запускаем инерцию для touch, если скорость выше порога (как в handleMouseUp)
+      const h = handlersRef.current;
       const velocity = panVelocityPxPerMsRef.current;
       if (Math.abs(velocity) > 0.05) {
         inertiaActiveRef.current = true;
-        setFollowMode?.(false);
+        h.setFollowMode?.(false);
       } else {
         inertiaActiveRef.current = false;
         panVelocityPxPerMsRef.current = 0;
       }
-      scheduleReturnToFollow?.();
+      h.scheduleReturnToFollow?.();
     }
     touchModeRef.current = 'none';
     touchStartRef.current = null;
@@ -606,8 +619,7 @@ export function useChartInteractions({
       canvas.removeEventListener('touchend', handleTouchEnd);
       canvas.removeEventListener('touchcancel', handleTouchEnd);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetYScale]);
+  }, [canvasRef]); // handlersRef обновляется каждый рендер — handlers всегда вызывают актуальные callbacks
 
   /**
    * 🔥 FLOW: Timeframe Switch Reset - сброс состояния pan/zoom
@@ -625,12 +637,8 @@ export function useChartInteractions({
     touchStartRef.current = null;
     pinchStartRef.current = null;
     
-    // Сбрасываем состояние Y-scale drag (прерываем активный drag если есть)
     yDragStateRef.current = false;
-    // Завершаем Y-scale drag если он был активен
-    if (endYScaleDrag) {
-      endYScaleDrag();
-    }
+    handlersRef.current.endYScaleDrag?.();
 
     // 🔥 FLOW C-INERTIA: Сбрасываем инерцию
     inertiaActiveRef.current = false;

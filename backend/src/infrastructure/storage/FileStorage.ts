@@ -7,6 +7,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { randomBytes } from 'crypto';
 import { logger } from '../../shared/logger.js';
+import { env } from '../../config/env.js';
 
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
 const AVATARS_DIR = path.join(UPLOADS_DIR, 'avatars');
@@ -47,10 +48,9 @@ export class FileStorage {
       throw new Error(`Invalid file type. Allowed: ${allowedExtensions.join(', ')}`);
     }
 
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.length > maxSize) {
-      throw new Error('File size exceeds 5MB limit');
+    // Check file size (from env)
+    if (file.length > env.MAX_UPLOAD_SIZE) {
+      throw new Error(`File size exceeds ${Math.round(env.MAX_UPLOAD_SIZE / 1024)}KB limit`);
     }
 
     const randomId = randomBytes(16).toString('hex');

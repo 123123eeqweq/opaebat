@@ -20,8 +20,10 @@ import {
   disable2FASchema,
 } from './user.validation.js';
 import { validateBody } from '../../shared/validation/validateBody.js';
+import { uploadSizeLimit } from '../../middleware/uploadLimit.js';
 import { env } from '../../config/env.js';
 import { logger } from '../../shared/logger.js';
+import { RATE_LIMIT_UPLOAD_MAX, RATE_LIMIT_UPLOAD_WINDOW } from '../../config/constants.js';
 
 export async function registerUserRoutes(app: FastifyInstance) {
   // Initialize dependencies
@@ -81,7 +83,13 @@ export async function registerUserRoutes(app: FastifyInstance) {
     '/api/user/avatar',
     {
       schema: uploadAvatarSchema,
-      preHandler: [requireAuth],
+      preHandler: [requireAuth, uploadSizeLimit],
+      config: {
+        rateLimit: {
+          max: RATE_LIMIT_UPLOAD_MAX,
+          timeWindow: RATE_LIMIT_UPLOAD_WINDOW,
+        },
+      },
     },
     async (request, reply) => {
       try {

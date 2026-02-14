@@ -3,9 +3,9 @@
  */
 
 import { randomUUID } from 'crypto';
-import type { FastifyRequest } from 'fastify';
 import Fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
+import fastifyCsrfProtection from '@fastify/csrf-protection';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import { logger } from './shared/logger.js';
@@ -24,11 +24,6 @@ import { registerLineChartRoutes } from './modules/linechart/linechart.routes.js
 import { registerUserRoutes } from './modules/user/user.routes.js';
 import { registerWalletRoutes } from './modules/wallet/wallet.routes.js';
 import { registerInstrumentsRoutes } from './modules/instruments/instruments.routes.js';
-import {
-  register as metricsRegister,
-  httpRequestsTotal,
-  httpRequestDuration,
-} from './modules/metrics/metrics.js';
 
 export async function createApp() {
   const app = Fastify({
@@ -46,20 +41,6 @@ export async function createApp() {
   // Request ID + correlation (use client header or generate UUID)
   app.addHook('onRequest', requestIdMiddleware);
 
-  // Metrics: track request duration
-  app.addHook('onRequest', async (request, reply) => {
-    (request as FastifyRequest & { _startTime: number })._startTime = Date.now();
-  });
-  app.addHook('onResponse', (request, reply) => {
-    const req = request as FastifyRequest & { _startTime?: number };
-    const duration = (Date.now() - (req._startTime ?? Date.now())) / 1000;
-    const route = request.routeOptions?.url ?? request.url;
-    const method = request.method;
-    const statusCode = String(reply.statusCode);
-    httpRequestsTotal.inc({ method, route: route.slice(0, 50), status_code: statusCode });
-    httpRequestDuration.observe({ method, route: route.slice(0, 50), status_code: statusCode }, duration);
-  });
-
   // Global error handler
   app.setErrorHandler(errorHandler);
 
@@ -68,13 +49,39 @@ export async function createApp() {
     origin: env.NODE_ENV === 'production' ? env.FRONTEND_URL : true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID', 'csrf-token'],
     exposedHeaders: ['Content-Type', 'X-Request-ID'],
   });
 
   // Register cookie plugin
   await app.register(fastifyCookie, {
     secret: env.COOKIE_SECRET,
+  });
+
+  // CSRF protection (cookie-based, token in csrf-token header)
+  await app.register(fastifyCsrfProtection, {
+    cookieOpts: {
+      path: '/',
+      sameSite: 'lax',
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      signed: true,
+    },
+    getToken: (req) => (req.headers['csrf-token'] as string) || undefined,
+  });
+
+  // CSRF hook for mutating methods (POST, PUT, PATCH, DELETE)
+  const CSRF_SKIP_PATHS = ['/api/auth/register', '/api/auth/login', '/api/auth/2fa'];
+  app.addHook('onRequest', async (request, reply) => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return;
+    if (request.url === '/health') return;
+    if (CSRF_SKIP_PATHS.some((p) => request.url?.startsWith(p))) return;
+    return new Promise<void>((resolve, reject) => {
+      app.csrfProtection(request, reply, (err?: Error) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
   });
 
   // OpenAPI/Swagger docs (must be registered before routes)
@@ -131,12 +138,6 @@ export async function createApp() {
 
   // Health check (comprehensive)
   await registerHealthRoutes(app);
-
-  // Prometheus metrics endpoint
-  app.get('/metrics', async (request, reply) => {
-    reply.header('Content-Type', metricsRegister.contentType);
-    return metricsRegister.metrics();
-  });
 
   // Register auth routes
   await registerAuthRoutes(app);

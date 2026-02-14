@@ -11,14 +11,15 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type React from 'react';
 import { useLinePointStore, type PricePoint } from './useLinePointStore';
-import { useLineViewport } from './useLineViewport';
+import { useLineViewport, DEFAULT_WINDOW_MS } from './useLineViewport';
 import { useLineData, type LiveSegment } from './useLineData';
 import { useLinePriceAnimator } from './useLinePriceAnimator';
 import { renderLine, calculatePriceRange, renderLiveSegment } from './renderLine';
 import { renderPulsatingPoint } from './renderPulsatingPoint';
 import { renderTrades } from './renderTrades';
 import { 
-  renderBackground, 
+  renderBackground,
+  renderInstrumentWatermark,
   renderGrid, 
   renderPriceAxis,
   renderTimeAxis,
@@ -48,6 +49,8 @@ interface UseLineChartParams {
   digits?: number;
   /** Процент выплаты для overlay сделок */
   payoutPercent?: number;
+  /** ID инструмента для watermark (например "EURUSD_otc") */
+  instrument?: string;
   /** FLOW G14: Режим рисования */
   drawingMode?: 'horizontal' | 'vertical' | 'trend' | 'rectangle' | 'fibonacci' | 'parallel-channel' | 'ray' | 'arrow' | null;
   /** FLOW G12: Конфигурация индикаторов */
@@ -63,12 +66,17 @@ export function useLineChart({
   enabled = true,
   digits,
   payoutPercent = 75,
+  instrument,
   drawingMode = null,
   indicatorConfigs = [],
   overlayRegistry,
 }: UseLineChartParams) {
   const pointStore = useLinePointStore();
   const viewport = useLineViewport();
+
+  // Ref для instrument (используется в render loop без пересоздания)
+  const instrumentRef = useRef(instrument);
+  instrumentRef.current = instrument;
   
   // 🔥 FLOW C-CHART-TYPE-RESET: Reset при монтировании компонента
   // При смене chartType компонент полностью пересоздается через ChartContainer (key),
@@ -89,7 +97,6 @@ export function useLineChart({
   const arrowDownImgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    // Загружаем изображения один раз при монтировании
     const up = new Image();
     up.src = '/images/arrowup.png';
     arrowUpImgRef.current = up;
@@ -105,6 +112,9 @@ export function useLineChart({
   const hadLiveSegmentRef = useRef<boolean>(false);
   /** 🔥 Заморозка price range на время live-сегмента — НЕ передавать animatedPrice в range */
   const frozenPriceRangeRef = useRef<{ min: number; max: number } | null>(null);
+  // 🔥 FIX #9: Кэш для setDataBounds — не обновляем каждый кадр если данные не изменились
+  const lastDataBoundsMinRef = useRef<number>(0);
+  const lastDataBoundsMaxRef = useRef<number>(0);
 
   // 🔥 FLOW RETURN-TO-FOLLOW: Автоматический возврат в follow mode после pan
   const returnToFollowTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -353,14 +363,28 @@ export function useLineChart({
           );
         }
         // 🔥 FIX: Расширяем frozen range если цена выходит за границы (но не сужаем)
+        // 🔥 FIX #12: Ограничиваем максимальное расширение — не больше 3x от исходного span
         const frozen = frozenPriceRangeRef.current;
         if (frozen) {
-          const padding = (frozen.max - frozen.min) * 0.1 || 1;
+          const originalSpan = frozen.max - frozen.min;
+          const maxSpan = (originalSpan || 1) * 3;
+          const padding = originalSpan * 0.1 || 1;
+          let newMin = frozen.min;
+          let newMax = frozen.max;
           if (price < frozen.min + padding) {
-            frozenPriceRangeRef.current = { ...frozen, min: price - padding };
+            newMin = price - padding;
           }
           if (price > frozen.max - padding) {
-            frozenPriceRangeRef.current = { ...frozen, max: price + padding };
+            newMax = price + padding;
+          }
+          // Не позволяем span расти больше maxSpan
+          if (newMax - newMin > maxSpan) {
+            const center = (newMax + newMin) / 2;
+            newMin = center - maxSpan / 2;
+            newMax = center + maxSpan / 2;
+          }
+          if (newMin !== frozen.min || newMax !== frozen.max) {
+            frozenPriceRangeRef.current = { min: newMin, max: newMax };
           }
         }
         priceAnimator.onPriceUpdate(price);
@@ -407,7 +431,7 @@ export function useLineChart({
       // Шаг 2: Reset viewport (сброс zoom/pan, autoFollow = true)
       // 30% right padding для свободного места справа
       const now = Date.now();
-      const windowMs = 60000;
+      const windowMs = DEFAULT_WINDOW_MS;
       const rightPadding = windowMs * 0.30;
       viewport.setViewport(now + rightPadding - windowMs, now + rightPadding, true); // autoFollow = true
       
@@ -421,6 +445,41 @@ export function useLineChart({
     }
   }, []); // Пустой массив зависимостей - только при монтировании
 
+  // 🔥 FIX: Ref для render params — RAF loop не перезапускается при каждом re-render.
+  // Без ref каждый re-render перезапускал useEffect → teardown/rebuild → frame drops.
+  const renderParamsRef = useRef({
+    pointStore,
+    viewport,
+    crosshair,
+    digits,
+    getExpirationTime,
+    getTrades,
+    drawings,
+    getHoveredDrawingId,
+    getSelectedDrawingId,
+    indicators,
+    indicatorConfigs,
+    overlayRegistry,
+    lineData,
+    priceAnimator,
+  });
+  renderParamsRef.current = {
+    pointStore,
+    viewport,
+    crosshair,
+    digits,
+    getExpirationTime,
+    getTrades,
+    drawings,
+    getHoveredDrawingId,
+    getSelectedDrawingId,
+    indicators,
+    indicatorConfigs,
+    overlayRegistry,
+    lineData,
+    priceAnimator,
+  };
+
   /**
    * Рендер-луп на requestAnimationFrame
    */
@@ -431,8 +490,9 @@ export function useLineChart({
     if (!canvas) return;
 
     let animationFrameId: number;
-    let devicePixelRatio = window.devicePixelRatio || 1;
     const canvasElement: HTMLCanvasElement = canvas;
+    // 🔥 FIX #14: Кэшируем DPR и перечитываем каждый кадр — корректно при переносе окна между мониторами
+    let cachedDpr = window.devicePixelRatio || 1;
 
     function setupCanvas(): { ctx: CanvasRenderingContext2D; width: number; height: number } | null {
       const ctx = canvasElement.getContext('2d');
@@ -444,26 +504,27 @@ export function useLineChart({
 
       if (width === 0 || height === 0) return null;
 
-      if (canvasElement.width !== width * devicePixelRatio || canvasElement.height !== height * devicePixelRatio) {
-        canvasElement.width = width * devicePixelRatio;
-        canvasElement.height = height * devicePixelRatio;
-        ctx.scale(devicePixelRatio, devicePixelRatio);
+      // 🔥 FIX #14: Обновляем DPR каждый кадр
+      const currentDpr = window.devicePixelRatio || 1;
+      const dprChanged = currentDpr !== cachedDpr;
+      if (dprChanged) cachedDpr = currentDpr;
+
+      if (dprChanged || canvasElement.width !== width * cachedDpr || canvasElement.height !== height * cachedDpr) {
+        canvasElement.width = width * cachedDpr;
+        canvasElement.height = height * cachedDpr;
+        ctx.scale(cachedDpr, cachedDpr);
       }
 
       return { ctx, width, height };
     }
 
     function render(now: number) {
-      // 🔥 FLOW C-INERTIA: Pan inertia (до отрисовки, так как она меняет viewport)
+      const r = renderParamsRef.current;
       if (panInertiaRefsRef.current) {
         advancePanInertiaRef.current(now);
       }
-
-      // 🔥 FLOW RETURN-TO-FOLLOW: Анимация возврата в follow mode
       advanceReturnToFollowRef.current(now);
-
-      // 🔥 FLOW SMOOTH-FOLLOW: Плавная анимация follow mode по X
-      viewport.advanceFollowAnimation(now);
+      r.viewport.advanceFollowAnimation(now);
 
       const setup = setupCanvas();
       if (!setup) {
@@ -473,23 +534,37 @@ export function useLineChart({
 
       const { ctx, width, height } = setup;
 
-      // ✅ ПРАВИЛЬНАЯ АРХИТЕКТУРА: История immutable, live сегмент отдельно
-      const historyPoints = pointStore.getAll();
+      const historyPoints = r.pointStore.getAll();
       const liveSegment = liveSegmentRef.current;
-      const currentViewport = viewport.getViewport();
+      const currentViewport = r.viewport.getViewport();
+
+      // 🔥 FLOW PAN-CLAMP: Обновляем границы данных для ограничения pan
+      // 🔥 FIX #9: Кэшируем — не создаём объект каждый кадр если данные не изменились
+      const firstPoint = historyPoints.length > 0 ? historyPoints[0] : null;
+      const lastPoint = historyPoints.length > 0 ? historyPoints[historyPoints.length - 1] : null;
+      if (firstPoint && lastPoint) {
+        const newMin = firstPoint.time;
+        const newMax = lastPoint.time;
+        if (newMin !== lastDataBoundsMinRef.current || newMax !== lastDataBoundsMaxRef.current) {
+          lastDataBoundsMinRef.current = newMin;
+          lastDataBoundsMaxRef.current = newMax;
+          r.viewport.setDataBounds(newMin, newMax);
+        }
+      }
 
       // Live-сегмент: X интерполируется от fromTime к toTime, Y анимируется
       let visualTime: number | null = null;
       if (liveSegment) {
-        priceAnimator.update(now);
+        r.priceAnimator.update(now);
         const elapsed = now - liveSegment.startedAt;
         const t = Math.min(1, elapsed / 1000); // Прогресс внутри секунды [0..1]
         visualTime = liveSegment.fromTime + (liveSegment.toTime - liveSegment.fromTime) * t;
       }
-      const animatedPrice = liveSegment ? priceAnimator.getAnimatedPrice() : undefined;
+      const animatedPrice = liveSegment ? r.priceAnimator.getAnimatedPrice() : undefined;
 
       if (historyPoints.length === 0 && !liveSegment) {
         renderBackground(ctx, width, height);
+        renderInstrumentWatermark(ctx, width, height, instrumentRef.current);
         ctx.save();
         ctx.fillStyle = '#888888';
         ctx.font = '14px sans-serif';
@@ -509,17 +584,17 @@ export function useLineChart({
             null,
             undefined
           );
-        viewport.updatePriceRange(calculatedPriceRange.min, calculatedPriceRange.max);
+        r.viewport.updatePriceRange(calculatedPriceRange.min, calculatedPriceRange.max);
         
-        const timePriceViewport = viewport.getTimePriceViewport();
+        const timePriceViewport = r.viewport.getTimePriceViewport();
         
         if (!timePriceViewport) {
           animationFrameId = requestAnimationFrame(render);
           return;
         }
 
-        const allIndicatorSeries = indicators.getIndicatorSeries();
-        const visibleIds = overlayRegistry?.getVisibleOverlayIds?.();
+        const allIndicatorSeries = r.indicators.getIndicatorSeries();
+        const visibleIds = r.overlayRegistry?.getVisibleOverlayIds?.();
         const filteredIndicators = visibleIds
           ? allIndicatorSeries.filter((i) => {
               if (i.type === 'Stochastic') {
@@ -546,20 +621,21 @@ export function useLineChart({
             })
           : allIndicatorSeries;
         
+        const ic = r.indicatorConfigs;
         const hasRSI = filteredIndicators.some((i) => i.type === 'RSI') ||
-          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'RSI' && c.enabled));
+          (visibleIds == null && ic.some((c) => c.type === 'RSI' && c.enabled));
         const hasStochastic = filteredIndicators.some((i) => i.type === 'Stochastic') ||
-          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Stochastic' && c.enabled));
+          (visibleIds == null && ic.some((c) => c.type === 'Stochastic' && c.enabled));
         const hasMomentum = filteredIndicators.some((i) => i.type === 'Momentum') ||
-          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'Momentum' && c.enabled));
+          (visibleIds == null && ic.some((c) => c.type === 'Momentum' && c.enabled));
         const hasAwesomeOscillator = filteredIndicators.some((i) => i.type === 'AwesomeOscillator') ||
-          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'AwesomeOscillator' && c.enabled));
+          (visibleIds == null && ic.some((c) => c.type === 'AwesomeOscillator' && c.enabled));
         const hasMACD = filteredIndicators.some((i) => i.type === 'MACD') ||
-          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'MACD' && c.enabled));
+          (visibleIds == null && ic.some((c) => c.type === 'MACD' && c.enabled));
         const hasATR = filteredIndicators.some((i) => i.type === 'ATR') ||
-          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ATR' && c.enabled));
+          (visibleIds == null && ic.some((c) => c.type === 'ATR' && c.enabled));
         const hasADX = filteredIndicators.some((i) => i.type === 'ADX') ||
-          (visibleIds == null && indicatorConfigs.some((c) => c.type === 'ADX' && c.enabled));
+          (visibleIds == null && ic.some((c) => c.type === 'ADX' && c.enabled));
         const rsiHeight = hasRSI ? 120 : 0;
         const stochHeight = hasStochastic ? 120 : 0;
         const momentumHeight = hasMomentum ? 90 : 0;
@@ -571,6 +647,7 @@ export function useLineChart({
 
         // Порядок рендеринга
         renderBackground(ctx, width, height);
+        renderInstrumentWatermark(ctx, width, height, instrumentRef.current);
         
         renderGrid({
           ctx,
@@ -616,9 +693,9 @@ export function useLineChart({
         }
 
         // Pulsating Point — на конце live сегмента
-        const pointForPulse = liveSegment && visualTime !== null
-          ? { time: visualTime, price: animatedPrice! }
-          : pointStore.getLast();
+        const pointForPulse = liveSegment && visualTime !== null && animatedPrice !== undefined
+          ? { time: visualTime, price: animatedPrice }
+          : r.pointStore.getLast();
           
         if (pointForPulse) {
           const timeRange = currentViewport.timeEnd - currentViewport.timeStart;
@@ -640,7 +717,7 @@ export function useLineChart({
         }
         
         // Expiration Line — как на свечном: кружок с флажком сверху, линия вниз
-        const rawExpirationTimestamp = getExpirationTime();
+        const rawExpirationTimestamp = r.getExpirationTime();
         if (rawExpirationTimestamp != null && Number.isFinite(rawExpirationTimestamp) && currentViewport.timeEnd > currentViewport.timeStart) {
           const EXP_ANIM_DURATION_MS = 320;
           const PRICE_LABEL_AREA_WIDTH = 60;
@@ -767,7 +844,17 @@ export function useLineChart({
         }
         
         // Trades
-        const trades = getTrades();
+        // 🔥 FIX #17: Автоочистка истёкших trade overlays (если trade:close был пропущен)
+        const TRADE_EXPIRY_GRACE_MS = 10_000; // 10 секунд после expiresAt
+        const currentTimeMs = Date.now();
+        const allTrades = r.getTrades();
+        if (allTrades.length > 0) {
+          const expired = allTrades.filter(t => currentTimeMs > t.expiresAt + TRADE_EXPIRY_GRACE_MS);
+          if (expired.length > 0) {
+            tradesRef.current = allTrades.filter(t => currentTimeMs <= t.expiresAt + TRADE_EXPIRY_GRACE_MS);
+          }
+        }
+        const trades = tradesRef.current;
         if (trades.length > 0) {
           renderTrades({
             ctx,
@@ -775,13 +862,13 @@ export function useLineChart({
             viewport: timePriceViewport,
             width,
             height: mainHeight,
-            digits,
+            digits: r.digits,
             payoutPercent,
           });
         }
         
         // Drawings
-        const allDrawings = drawings.getDrawings();
+        const allDrawings = r.drawings.getDrawings();
         if (allDrawings.length > 0) {
           renderDrawings({
             ctx,
@@ -789,8 +876,8 @@ export function useLineChart({
             viewport: { ...timePriceViewport, yMode: 'auto' as const },
             width,
             height: mainHeight,
-            hoveredDrawingId: getHoveredDrawingId(),
-            selectedDrawingId: getSelectedDrawingId(),
+            hoveredDrawingId: r.getHoveredDrawingId(),
+            selectedDrawingId: r.getSelectedDrawingId(),
           });
         }
         
@@ -799,7 +886,7 @@ export function useLineChart({
           renderIndicators({
             ctx,
             indicators: filteredIndicators,
-            indicatorConfigs,
+            indicatorConfigs: r.indicatorConfigs,
             viewport: {
               ...timePriceViewport,
               yMode: 'auto' as const,
@@ -826,7 +913,7 @@ export function useLineChart({
             currentPrice,
             width,
             height: mainHeight,
-            digits,
+            digits: r.digits,
           });
         }
         
@@ -836,7 +923,7 @@ export function useLineChart({
           viewport: timePriceViewport,
           width,
           height: mainHeight,
-          digits: undefined,
+          digits: r.digits,
         });
         
         // Time Axis
@@ -848,14 +935,17 @@ export function useLineChart({
         });
         
         // Crosshair
-        const crosshairState = crosshair.getCrosshair();
+        // 🔥 FIX: Передаём mainHeight вместо height для price label и вертикальной линии
+        // height включает панели индикаторов (RSI, MACD и т.д.) → кроссхейр рисовался за пределами
+        // основной области графика, перекрывая индикаторы
+        const crosshairState = r.crosshair.getCrosshair();
         if (crosshairState) {
           renderCrosshair({
             ctx,
             crosshair: crosshairState,
             viewport: timePriceViewport,
             width,
-            height,
+            height: mainHeight,
           });
           
           renderCrosshairTimeLabel(ctx, crosshairState, timePriceViewport, width, height);
@@ -871,8 +961,14 @@ export function useLineChart({
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      // 🔥 FIX: Очищаем returnToFollow таймер при unmount (утечка памяти + callback на мёртвом компоненте)
+      if (returnToFollowTimerRef.current) {
+        clearTimeout(returnToFollowTimerRef.current);
+        returnToFollowTimerRef.current = null;
+      }
+      returnToFollowAnimRef.current = null;
     };
-  }, [enabled, canvasRef, pointStore, viewport, crosshair, digits, getExpirationTime, getTrades, drawings, getHoveredDrawingId, getSelectedDrawingId, indicators, indicatorConfigs, liveSegmentRef, overlayRegistry, hoverActionRef, arrowUpImgRef, arrowDownImgRef, lineData, priceAnimator]);
+  }, [enabled, canvasRef]); // renderParamsRef обновляется каждый рендер — RAF loop не перезапускается
 
   // 🔥 FLOW RETURN-TO-FOLLOW: Функция отмены возврата (вызывается при взаимодействии)
   const cancelReturnToFollow = useCallback(() => {
@@ -943,8 +1039,6 @@ export function useLineChart({
   const advancePanInertia = useCallback((now: number) => {
     const refs = panInertiaRefsRef.current;
     if (!refs) return;
-
-    // Инвариант - инерция и autoFollow не могут работать вместе
     const currentViewport = viewport.getViewport();
     if (currentViewport.autoFollow) {
       refs.activeRef.current = false;
@@ -968,8 +1062,7 @@ export function useLineChart({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Применяем velocity за один кадр (~16ms)
-    const dt = 16; // ~1 frame при 60 FPS
+    const dt = 16;
     const deltaX = velocity * dt;
 
     // Вычисляем pixelsPerMs
@@ -991,6 +1084,10 @@ export function useLineChart({
   const advanceReturnToFollow = useCallback((now: number) => {
     const anim = returnToFollowAnimRef.current;
     if (!anim || !anim.active) return;
+
+    // 🔥 FIX #11: Не анимируем возврат пока инерция ещё активна — они «борются» друг с другом
+    const refs = panInertiaRefsRef.current;
+    if (refs && refs.activeRef.current) return;
 
     const elapsed = now - anim.startTime;
     const progress = Math.min(1, elapsed / RETURN_TO_FOLLOW_DURATION_MS);
@@ -1051,9 +1148,8 @@ export function useLineChart({
     if (snapshot.points.length === 0) {
       // Инициализируем viewport от текущего времени (live-only режим)
       const now = snapshot.serverTime || Date.now();
-      const windowSize = 60000; // 60 секунд
-      const rightPadding = windowSize * RIGHT_PADDING;
-      viewport.setViewport(now + rightPadding - windowSize, now + rightPadding, true);
+      const rightPadding = DEFAULT_WINDOW_MS * RIGHT_PADDING;
+      viewport.setViewport(now + rightPadding - DEFAULT_WINDOW_MS, now + rightPadding, true);
       return;
     }
 
@@ -1061,9 +1157,8 @@ export function useLineChart({
     pointStore.appendMany(snapshot.points);
     // Используем serverTime (текущее время), а не lastTime точек
     const now = snapshot.serverTime || Date.now();
-    const windowSize = 60000; // 60 секунд
-    const rightPadding = windowSize * RIGHT_PADDING;
-    viewport.setViewport(now + rightPadding - windowSize, now + rightPadding, true);
+    const rightPadding = DEFAULT_WINDOW_MS * RIGHT_PADDING;
+    viewport.setViewport(now + rightPadding - DEFAULT_WINDOW_MS, now + rightPadding, true);
   }, [pointStore, viewport, setLiveSegment, priceAnimator]);
 
   const prependHistory = useCallback((points: Array<{ time: number; price: number }>) => {

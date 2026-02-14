@@ -74,15 +74,19 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
         client.messageCount++;
         if (client.messageCount > WS_RATE_LIMIT_MAX) {
           logger.warn(`WebSocket rate limit exceeded for user ${userId}`);
-          client.send({ type: 'server:time', data: { timestamp: Date.now(), rateLimited: true } });
+          client.send({ type: 'error', message: 'Rate limit exceeded. Please slow down.' });
           return;
         }
 
         // FLOW WS-1.1: subscribe - добавляем в Set подписок
         if (data.type === 'subscribe' && typeof data.instrument === 'string') {
           client.subscriptions.add(data.instrument);
+          // 🔥 FLOW WS-TF: Сохраняем активный таймфрейм (для фильтрации candle:close и snapshot)
+          if (typeof data.timeframe === 'string') {
+            client.activeTimeframe = data.timeframe;
+          }
           
-          logger.debug(`🔔 Client ${userId} subscribed to ${data.instrument}`);
+          logger.debug(`🔔 Client ${userId} subscribed to ${data.instrument} (tf: ${client.activeTimeframe ?? 'all'})`);
           
           // Отправляем подтверждение подписки
           client.send({ 
@@ -90,9 +94,9 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
             instrument: data.instrument,
           });
 
-          // FLOW CANDLE-SNAPSHOT: Отправляем снапшот активных свечей при подписке
-          // Это позволяет фронтенду восстановить live-свечу с правильными OHLC
-          sendActiveCandleSnapshot(client, data.instrument).catch((error) => {
+          // FLOW CANDLE-SNAPSHOT: Отправляем снапшот активной свечи при подписке
+          // 🔥 FLOW WS-TF: Только для активного таймфрейма (если указан)
+          sendActiveCandleSnapshot(client, data.instrument, client.activeTimeframe).catch((error) => {
             logger.error(`Failed to send candle snapshot for ${data.instrument}:`, error);
           });
           return;
@@ -101,6 +105,9 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
         // FLOW WS-1.1: unsubscribe - удаляем из Set
         if (data.type === 'unsubscribe' && typeof data.instrument === 'string') {
           client.subscriptions.delete(data.instrument);
+          if (client.subscriptions.size === 0) {
+            client.activeTimeframe = null;
+          }
           
           logger.debug(`🔕 Client ${userId} unsubscribed from ${data.instrument}`);
           
@@ -115,6 +122,7 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
         if (data.type === 'unsubscribe_all') {
           const instruments = Array.from(client.subscriptions);
           client.subscriptions.clear();
+          client.activeTimeframe = null;
           
           logger.debug(`🔕 Client ${userId} unsubscribed from all instruments`);
           
@@ -149,13 +157,10 @@ export async function registerWebSocketRoutes(app: FastifyInstance): Promise<voi
 }
 
 /**
- * FLOW CANDLE-SNAPSHOT: Отправляет снапшот активных (незакрытых) свечей клиенту
- * 
- * При подписке на инструмент, фронтенд получает историю (закрытые свечи) и создает
- * live-свечу с нуля. Но активная свеча на бэкенде уже может иметь накопленные OHLC данные.
- * Этот снапшот позволяет фронтенду восстановить правильное состояние live-свечи.
+ * FLOW CANDLE-SNAPSHOT: Отправляет снапшот активной (незакрытой) свечи клиенту
+ * 🔥 FLOW WS-TF: Если указан timeframe — отправляет только эту свечу (не все таймфреймы)
  */
-async function sendActiveCandleSnapshot(client: WsClient, instrument: string): Promise<void> {
+async function sendActiveCandleSnapshot(client: WsClient, instrument: string, timeframe: string | null): Promise<void> {
   try {
     const manager = getPriceEngineManager();
     const activeCandles = await manager.getActiveCandles(instrument);
@@ -164,10 +169,17 @@ async function sendActiveCandleSnapshot(client: WsClient, instrument: string): P
       return; // Нет активных свечей — ничего отправлять
     }
 
-    const candlesArray = Array.from(activeCandles.entries()).map(([timeframe, candle]) => ({
-      timeframe,
-      candle,
-    }));
+    // 🔥 FLOW WS-TF: Фильтруем по таймфрейму — отправляем только нужную свечу
+    let candlesArray: Array<{ timeframe: string; candle: any }>;
+    if (timeframe && activeCandles.has(timeframe)) {
+      candlesArray = [{ timeframe, candle: activeCandles.get(timeframe)! }];
+    } else {
+      // Fallback: если таймфрейм не указан или нет такой свечи — отправляем все
+      candlesArray = Array.from(activeCandles.entries()).map(([tf, candle]) => ({
+        timeframe: tf,
+        candle,
+      }));
+    }
 
     client.send({
       instrument,
@@ -177,7 +189,6 @@ async function sendActiveCandleSnapshot(client: WsClient, instrument: string): P
 
     logger.debug(`📸 Sent candle snapshot to client for ${instrument}: ${candlesArray.map(c => c.timeframe).join(', ')}`);
   } catch (error) {
-    // getPriceEngineManager может выбросить если еще не инициализирован
     logger.warn(`[sendActiveCandleSnapshot] Failed for ${instrument}:`, error);
   }
 }

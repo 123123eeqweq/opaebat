@@ -21,7 +21,7 @@ import { useRef, useEffect } from 'react';
 import type React from 'react';
 import type { Viewport, ViewportConfig } from './viewport.types';
 import type { Candle } from './chart.types';
-import { panViewportTime } from './interactions/math';
+import { panViewportTime, clampToDataBounds } from './interactions/math';
 
 interface UseViewportParams {
   getCandles: () => Candle[];
@@ -219,10 +219,12 @@ export function useViewport({
 }: UseViewportParams): UseViewportReturn {
   const viewportRef = useRef<Viewport | null>(null);
   
-  // 🔥 FLOW: Timeframe-aware visibleCandles - вычисляем на основе canvasWidth
+  // 🔥 FLOW: Timeframe-aware visibleCandles - вычисляем на основе CSS-ширины canvas
+  // 🔥 FIX: Используем clientWidth (CSS px), а не canvas.width (bitmap px = CSS * DPR)
+  // На Retina (DPR=2) canvas.width = 2000 при CSS 1000px → вычислялось 2x больше видимых свечей
   const getCanvasWidth = (): number | null => {
     if (!canvasRef?.current) return null;
-    return canvasRef.current.width || canvasRef.current.clientWidth || null;
+    return canvasRef.current.clientWidth || null;
   };
   
   // Вычисляем visibleCandles на основе canvasWidth и timeframeMs
@@ -477,16 +479,36 @@ export function useViewport({
   /**
    * Обновить viewport (для pan/zoom)
    * 🔥 FLOW Y1: Y пересчитывается через auto-fit только если yMode === 'auto'
+   * 🔥 FLOW PAN-CLAMP: Viewport ограничен — минимум 10% должно пересекаться с данными
    */
   const updateViewport = (newViewport: Viewport): void => {
+    // 🔥 FLOW PAN-CLAMP: Ограничиваем viewport по данным
+    const candles = getCandles();
+    const liveCandle = getLiveCandle();
+    const dataTimeMin = candles.length > 0 ? candles[0].startTime : null;
+    const dataTimeMax = liveCandle?.endTime ?? (candles.length > 0 ? candles[candles.length - 1].endTime : null);
+
+    let vp = newViewport;
+    if (dataTimeMin !== null && dataTimeMax !== null) {
+      const { timeStart, timeEnd, clamped } = clampToDataBounds({
+        timeStart: newViewport.timeStart,
+        timeEnd: newViewport.timeEnd,
+        dataTimeMin,
+        dataTimeMax,
+      });
+      if (clamped) {
+        vp = { ...newViewport, timeStart, timeEnd };
+      }
+    }
+
     const currentViewport = viewportRef.current;
     const currentYMode = currentViewport?.yMode || 'auto';
     
     // 🔥 FLOW Y1: Если yMode === 'manual', сохраняем текущие Y значения
     if (currentYMode === 'manual' && currentViewport) {
       viewportRef.current = {
-        timeStart: newViewport.timeStart,
-        timeEnd: newViewport.timeEnd,
+        timeStart: vp.timeStart,
+        timeEnd: vp.timeEnd,
         priceMin: currentViewport.priceMin,
         priceMax: currentViewport.priceMax,
         yMode: 'manual',
@@ -494,16 +516,12 @@ export function useViewport({
       return;
     }
 
-    // Получаем актуальные данные для auto-fit Y
-    const candles = getCandles();
-    const liveCandle = getLiveCandle();
-
     // Получаем видимые свечи в новом viewport
     const visibleCandles = getVisibleCandles(
       candles,
       liveCandle,
-      newViewport.timeStart,
-      newViewport.timeEnd
+      vp.timeStart,
+      vp.timeEnd
     );
 
     // Auto-fit по Y: вычисляем priceMin и priceMax
@@ -513,8 +531,8 @@ export function useViewport({
     if (!priceRange) {
       // Если нет видимых свечей, используем дефолтные значения
       viewportRef.current = {
-        timeStart: newViewport.timeStart,
-        timeEnd: newViewport.timeEnd,
+        timeStart: vp.timeStart,
+        timeEnd: vp.timeEnd,
         priceMin: 0,
         priceMax: 100,
         yMode: 'auto',
@@ -527,16 +545,22 @@ export function useViewport({
     const currentMin = currentViewport?.priceMin ?? priceRange.priceMin;
     const currentMax = currentViewport?.priceMax ?? priceRange.priceMax;
     
+    // 🔥 FIX #18: Пропускаем lerp если цель уже достигнута (epsilon < 0.0001 пункта)
+    const EPSILON = 0.0001;
+    const minDiff = Math.abs(currentMin - priceRange.priceMin);
+    const maxDiff = Math.abs(currentMax - priceRange.priceMax);
+    const alreadyAtTarget = minDiff < EPSILON && maxDiff < EPSILON;
+
     // Коэффициент сглаживания: 0.3 = 30% движения к цели за кадр
     // Это даёт плавность без "желейности"
     const smoothFactor = 0.3;
-    const smoothedMin = lerp(currentMin, priceRange.priceMin, smoothFactor);
-    const smoothedMax = lerp(currentMax, priceRange.priceMax, smoothFactor);
+    const smoothedMin = alreadyAtTarget ? priceRange.priceMin : lerp(currentMin, priceRange.priceMin, smoothFactor);
+    const smoothedMax = alreadyAtTarget ? priceRange.priceMax : lerp(currentMax, priceRange.priceMax, smoothFactor);
 
     // Обновляем viewport с плавным Y
     viewportRef.current = {
-      timeStart: newViewport.timeStart,
-      timeEnd: newViewport.timeEnd,
+      timeStart: vp.timeStart,
+      timeEnd: vp.timeEnd,
       priceMin: smoothedMin,
       priceMax: smoothedMax,
       yMode: 'auto',
@@ -926,7 +950,6 @@ export function useViewport({
   const PAN_STOP_EPSILON = 0.02;
 
   const advancePanInertia = (now: number): void => {
-    // Если refs не переданы, ничего не делаем (для совместимости)
     if (!panInertiaRefs) return;
 
     // FLOW C-MARKET-CLOSED: когда рынок закрыт, не применяем инерцию
@@ -957,12 +980,11 @@ export function useViewport({
     const viewport = viewportRef.current;
     if (!viewport) return;
 
-    // Получаем canvas для вычисления pixelsPerMs
     const canvas = canvasRef?.current;
     if (!canvas) return;
 
     // Применяем velocity за один кадр (~16ms)
-    const dt = 16; // ~1 frame при 60 FPS
+    const dt = 16;
     const deltaX = velocity * dt;
 
     // Вычисляем pixelsPerMs
@@ -990,6 +1012,17 @@ export function useViewport({
   useEffect(() => {
     recalculateViewport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 🔥 FIX: Очищаем returnToFollow таймер при unmount (утечка памяти + callback на мёртвом компоненте)
+  // Аналогично useLineChart.ts — при unmount CandleChart таймер должен быть отменён
+  useEffect(() => {
+    return () => {
+      if (returnToFollowTimerRef.current) {
+        clearTimeout(returnToFollowTimerRef.current);
+        returnToFollowTimerRef.current = null;
+      }
+    };
   }, []);
 
   return {

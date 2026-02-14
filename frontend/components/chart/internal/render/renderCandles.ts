@@ -83,13 +83,14 @@ function priceToY(price: number, viewport: Viewport, height: number): number {
  * Рисует одну свечу в режиме classic или heikin_ashi
  */
 function renderCandleClassic(
-  ctx: CanvasRenderingContext2D, // Нативный тип браузера
+  ctx: CanvasRenderingContext2D,
   candle: Candle,
   viewport: Viewport,
   width: number,
   height: number,
   candleWidth: number,
-  timeframeMs: number
+  timeframeMs: number,
+  settings: { bullishColor: string; bearishColor: string }
 ): void {
   // 🔥 FLOW: Candle Width Control - центрирование по времени
   // Центр свечи вычисляется по времени (середина временного слота свечи)
@@ -103,7 +104,6 @@ function renderCandleClassic(
   const lowY = priceToY(candle.low, viewport, height);
 
   const isGreen = candle.close >= candle.open;
-  const settings = getChartSettings();
   const color = isGreen ? settings.bullishColor : settings.bearishColor;
   const bodyTop = Math.min(openY, closeY);
   const bodyBottom = Math.max(openY, closeY);
@@ -145,13 +145,14 @@ function renderCandleClassic(
  * - Body НЕ рисуется
  */
 function renderCandleBars(
-  ctx: CanvasRenderingContext2D, // Нативный тип браузера
+  ctx: CanvasRenderingContext2D,
   candle: Candle,
   viewport: Viewport,
   width: number,
   height: number,
   candleWidth: number,
-  timeframeMs: number
+  timeframeMs: number,
+  settings: { bullishColor: string; bearishColor: string }
 ): void {
   // 🔥 FLOW: Candle Width Control - центрирование по времени
   // Центр свечи вычисляется по времени (середина временного слота свечи)
@@ -164,7 +165,6 @@ function renderCandleBars(
   const lowY = priceToY(candle.low, viewport, height);
 
   const isGreen = candle.close >= candle.open;
-  const settings = getChartSettings();
   const color = isGreen ? settings.bullishColor : settings.bearishColor;
 
   ctx.save();
@@ -207,14 +207,14 @@ function renderCandle(
   height: number,
   candleWidth: number,
   timeframeMs: number,
-  isLive: boolean,
-  mode: CandleMode
+  _isLive: boolean,
+  mode: CandleMode,
+  settings: { bullishColor: string; bearishColor: string }
 ): void {
   if (mode === 'bars') {
-    renderCandleBars(ctx, candle, viewport, width, height, candleWidth, timeframeMs);
+    renderCandleBars(ctx, candle, viewport, width, height, candleWidth, timeframeMs, settings);
   } else {
-    // classic или heikin_ashi - одинаковый способ отрисовки
-    renderCandleClassic(ctx, candle, viewport, width, height, candleWidth, timeframeMs);
+    renderCandleClassic(ctx, candle, viewport, width, height, candleWidth, timeframeMs, settings);
   }
 }
 
@@ -226,9 +226,10 @@ export function renderCandles({
   width,
   height,
   timeframeMs,
-  mode = 'classic', // FLOW G10: Режим отображения (по умолчанию classic)
+  mode = 'classic',
 }: RenderCandlesParams): void {
-  // Вычисляем ширину свечи на основе timeframe (не на основе количества видимых свечей!)
+  // 🔥 FIX #10: getChartSettings один раз для всего рендера, не на каждую свечу
+  const settings = getChartSettings();
   // Каждая свеча занимает фиксированное пространство времени
   const timeRange = viewport.timeEnd - viewport.timeStart;
   
@@ -243,15 +244,13 @@ export function renderCandles({
   // - При большом зуме: минимальный фиксированный gap (2-6px)
   const candleWidth = Math.min(MAX_CANDLE_PX, rawWidth);
 
-  // Рисуем закрытые свечи
   for (const candle of candles) {
     if (isCandleVisible(candle, viewport)) {
-      renderCandle(ctx, candle, viewport, width, height, candleWidth, timeframeMs, false, mode);
+      renderCandle(ctx, candle, viewport, width, height, candleWidth, timeframeMs, false, mode, settings);
     }
   }
 
-  // Рисуем live-свечу
   if (liveCandle && isCandleVisible(liveCandle, viewport)) {
-    renderCandle(ctx, liveCandle, viewport, width, height, candleWidth, timeframeMs, true, mode);
+    renderCandle(ctx, liveCandle, viewport, width, height, candleWidth, timeframeMs, true, mode, settings);
   }
 }

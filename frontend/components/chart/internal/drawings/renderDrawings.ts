@@ -405,10 +405,13 @@ function renderFibonacci(
   const priceHigh = Math.max(drawing.start.price, drawing.end.price);
   const priceRange = priceHigh - priceLow;
 
+  // 🔥 FIX: priceHigh < priceMin && priceLow > priceMax невозможно (priceHigh >= priceLow всегда).
+  // Рисунок за экраном по вертикали: выше viewport ИЛИ ниже viewport → OR, не AND
   if (
     maxTime < viewport.timeStart ||
     minTime > viewport.timeEnd ||
-    (priceHigh < viewport.priceMin && priceLow > viewport.priceMax)
+    priceHigh < viewport.priceMin ||
+    priceLow > viewport.priceMax
   ) {
     return;
   }

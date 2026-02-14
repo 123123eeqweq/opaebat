@@ -556,8 +556,12 @@ function renderADXZone(
   if (adxVis.length === 0) return;
 
   const allValues = [...adxVis.map((p) => p.value), ...plusVis.map((p) => p.value), ...minusVis.map((p) => p.value)];
-  const minVal = Math.min(...allValues);
-  const maxVal = Math.max(...allValues);
+  let minVal = allValues[0];
+  let maxVal = allValues[0];
+  for (let i = 1; i < allValues.length; i++) {
+    if (allValues[i] < minVal) minVal = allValues[i];
+    if (allValues[i] > maxVal) maxVal = allValues[i];
+  }
   const range = maxVal - minVal || 1;
   const pad = range * 0.08;
   const priceMin = minVal - pad;
@@ -611,8 +615,12 @@ function renderATRZone(
   const padding = ATR_OSC_PADDING;
   const innerHeight = zoneHeight - 2 * padding;
   const values = visiblePoints.map((p) => p.value);
-  const minVal = Math.min(...values);
-  const maxVal = Math.max(...values);
+  let minVal = values[0];
+  let maxVal = values[0];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i] < minVal) minVal = values[i];
+    if (values[i] > maxVal) maxVal = values[i];
+  }
   const range = maxVal - minVal || 1e-12;
 
   function valueToY(v: number): number {

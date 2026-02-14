@@ -107,6 +107,10 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
   // Вычисляем timeframeMs
   const timeframeMs = parseTimeframeToMs(timeframe);
 
+  // 🔥 FLOW WS-TF: Ref для передачи текущего таймфрейма в useWebSocket
+  const activeTimeframeRef = useRef<string>(timeframe);
+  activeTimeframeRef.current = timeframe; // Синхронизируем при каждом рендере
+
   // 🔥 FLOW C-CHART-TYPE-RESET: Reset при монтировании компонента
   // При смене chartType компонент полностью пересоздается через ChartContainer (key),
   // поэтому reset при монтировании гарантирует чистое состояние
@@ -483,6 +487,8 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
     getTopAlternatives: chartData.getTopAlternatives, // FLOW C-MARKET-ALTERNATIVES: альтернативные пары
     marketAlternativesHitboxesRef, // FLOW C-MARKET-ALTERNATIVES: ref для hitboxes
     getMarketAlternativesHoveredIndex: () => marketAlternativesHoveredIndexRef.current, // FLOW C-MARKET-ALTERNATIVES: hovered index
+    instrument, // Watermark: полупрозрачное название инструмента
+    timeframe,  // Watermark: таймфрейм под названием
   });
 
   // FLOW G6/P9: history loading по instrument (id для API ?instrument=)
@@ -666,6 +672,7 @@ export function useChart({ canvasRef, timeframe = '5s', snapshot, instrument, pa
   // snapshot нужен только для инициализации данных, но WebSocket должен работать и без него
   useWebSocket({
     activeInstrumentRef,
+    activeTimeframeRef, // 🔥 FLOW WS-TF: Сервер фильтрует candle:close и snapshot по этому таймфрейму
     onTradeOpen: (data) => showTradeOpenToast(data),
     onTradeClose: (data: TradeClosePayload) => {
       removeTrade(data.id);

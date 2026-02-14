@@ -11,6 +11,7 @@
 import { useRef, useEffect } from 'react';
 import { CandleChart, type CandleChartRef } from './candle/CandleChart';
 import { LineChart, type LineChartRef } from './line/LineChart';
+import { ChartErrorBoundary } from './ChartErrorBoundary';
 import type { ChartType } from './chart.types';
 import type { TerminalSnapshot } from '@/types/terminal';
 import type { IndicatorConfig } from './internal/indicators/indicator.types';
@@ -76,24 +77,27 @@ export function ChartContainer({
   if (type === 'line') {
     return (
       <div className={className} style={style}>
-        <LineChart
-          ref={lineChartRef}
-          className="w-full h-full"
-          style={{ display: 'block' }}
-          instrument={instrument}
-          payoutPercent={payoutPercent}
-          activeInstrumentRef={activeInstrumentRef}
-          digits={digits}
-          drawingMode={drawingMode}
-          indicatorConfigs={indicatorConfigs}
-          overlayRegistry={overlayRegistry}
-        />
+        <ChartErrorBoundary>
+          <LineChart
+            ref={lineChartRef}
+            className="w-full h-full"
+            style={{ display: 'block' }}
+            instrument={instrument}
+            payoutPercent={payoutPercent}
+            activeInstrumentRef={activeInstrumentRef}
+            digits={digits}
+            drawingMode={drawingMode}
+            indicatorConfigs={indicatorConfigs}
+            overlayRegistry={overlayRegistry}
+          />
+        </ChartErrorBoundary>
       </div>
     );
   }
 
   return (
     <div className={className} style={style}>
+      <ChartErrorBoundary>
         <CandleChart
           ref={candleChartRef}
           className="w-full h-full"
@@ -110,6 +114,7 @@ export function ChartContainer({
           onInstrumentChange={onInstrumentChange}
           candleMode={candleMode}
         />
+      </ChartErrorBoundary>
     </div>
   );
 }

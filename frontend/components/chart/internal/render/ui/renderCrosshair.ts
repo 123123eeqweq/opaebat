@@ -50,6 +50,7 @@ function xToTime(x: number, viewport: TimePriceViewport, width: number): number 
  * Форматирует цену
  */
 function formatPrice(price: number, digits?: number): string {
+  if (!Number.isFinite(price)) return '—';
   return price.toFixed(digits ?? 2);
 }
 
@@ -113,6 +114,9 @@ export function renderCrosshair({
   );
 
   // Фон для метки цены
+  // 🔥 FIX: beginPath() перед roundRect — без этого path от линий кроссхейра
+  // остаётся активным и fill() заливает весь накопленный path
+  ctx.beginPath();
   ctx.fillStyle = LABEL_BG_COLOR;
   ctx.roundRect(
     priceLabelX - LABEL_PADDING,

@@ -48,12 +48,22 @@ export function useLinePointStore() {
 
   /**
    * Добавить точки в начало (для infinite scroll истории)
+   * 🔥 FIX: Фильтрует дубликаты по timestamp — безопасен при повторном запросе истории
    */
   function prepend(points: PricePoint[]): void {
     const arr = pointsRef.current;
-    
-    // Добавляем в начало, сохраняя хронологический порядок
-    arr.unshift(...points);
+
+    if (arr.length === 0) {
+      arr.push(...points);
+    } else {
+      // Самая ранняя существующая точка — всё что >= её времени уже есть
+      const earliestExisting = arr[0].time;
+      // Берём только те точки из history, которые строго раньше существующих
+      const filtered = points.filter(p => p.time < earliestExisting);
+      if (filtered.length > 0) {
+        arr.unshift(...filtered);
+      }
+    }
 
     // Ограничиваем размер: удаляем новые точки справа
     if (arr.length > MAX_POINTS) {

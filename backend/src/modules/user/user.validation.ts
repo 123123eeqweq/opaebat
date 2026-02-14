@@ -12,6 +12,7 @@ import {
   passwordStrongSchema,
   passwordSchema,
 } from '../../shared/validation/schemas.js';
+import { sanitizeHtml } from '../../shared/validation/sanitize.js';
 
 /** Optional name - valid name or empty/whitespace (clears to null) */
 const optionalNameSchema = z
@@ -52,11 +53,11 @@ export const updateProfileSchema = z.object({
     .optional()
     .nullable(),
   country: z
-    .string()
-    .max(100, 'Country name must be at most 100 characters')
-    .transform((s) => s.trim().slice(0, 100))
-    .optional()
-    .nullable(),
+    .union([
+      z.string().max(100, 'Country name must be at most 100 characters').transform((s) => sanitizeHtml(s).slice(0, 100) || null),
+      z.null(),
+    ])
+    .optional(),
   dateOfBirth: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth must be in YYYY-MM-DD format')
