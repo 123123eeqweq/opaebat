@@ -29,6 +29,8 @@ type WsEvent =
   | { type: 'server:time'; data: { timestamp: number } }
   // FLOW A-ACCOUNT: Account snapshot event
   | { type: 'account.snapshot'; payload: { accountId: string; type: 'REAL' | 'DEMO'; balance: number; currency: 'USD' | 'RUB' | 'UAH'; updatedAt: number } }
+  // Server error (e.g. rate limit)
+  | { type: 'error'; message: string }
   // FLOW WS-1: Handshake events
   | { type: 'ws:ready'; sessionId: string; serverTime: number }
   | { type: 'subscribed'; instrument: string }
